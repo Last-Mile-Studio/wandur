@@ -134,6 +134,10 @@ pub enum Target {
     SavedRow(usize),
     /// The whole dock.
     Dock,
+    /// The toolbar's world picker.
+    Picker,
+    /// The address field in the open world picker.
+    PickerField,
 }
 
 /// What a scene's pointer does once the screen is ready (the C# captures' hovers and drags).
@@ -149,6 +153,8 @@ pub enum Gesture {
     DragToGuide(crate::workspace::Tab, Option<egui_dock::Split>),
     /// The same onto a window-edge guide.
     DragToEdge(crate::workspace::Tab, crate::dock_drop::WindowEdge),
+    /// Open the toolbar's world picker, then click its address field (the popup stays open).
+    PickerField,
 }
 
 /// The C# `ui/panel-headers` captures (`.superpowers/ref-shots-ui/`): the pointer's part.
@@ -157,6 +163,7 @@ pub fn gesture(scene: &Scene) -> Gesture {
     match scene.name {
         "ui-header-hover" => Gesture::Hover(Tab::Map, 0.3),
         "ui-saved-worlds-menu" => Gesture::RowMenu(1),
+        "ui-world-picker" => Gesture::PickerField,
         "ui-drop-preview" => Gesture::DragToGuide(Tab::Channels, Some(egui_dock::Split::Left)),
         "ui-drop-preview-edge" => Gesture::DragToEdge(Tab::Channels, crate::dock_drop::WindowEdge::Bottom),
         _ => Gesture::None,
@@ -580,6 +587,15 @@ pub const SCENES: &[Scene] = &[
         scene(
             "ui-saved-worlds-menu",
             "Saved worlds: a row's menu open (System, Linen)",
+            "Linen",
+            Show::Session,
+        ),
+        "System",
+    ),
+    skinned(
+        scene(
+            "ui-world-picker",
+            "Toolbar world picker open, its address field clicked (System, Linen)",
             "Linen",
             Show::Session,
         ),
@@ -2614,6 +2630,19 @@ fn play(
                 step(vec![button(at, true, PointerButton::Secondary)], app);
                 step(vec![button(at, false, PointerButton::Secondary)], app);
             }
+        }
+        Gesture::PickerField => {
+            let mut click = |target, app: &mut WandurApp| {
+                if let Some(r) = app.scene_target(target) {
+                    let at = r.center();
+                    step(vec![Event::PointerMoved(at)], app);
+                    step(vec![button(at, true, PointerButton::Primary)], app);
+                    step(vec![button(at, false, PointerButton::Primary)], app);
+                    step(vec![], app);
+                }
+            };
+            click(Target::Picker, app);
+            click(Target::PickerField, app);
         }
         Gesture::DragToGuide(..) | Gesture::DragToEdge(..) => {
             let (tab, end) = match gesture {

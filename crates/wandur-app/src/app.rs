@@ -380,6 +380,8 @@ pub struct WandurApp {
     auto: AutoHide,
     /// Where the dock was drawn in the last frame (the overlays slide out over it).
     dock_rect: egui::Rect,
+    /// The toolbar world picker and, while its popup is open, the address field in it (for scenes).
+    picker_rects: (egui::Rect, egui::Rect),
     /// Tool panels docked alone in their leaf, whose headers this app draws (last frame's).
     heads: HashMap<Tab, shell::Head>,
     /// The undo toast in the main window (a delete of map rooms or exits, or a saved world).
@@ -866,6 +868,7 @@ impl WandurApp {
             dock,
             auto,
             dock_rect: egui::Rect::NOTHING,
+            picker_rects: (egui::Rect::NOTHING, egui::Rect::NOTHING),
             heads: HashMap::new(),
             toast: None,
             drop: Default::default(),
@@ -2639,6 +2642,8 @@ impl WandurApp {
             }
             Target::SavedRow(i) => self.panel.row_rects.iter().find(|(w, _)| *w == i).map(|(_, r)| *r),
             Target::Dock => self.dock_rect.is_positive().then_some(self.dock_rect),
+            Target::Picker => self.picker_rects.0.is_positive().then_some(self.picker_rects.0),
+            Target::PickerField => self.picker_rects.1.is_positive().then_some(self.picker_rects.1),
         }
     }
 
@@ -4199,6 +4204,7 @@ impl WandurApp {
     }
 
     fn world_picker_field(&mut self, ui: &mut Ui) {
+        use crate::saved_worlds_panel as picker;
         {
             let selected = self.panel.selected_world.and_then(|i| self.settings.worlds.get(i));
             // The active session's own world is marked with its status lamp, so the picker reads
@@ -4220,43 +4226,79 @@ impl WandurApp {
             };
             let mut picked = None;
             let mut connect_typed = false;
+            let mut picker_field = egui::Rect::NOTHING;
+            let catalog = self.directory_status.catalog.clone();
+            let base = self.directory.base().to_string();
+            let theme = self.theme.clone();
+            // The popup stays open for clicks inside it (the address field takes focus); picking a
+            // world or connecting closes it, as do a click outside and Escape.
             let picker = egui::ComboBox::from_id_salt("world-picker")
                 .selected_text(text)
-                .width(220.0)
-                .height(360.0)
+                .width(picker::PICKER_POPUP_WIDTH)
+                .height(picker::PICKER_POPUP_MAX_HEIGHT)
+                .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
                 .show_ui(ui, |ui| {
-                    for (i, world) in self.settings.worlds.iter().enumerate() {
-                        if ui
-                            .selectable_label(self.panel.selected_world == Some(i), &world.name)
-                            .clicked()
-                        {
-                            picked = Some(i);
-                        }
-                    }
                     if !self.settings.worlds.is_empty() {
+                        let ppp = ui.ctx().pixels_per_point();
+                        let target = crate::artwork::Target {
+                            width: (picker::PICKER_THUMB.x * ppp).round() as u32,
+                            height: (picker::PICKER_THUMB.y * ppp).round() as u32,
+                            cover: true,
+                        };
+                        // Six rows show at once; more scroll.
+                        egui::ScrollArea::vertical()
+                            .id_salt("world-picker-list")
+                            .max_height(picker::PICKER_VISIBLE_ROWS * (picker::PICKER_ROW_HEIGHT + 2.0))
+                            .auto_shrink([false, true])
+                            .show(ui, |ui| {
+                                ui.spacing_mut().item_spacing.y = 2.0;
+                                for (i, world) in self.settings.worlds.iter().enumerate() {
+                                    let listing = picker::listing_of(catalog.as_deref(), world);
+                                    let selected = self.panel.selected_world == Some(i);
+                                    if picker::picker_row(
+                                        ui,
+                                        world,
+                                        listing,
+                                        &base,
+                                        &mut self.art,
+                                        target,
+                                        &theme,
+                                        selected,
+                                    )
+                                    .clicked()
+                                    {
+                                        picked = Some(i);
+                                        ui.close();
+                                    }
+                                }
+                            });
                         ui.separator();
                     }
                     ui.label(
                         RichText::new(t(S::ConnectToAnAddress))
-                            .size(12.0)
+                            .size(13.0)
                             .color(self.theme.muted),
                     );
                     ui.horizontal(|ui| {
                         let edit = egui::TextEdit::singleline(&mut self.address)
                             .hint_text(t(S::HostnameAcceptsHostPort))
-                            .desired_width(180.0);
+                            .font(egui::FontId::proportional(14.0))
+                            .desired_width(picker::PICKER_POPUP_WIDTH - 90.0);
                         let response = ui.add(edit);
+                        picker_field = response.rect;
                         crate::a11y::label(&response, t(S::ConnectToAnAddress));
                         let enter = response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-                        if ui.button(t(S::ConnectShort)).clicked() || enter {
+                        if ui.button(RichText::new(t(S::ConnectShort)).size(14.0)).clicked() || enter {
                             connect_typed = true;
+                            ui.close();
                         }
                     });
                     for address in &self.settings.recent {
-                        if ui.selectable_label(false, RichText::new(address).size(12.0)).clicked() {
+                        if ui.selectable_label(false, RichText::new(address).size(13.0)).clicked() {
                             self.address = address.clone();
                         }
                     }
+                    ui.add_space(4.0);
                 })
                 .response
                 .on_hover_text(if self.picker_on_active_world() {
@@ -4265,6 +4307,7 @@ impl WandurApp {
                     t(S::PickerHint)
                 });
             crate::a11y::label_combo(&picker, t(S::ChooseAWorld));
+            self.picker_rects = (picker.rect, picker_field);
             if let Some(i) = picked {
                 self.panel.selected_world = Some(i);
             }
@@ -7363,6 +7406,61 @@ mod tests {
             layout::to_json(&app.dock, &app.auto),
             layout::to_json(&left, &AutoHide::default())
         );
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The toolbar's world picker stays open for a click in its address field (it used to close),
+    /// and Enter there connects to the typed address and closes it.
+    #[test]
+    fn the_world_picker_stays_open_for_its_address_field_and_enter_connects() {
+        let dir = std::env::temp_dir().join(format!("wandur-app-picker-field-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let ctx = egui::Context::default();
+        let mut app = WandurApp::new(&ctx, offline_options(&dir));
+        app.settings.worlds = vec![SavedWorld {
+            name: "The Lantern Road".into(),
+            ..SavedWorld::from_endpoint(String::from("127.0.0.1"), &Endpoint::new("127.0.0.1", 4400))
+        }];
+        let click = |at: egui::Pos2| {
+            let button = |pressed| Event::PointerButton {
+                pos: at,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::NONE,
+            };
+            vec![Event::PointerMoved(at), button(true), button(false)]
+        };
+        frame(&mut app, &ctx, vec![]);
+        let picker = app.picker_rects.0;
+        assert!(picker.is_positive(), "the toolbar shows the picker");
+        frame(&mut app, &ctx, click(picker.center()));
+        frame(&mut app, &ctx, vec![]);
+        let field = app.picker_rects.1;
+        assert!(field.is_positive(), "the popup is open with its address field");
+        // A click in the field used to close the popup; now it stays open and the field has focus.
+        frame(&mut app, &ctx, click(field.center()));
+        frame(&mut app, &ctx, vec![]);
+        frame(&mut app, &ctx, vec![]);
+        assert!(app.picker_rects.1.is_positive(), "the popup stays open for its field");
+        frame(&mut app, &ctx, vec![Event::Text("mud.example.test:4000".into())]);
+        assert_eq!(app.address, "mud.example.test:4000");
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::Key {
+                key: egui::Key::Enter,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+        );
+        assert_eq!(app.sessions.len(), 1, "Enter connects to the typed address");
+        assert_eq!(app.connect_error, None);
+        frame(&mut app, &ctx, vec![]);
+        assert!(!app.picker_rects.1.is_positive(), "connecting closes the popup");
         app.on_exit();
         drop(app);
         let _ = std::fs::remove_dir_all(&dir);

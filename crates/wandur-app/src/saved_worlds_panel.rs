@@ -224,29 +224,7 @@ pub fn show(ui: &mut Ui, state: &mut PanelState, cx: &mut SavedContext<'_>) {
                 }
                 let thumb = egui::Rect::from_min_size(rect.min + vec2(8.0, 7.0), vec2(40.0, 30.0));
                 let listing = listing_of(cx.catalog, world);
-                let state_art = listing
-                    .and_then(|l| art_request(l, cx.base, "thumb", target, Some("400"), None))
-                    .map_or(ArtState::Failed, |r| cx.art.request(&r));
-                if matches!(state_art, ArtState::Ready { .. }) {
-                    widgets::plate(ui, thumb, CornerRadius::same(3), &state_art, &world.name, theme, 13.0);
-                } else {
-                    // The C# initials tile: the panel's colour, a fine line, the initials in the
-                    // accent.
-                    ui.painter().rect_filled(thumb, CornerRadius::same(3), theme.panel);
-                    ui.painter().rect_stroke(
-                        thumb,
-                        CornerRadius::same(3),
-                        Stroke::new(1.0, theme.border),
-                        egui::StrokeKind::Inside,
-                    );
-                    ui.painter().text(
-                        thumb.center(),
-                        egui::Align2::CENTER_CENTER,
-                        widgets::initials(&world.name),
-                        egui::FontId::new(12.0, crate::fonts::bold_family()),
-                        theme.accent,
-                    );
-                }
+                world_thumb(ui, thumb, world, listing, cx.base, cx.art, target, theme);
                 let text_rect = egui::Rect::from_min_max(
                     egui::pos2(thumb.right() + 8.0, rect.top() + 5.0),
                     rect.max - vec2(6.0, 5.0),
@@ -341,7 +319,108 @@ pub fn show(ui: &mut Ui, state: &mut PanelState, cx: &mut SavedContext<'_>) {
     }
 }
 
-fn listing_of<'a>(
+/// The toolbar world picker's popup: rows of a picture, the name and the address; six show at once.
+pub const PICKER_POPUP_WIDTH: f32 = 300.0;
+pub const PICKER_POPUP_MAX_HEIGHT: f32 = 520.0;
+pub const PICKER_ROW_HEIGHT: f32 = 40.0;
+pub const PICKER_VISIBLE_ROWS: f32 = 6.0;
+pub const PICKER_THUMB: egui::Vec2 = vec2(40.0, 30.0);
+
+/// One world in the toolbar picker: its picture, its name a size up from the list default, and
+/// its address muted beneath.
+#[allow(clippy::too_many_arguments)]
+pub fn picker_row(
+    ui: &mut Ui,
+    world: &SavedWorld,
+    listing: Option<&wandur_core::directory::listing::WorldListing>,
+    base: &str,
+    art: &mut ArtLoader,
+    target: Target,
+    theme: &Theme,
+    selected: bool,
+) -> egui::Response {
+    let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), PICKER_ROW_HEIGHT), Sense::click());
+    let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+    crate::a11y::toggle(
+        &response,
+        egui::accesskit::Role::ListBoxOption,
+        &format!("{}, {}:{}", world.name, world.host, world.port),
+        selected,
+    );
+    if selected || response.hovered() || response.has_focus() {
+        let fill = if selected {
+            theme.selection_fill()
+        } else {
+            theme.hover_fill()
+        };
+        ui.painter().rect_filled(rect, CornerRadius::same(4), fill);
+    }
+    let thumb = egui::Rect::from_min_size(
+        rect.min + vec2(5.0, (PICKER_ROW_HEIGHT - PICKER_THUMB.y) / 2.0),
+        PICKER_THUMB,
+    );
+    world_thumb(ui, thumb, world, listing, base, art, target, theme);
+    let left = thumb.right() + 10.0;
+    let width = (rect.right() - 6.0 - left).max(0.0);
+    let name = ui
+        .painter()
+        .layout(world.name.clone(), egui::FontId::proportional(15.0), theme.text, width);
+    let endpoint = format!(
+        "{}{}",
+        wandur_core::directory::listing::format_host_port(&world.host, world.port),
+        if world.tls { " · TLS" } else { "" }
+    );
+    let address = ui
+        .painter()
+        .layout_no_wrap(endpoint, egui::FontId::proportional(11.0), theme.muted);
+    let total = name.rect.height().min(19.0) + 1.0 + address.rect.height();
+    let top = rect.center().y - total / 2.0;
+    let clip = ui
+        .painter()
+        .with_clip_rect(rect.shrink2(vec2(0.0, 1.0)).intersect(ui.clip_rect()));
+    clip.galley(egui::pos2(left, top), name, theme.text);
+    clip.galley(egui::pos2(left, top + 20.0), address, theme.muted);
+    response
+}
+
+/// A world's small picture: its listing's artwork, or the C# initials tile (the panel's colour, a
+/// fine line, the initials in the accent) while there is none. Used by the rows here and the
+/// toolbar's world picker.
+#[allow(clippy::too_many_arguments)]
+pub fn world_thumb(
+    ui: &Ui,
+    thumb: egui::Rect,
+    world: &SavedWorld,
+    listing: Option<&wandur_core::directory::listing::WorldListing>,
+    base: &str,
+    art: &mut ArtLoader,
+    target: Target,
+    theme: &Theme,
+) {
+    let state_art = listing
+        .and_then(|l| art_request(l, base, "thumb", target, Some("400"), None))
+        .map_or(ArtState::Failed, |r| art.request(&r));
+    if matches!(state_art, ArtState::Ready { .. }) {
+        widgets::plate(ui, thumb, CornerRadius::same(3), &state_art, &world.name, theme, 13.0);
+    } else {
+        ui.painter().rect_filled(thumb, CornerRadius::same(3), theme.panel);
+        ui.painter().rect_stroke(
+            thumb,
+            CornerRadius::same(3),
+            Stroke::new(1.0, theme.border),
+            egui::StrokeKind::Inside,
+        );
+        ui.painter().text(
+            thumb.center(),
+            egui::Align2::CENTER_CENTER,
+            widgets::initials(&world.name),
+            egui::FontId::new((thumb.height() * 0.4).round(), crate::fonts::bold_family()),
+            theme.accent,
+        );
+    }
+}
+
+pub fn listing_of<'a>(
     catalog: Option<&'a wandur_core::directory::Catalog>,
     world: &SavedWorld,
 ) -> Option<&'a wandur_core::directory::listing::WorldListing> {
