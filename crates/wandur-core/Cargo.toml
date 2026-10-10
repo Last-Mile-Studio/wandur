@@ -25,7 +25,7 @@ scripting = ["dep:rquickjs"]
 lua = ["scripting", "dep:mlua"]
 # File > Import from Mudlet: Mudlet profile and package XML (quick-xml) and zipped packages
 # (read here, inflated with flate2). Generated scripts are checked with the JavaScript engine.
-mudlet-import = ["scripting", "dep:quick-xml", "dep:flate2"]
+mudlet-import = ["scripting", "dep:flate2"]
 # Look-around patterns for scripts and channel rules (t08, t09). Plain `regex` is always built
 # (login prompt patterns).
 patterns = ["dep:fancy-regex"]
@@ -70,7 +70,9 @@ rquickjs = { version = "0.14", optional = true }
 # Not `send`: a Lua engine holds JavaScript values of its host engine, which never leave the
 # session's script thread.
 mlua = { version = "0.12", features = ["lua54", "vendored"], optional = true }
-quick-xml = { version = "0.41", optional = true }
+# Mudlet profile and package XML, and the Mudlet Mapping Protocol's XML map (always built: a
+# game's official map and File > Import map read it).
+quick-xml = "0.41"
 flate2 = { version = "1", optional = true }
 # Login prompt patterns (linear time, like .NET's NonBacktracking).
 regex = "1"

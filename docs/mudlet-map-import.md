@@ -1,12 +1,15 @@
 # Importing Mudlet maps
 
-File > Import map... (and the full map's Import, with nothing selected) reads two kinds of
+File > Import map... (and the full map's Import, with nothing selected) reads three kinds of
 file:
 
 - **This client's map file** (`{"Version":1|2,"Map":{...}}`, or a bare map): it replaces the
   world's map, as the C# client's import does.
 - **Mudlet's JSON map export** (Mudlet's `saveJsonMap(path)`, or the export in Mudlet's map
   settings): it is merged into the world's map.
+- **A Mudlet Mapping Protocol XML map** (MMP, the `.xml` map a game publishes and announces with
+  GMCP `Client.Map`): it is merged into the world's map too. See "XML maps (MMP)" and
+  "Official maps" below.
 
 Mudlet's binary map (`.dat`) is recognised (by its extension, or by a file that starts with a
 small big-endian number instead of JSON) and refused with a note, in the person's language,
@@ -130,3 +133,84 @@ An imported room replaces the map's room with the same id but keeps what the tra
 of it (the server's name, description and area for recognition, a terrain guess, the known
 exits), and keeps its description when the import has none. Rooms, exits and labels of the map
 that the file does not have stay. The player's position is kept. All of it is one undo step.
+
+## XML maps (MMP)
+
+Code: `crates/wandur-core/src/map/mudlet/xml.rs`. Fixture:
+`crates/wandur-core/tests/fixtures/mudlet/ember-vale-map.xml` (hand-written, fictional).
+
+The XML is read into the same model as Mudlet's JSON export and converted by the same code, so
+everything above (ids, environment colours, special exits, doors, the way up, the summary, the
+limits, merging) applies. Sources: the public Mudlet wiki pages "Standards:MMP" (the layout),
+"Manual:GMCP Extensions" (`Client.Map`) and "Manual:Mapper Functions" (`loadMap` reads `.xml`
+maps). No Mudlet source was read.
+
+The layout the wiki documents: `<map>` holds `<areas>` (`<area id name>`), `<rooms>` (`<room id
+area title environment>` with a `<coord x y z>` and `<exit direction target>` children) and
+`<environments>` (`<environment id name color>`). Assumptions where the wiki is silent:
+
+1. **Ids**: a room's id is the game's own room number, the one GMCP `Room.Info` gives as `num`
+   (true of the games that publish these maps). It becomes `s:<id>`, so imported rooms line up
+   with tracking. Without that, two maps would never meet.
+2. **Environment colours**: `color` is an ANSI colour number (0 black, 1 to 15 the normal and
+   bright colours as Mudlet's defaults above), or a 256 colour palette number. An
+   `htmlcolor="#RRGGBB"` attribute, when present, wins.
+3. **Exits**: `direction` takes full or short compass names, `up`, `down`, `in`, `out`; any other
+   direction is a special exit whose name is its command. Optional `door` (a number as above or
+   a word), `weight` and `locked` attributes are read when present. Exits to rooms the file does
+   not have are left out and counted.
+4. **Areas**: rooms whose `area` the file does not name get an area of their own with no name.
+   A second area with the same id keeps the first name.
+5. **Labels**: the documented format has none, so an XML map brings no labels.
+6. **Element names** compare without case and namespace prefixes; elements and attributes the
+   format does not name are ignored.
+
+Safety: a file that declares a DTD is refused; an entity other than the five built-in ones and
+character references is refused; nesting deeper than 16 elements is refused. Limits, checked
+while reading: 64 MiB, 10,000 rooms and 60,000 exits (the map's own, refused with the counts),
+10,000 areas, 10,000 environments and 256 exits per room.
+
+## Official maps
+
+A game can name its official map with GMCP `Client.Map {"url": "https://..."}` (the public
+Mudlet wiki, "Manual:GMCP Extensions", Automatic map download). The session then shows a strip:
+"This game offers an official map." with Download, Not now and Never.
+
+- **Never** is saved for the world; the strip does not come back for it.
+- **Not now** hides it for the rest of the session.
+- When a file was imported before, the client asks the server first (with the file's ETag as
+  `If-None-Match`, or, when the server gave no ETag, its `Last-Modified` as
+  `If-Modified-Since`); the strip shows only when the file changed. The server is asked at most
+  once every 24 hours per world; within that time the last check's answer stands (a change it
+  found is still offered, without asking again). A new address is checked at once, without
+  validators; the same file moved there is not news, and the record follows it.
+- **Download** fetches the file on a worker thread: https only (an http address is refused), at
+  most 3 redirects and each to https (another host is fine), 64 MiB at most counted while it
+  streams, 15 seconds to connect and 5 minutes in all. The file is read as an MMP XML map or
+  Mudlet's JSON export (as File > Import map reads them) and merged into the session's map as
+  one undo step, once the session's saved map has loaded. The toast says how many rooms, exits
+  and labels were added, updated, kept with your edits and removed, and offers Undo.
+
+The file is kept at `<data dir>/official-maps/<world>/map.xml` (`map.json` for a JSON map),
+with `meta.json` beside it: the address, the ETag and Last-Modified, the SHA-256, when it was
+imported, the last merge's counts, Never, and the last check (`last_checked_at`, its address,
+and whether it found a change). `<world>` is the saved world's id, or `endpoint-<host>-<port>` for a
+session opened by address (only letters, digits, `-` and `_`).
+
+Merging a new version is three-way: the base is the file kept last time, theirs the new file,
+ours the world's map now (the base is the last imported file even when the address changed).
+Item by item (rooms by id, exits by room and direction, labels by id):
+untouched here since the base takes the new version (or is removed when the new file dropped
+it); changed or deleted here keeps your version; new in the file is added. What the tracker
+records on its own (the server's words for a room, known exits, a terrain guess, an exit seen
+from both ends) is not an edit. A room the map learned by walking under an id the file now has
+takes the file's version. The first download, with no base, is a plain merge, as above.
+
+Code: `crates/wandur-core/src/map/official.rs` and its folder (address, download, store, offer,
+merge), `crates/wandur-app/src/official_map.rs` (the strip and the workers). To try it by hand:
+`wandur-bench mud-server --port 4403 --rate 0 --page gmcp --client-map https://.../map.xml` names
+the address; `crates/wandur-core/tests/fixtures/mudlet/lantern-town-map.xml` is a map of that
+world's rooms to put on an https address.
+
+Not done: an Undo of the merge does not forget the kept file, so the next new version is merged
+as if the person had deleted what the undo took away (it stays away).

@@ -1,7 +1,8 @@
 //! `wandur-bench`: loopback servers and in-process measurements for the Rust prototype.
 //!
 //! - `wandur-bench mud-server [--port 4400] [--rate BYTES_PER_SECOND] [--nochat] [--page unicode] [--write-ms 100] [--tick-ms N]`
-//! - `wandur-bench mud-server --page gmcp` (a small GMCP world: rooms for the Map, channel talk)
+//! - `wandur-bench mud-server --page gmcp` (a small GMCP world: rooms for the Map, channel talk);
+//!   `--client-map URL` makes it name URL as its official map (GMCP `Client.Map`)
 //! - `wandur-bench mud-server --page jedi` (one Legends of the Jedi room and nothing more: the C#
 //!   `world-theme-session` capture)
 //! - `wandur-bench mud-server --page lotj --rate 1000000` (the flood with a Legends of the Jedi-like
@@ -93,6 +94,9 @@ fn main() {
                 }
                 Some("gmcp") => {
                     mud_server::GMCP_DEMO.store(true, std::sync::atomic::Ordering::Relaxed);
+                    if let Some(url) = option(&args, "--client-map") {
+                        let _ = mud_server::CLIENT_MAP.set(url);
+                    }
                     None
                 }
                 Some("lantern") | Some("login") | Some("login-gmcp") | Some("msdp") => Some(String::new()),
@@ -212,7 +216,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "commands: mud-server [--port N] [--rate BYTES] [--nochat] [--page unicode|gmcp|lantern|login|login-gmcp|msdp|jedi|lotj] [--write-ms N] [--tick-ms N] | \
+                "commands: mud-server [--port N] [--rate BYTES] [--nochat] [--page unicode|gmcp|lantern|login|login-gmcp|msdp|jedi|lotj] [--client-map URL] [--write-ms N] [--tick-ms N] | \
                  directory-server [--port N] [--worlds N] [--varied] [--art-size WxH] [--fixture] | micro [--label NAME] | history [--mb N] [--rate BYTES] | shell [--label NAME] [--frames N] [--only TEXT]"
             );
             std::process::exit(2);

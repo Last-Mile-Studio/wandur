@@ -27,7 +27,8 @@ cargo build --release
 
 # A local test MUD (generated text; 0 = idle prompts, or a byte rate such as 100000)
 ./target/release/wandur-bench mud-server --port 4400 --rate 3000
-# A small GMCP world for the Channels and Map panels
+# A small GMCP world for the Channels and Map panels (add --client-map https://... to have it
+# offer that address as its official map, GMCP Client.Map)
 ./target/release/wandur-bench mud-server --port 4403 --rate 0 --page gmcp
 # The Unicode test page
 ./target/release/wandur-bench mud-server --port 4401 --rate 0 --page unicode

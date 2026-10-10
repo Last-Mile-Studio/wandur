@@ -2832,7 +2832,7 @@ pub enum S {
     MapImportTooBig,
     /// This is a Mudlet binary map (.dat), which Wandur cannot read. Wandur reads Mudlet's JSO...
     MapImportMudletDat,
-    /// This is not a map file Wandur reads. Pick a Wandur map file or Mudlet's JSON map export.
+    /// This is not a map file Wandur reads. Pick a Wandur map file, Mudlet's JSON map export o...
     MapImportUnknownFile,
     /// The file is larger than 64 MB.
     MapImportFileTooLarge,
@@ -2944,7 +2944,7 @@ pub enum S {
     ToastImportedMap,
     /// Import map
     MapImportTitle,
-    /// Bring in a Wandur map file or Mudlet's JSON map export. A Wandur file replaces the worl...
+    /// Bring in a Wandur map file, Mudlet's JSON map export or an XML map (Mudlet Mapping Prot...
     MapImportIntro,
     /// Open a session or save a world first: a map belongs to a world.
     MapImportNoWorld,
@@ -2974,16 +2974,58 @@ pub enum S {
     MapImportReplaceNote,
     /// Rooms, exits and labels are added to the world's map; ones imported before are updated....
     MapImportMergeNote,
-    /// Map files (JSON, Mudlet .dat)
+    /// Map files (JSON, XML, Mudlet .dat)
     MapImportFileTypes,
     /// {0} (open session)
     MapImportOpenSession,
     /// The map already has everything in this file.
     MapImportNothingNew,
+    /// A Mudlet Mapping Protocol map (XML):
+    MapImportKindMudletXml,
+    /// This XML file is not a map Wandur can read ({0}).
+    MapImportXmlInvalid,
+    /// This XML file declares a DTD or uses entities, which Wandur does not read.
+    MapImportXmlDtd,
+    /// This map is past the limit for {0}: Wandur reads at most {1}. Nothing was imported.
+    MapImportXmlTooMany,
+    /// areas
+    MapImportXmlAreas,
+    /// environments
+    MapImportXmlEnvironments,
+    /// exits of one room
+    MapImportXmlRoomExits,
+    /// This game offers an official map.
+    OfficialMapOffer,
+    /// Download
+    OfficialMapDownload,
+    /// Not now
+    OfficialMapNotNow,
+    /// Never
+    OfficialMapNever,
+    /// Downloading the official map…
+    OfficialMapDownloading,
+    /// The official map could not be imported: {0}
+    OfficialMapFailed,
+    /// Official map for {0}: {1} added, {2} updated, {3} kept with your edits, {4} removed
+    OfficialMapImported,
+    /// The official map has not changed since it was imported.
+    OfficialMapUpToDate,
+    /// The map's address is not an https address.
+    OfficialMapNotHttps,
+    /// The map's address redirected to an address that is not https.
+    OfficialMapRedirectNotHttps,
+    /// The map's address redirected more than {0} times.
+    OfficialMapTooManyRedirects,
+    /// The server answered {0}.
+    OfficialMapHttpStatus,
+    /// The official map was imported, but its copy could not be saved: {0}
+    OfficialMapSaveFailed,
+    /// Could not remember this choice: {0}
+    OfficialMapPreferenceFailed,
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1487;
+pub const COUNT: usize = 1508;
 
 impl S {
     /// Every key, in table order.
@@ -4475,6 +4517,27 @@ impl S {
         S::MapImportFileTypes,
         S::MapImportOpenSession,
         S::MapImportNothingNew,
+        S::MapImportKindMudletXml,
+        S::MapImportXmlInvalid,
+        S::MapImportXmlDtd,
+        S::MapImportXmlTooMany,
+        S::MapImportXmlAreas,
+        S::MapImportXmlEnvironments,
+        S::MapImportXmlRoomExits,
+        S::OfficialMapOffer,
+        S::OfficialMapDownload,
+        S::OfficialMapNotNow,
+        S::OfficialMapNever,
+        S::OfficialMapDownloading,
+        S::OfficialMapFailed,
+        S::OfficialMapImported,
+        S::OfficialMapUpToDate,
+        S::OfficialMapNotHttps,
+        S::OfficialMapRedirectNotHttps,
+        S::OfficialMapTooManyRedirects,
+        S::OfficialMapHttpStatus,
+        S::OfficialMapSaveFailed,
+        S::OfficialMapPreferenceFailed,
     ];
 }
 
@@ -5967,6 +6030,27 @@ pub static NAMES: [&str; COUNT] = [
     "MapImportFileTypes",
     "MapImportOpenSession",
     "MapImportNothingNew",
+    "MapImportKindMudletXml",
+    "MapImportXmlInvalid",
+    "MapImportXmlDtd",
+    "MapImportXmlTooMany",
+    "MapImportXmlAreas",
+    "MapImportXmlEnvironments",
+    "MapImportXmlRoomExits",
+    "OfficialMapOffer",
+    "OfficialMapDownload",
+    "OfficialMapNotNow",
+    "OfficialMapNever",
+    "OfficialMapDownloading",
+    "OfficialMapFailed",
+    "OfficialMapImported",
+    "OfficialMapUpToDate",
+    "OfficialMapNotHttps",
+    "OfficialMapRedirectNotHttps",
+    "OfficialMapTooManyRedirects",
+    "OfficialMapHttpStatus",
+    "OfficialMapSaveFailed",
+    "OfficialMapPreferenceFailed",
 ];
 
 /// The text of every key in each language, in the order of `Language`.
@@ -7386,7 +7470,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "This picture is too large, even scaled down. A map holds pictures of up to 2 MB each and 20 MB in all.",
         "This map has {0} rooms and {2} exits, but a map holds at most {1} rooms and {3} exits. Nothing was imported.",
         "This is a Mudlet binary map (.dat), which Wandur cannot read. Wandur reads Mudlet's JSON map export instead. To make one in Mudlet, open the map settings and export the map as JSON, or type lua saveJsonMap(getMudletHomeDir() .. \"/map.json\") in Mudlet's command line. Then import that .json file here.",
-        "This is not a map file Wandur reads. Pick a Wandur map file or Mudlet's JSON map export.",
+        "This is not a map file Wandur reads. Pick a Wandur map file, Mudlet's JSON map export or an XML map (Mudlet Mapping Protocol).",
         "The file is larger than 64 MB.",
         "Room {0}",
         "Areas: {0}",
@@ -7442,7 +7526,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Deleted label",
         "Imported a map into {0}",
         "Import map",
-        "Bring in a Wandur map file or Mudlet's JSON map export. A Wandur file replaces the world's map; a Mudlet map is added to it. Nothing changes until you press Import, and Undo takes it back.",
+        "Bring in a Wandur map file, Mudlet's JSON map export or an XML map (Mudlet Mapping Protocol). A Wandur file replaces the world's map; the others are added to it. Nothing changes until you press Import, and Undo takes it back.",
         "Open a session or save a world first: a map belongs to a world.",
         "Import into",
         "Choose file…",
@@ -7457,9 +7541,30 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Left out or changed:",
         "Importing replaces the world's whole map.",
         "Rooms, exits and labels are added to the world's map; ones imported before are updated. Importing the same file again changes nothing.",
-        "Map files (JSON, Mudlet .dat)",
+        "Map files (JSON, XML, Mudlet .dat)",
         "{0} (open session)",
         "The map already has everything in this file.",
+        "A Mudlet Mapping Protocol map (XML):",
+        "This XML file is not a map Wandur can read ({0}).",
+        "This XML file declares a DTD or uses entities, which Wandur does not read.",
+        "This map is past the limit for {0}: Wandur reads at most {1}. Nothing was imported.",
+        "areas",
+        "environments",
+        "exits of one room",
+        "This game offers an official map.",
+        "Download",
+        "Not now",
+        "Never",
+        "Downloading the official map…",
+        "The official map could not be imported: {0}",
+        "Official map for {0}: {1} added, {2} updated, {3} kept with your edits, {4} removed",
+        "The official map has not changed since it was imported.",
+        "The map's address is not an https address.",
+        "The map's address redirected to an address that is not https.",
+        "The map's address redirected more than {0} times.",
+        "The server answered {0}.",
+        "The official map was imported, but its copy could not be saved: {0}",
+        "Could not remember this choice: {0}",
     ],
     // es
     [
@@ -8876,7 +8981,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Esta imagen es demasiado grande, incluso reducida. Un mapa admite imágenes de hasta 2 MB cada una y 20 MB en total.",
         "Este mapa tiene {0} salas y {2} salidas, pero un mapa admite como máximo {1} salas y {3} salidas. No se importó nada.",
         "Este es un mapa binario de Mudlet (.dat), que Wandur no puede leer. Wandur lee en su lugar la exportación del mapa de Mudlet en JSON. Para crearla en Mudlet, abre los ajustes del mapa y exporta el mapa como JSON, o escribe lua saveJsonMap(getMudletHomeDir() .. \"/map.json\") en la línea de comandos de Mudlet. Después importa aquí ese archivo .json.",
-        "Este no es un archivo de mapa que Wandur lea. Elige un archivo de mapa de Wandur o la exportación del mapa de Mudlet en JSON.",
+        "Este no es un archivo de mapa que Wandur lea. Elige un archivo de mapa de Wandur, la exportación del mapa de Mudlet en JSON o un mapa XML (Mudlet Mapping Protocol).",
         "El archivo ocupa más de 64 MB.",
         "Sala {0}",
         "Áreas: {0}",
@@ -8932,7 +9037,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Etiqueta eliminada",
         "Mapa importado en {0}",
         "Importar mapa",
-        "Trae un archivo de mapa de Wandur o la exportación del mapa de Mudlet en JSON. Un archivo de Wandur reemplaza el mapa del mundo; un mapa de Mudlet se añade a él. No cambia nada hasta que pulses Importar, y Deshacer lo revierte.",
+        "Trae un archivo de mapa de Wandur, la exportación del mapa de Mudlet en JSON o un mapa XML (Mudlet Mapping Protocol). Un archivo de Wandur reemplaza el mapa del mundo; los demás se añaden a él. No cambia nada hasta que pulses Importar, y Deshacer lo revierte.",
         "Primero abre una sesión o guarda un mundo: un mapa pertenece a un mundo.",
         "Importar en",
         "Elegir archivo…",
@@ -8947,9 +9052,30 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Omitido o cambiado:",
         "Importar reemplaza todo el mapa del mundo.",
         "Las salas, salidas y etiquetas se añaden al mapa del mundo; las importadas antes se actualizan. Importar otra vez el mismo archivo no cambia nada.",
-        "Archivos de mapa (JSON, .dat de Mudlet)",
+        "Archivos de mapa (JSON, XML, .dat de Mudlet)",
         "{0} (sesión abierta)",
         "El mapa ya tiene todo lo de este archivo.",
+        "Un mapa del Mudlet Mapping Protocol (XML):",
+        "Este archivo XML no es un mapa que Wandur pueda leer ({0}).",
+        "Este archivo XML declara una DTD o usa entidades, que Wandur no lee.",
+        "Este mapa supera el límite de {0}: Wandur lee como máximo {1}. No se importó nada.",
+        "áreas",
+        "entornos",
+        "salidas de una sala",
+        "Este juego ofrece un mapa oficial.",
+        "Descargar",
+        "Ahora no",
+        "Nunca",
+        "Descargando el mapa oficial…",
+        "No se pudo importar el mapa oficial: {0}",
+        "Mapa oficial de {0}: {1} añadidos, {2} actualizados, {3} conservados con tus cambios, {4} eliminados",
+        "El mapa oficial no ha cambiado desde que se importó.",
+        "La dirección del mapa no es una dirección https.",
+        "La dirección del mapa redirigió a una dirección que no es https.",
+        "La dirección del mapa redirigió más de {0} veces.",
+        "El servidor respondió {0}.",
+        "Se importó el mapa oficial, pero no se pudo guardar su copia: {0}",
+        "No se pudo recordar esta elección: {0}",
     ],
     // fr
     [
@@ -10366,7 +10492,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Cette image est trop grande, même réduite. Une carte accepte des images de 2 Mo au plus chacune et 20 Mo au total.",
         "Cette carte compte {0} pièces et {2} sorties, mais une carte accepte au plus {1} pièces et {3} sorties. Rien n’a été importé.",
         "Ceci est une carte binaire de Mudlet (.dat), que Wandur ne sait pas lire. Wandur lit à la place l’export JSON de la carte de Mudlet. Pour le créer dans Mudlet, ouvrez les réglages de la carte et exportez la carte en JSON, ou tapez lua saveJsonMap(getMudletHomeDir() .. \"/map.json\") dans la ligne de commande de Mudlet. Importez ensuite ce fichier .json ici.",
-        "Ce n’est pas un fichier de carte que Wandur sait lire. Choisissez un fichier de carte Wandur ou l’export JSON de la carte de Mudlet.",
+        "Ce n’est pas un fichier de carte que Wandur sait lire. Choisissez un fichier de carte Wandur, l’export JSON de la carte de Mudlet ou une carte XML (Mudlet Mapping Protocol).",
         "Le fichier dépasse 64 Mo.",
         "Pièce {0}",
         "Zones : {0}",
@@ -10422,7 +10548,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Étiquette supprimée",
         "Carte importée dans {0}",
         "Importer une carte",
-        "Importez un fichier de carte Wandur ou l’export JSON de la carte de Mudlet. Un fichier Wandur remplace la carte du monde ; une carte Mudlet s’y ajoute. Rien ne change avant d’appuyer sur Importer, et Annuler revient en arrière.",
+        "Importez un fichier de carte Wandur, l’export JSON de la carte de Mudlet ou une carte XML (Mudlet Mapping Protocol). Un fichier Wandur remplace la carte du monde ; les autres s’y ajoutent. Rien ne change avant d’appuyer sur Importer, et Annuler revient en arrière.",
         "Ouvrez d’abord une session ou enregistrez un monde : une carte appartient à un monde.",
         "Importer dans",
         "Choisir un fichier…",
@@ -10437,9 +10563,30 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Ignoré ou modifié :",
         "L’importation remplace toute la carte du monde.",
         "Les pièces, sorties et étiquettes s’ajoutent à la carte du monde ; celles importées auparavant sont mises à jour. Importer de nouveau le même fichier ne change rien.",
-        "Fichiers de carte (JSON, .dat de Mudlet)",
+        "Fichiers de carte (JSON, XML, .dat de Mudlet)",
         "{0} (session ouverte)",
         "La carte contient déjà tout ce que ce fichier apporte.",
+        "Une carte Mudlet Mapping Protocol (XML) :",
+        "Ce fichier XML n’est pas une carte que Wandur sait lire ({0}).",
+        "Ce fichier XML déclare une DTD ou utilise des entités, que Wandur ne lit pas.",
+        "Cette carte dépasse la limite de {0} : Wandur en lit au plus {1}. Rien n’a été importé.",
+        "zones",
+        "environnements",
+        "sorties d’une salle",
+        "Ce jeu propose une carte officielle.",
+        "Télécharger",
+        "Pas maintenant",
+        "Jamais",
+        "Téléchargement de la carte officielle…",
+        "La carte officielle n’a pas pu être importée : {0}",
+        "Carte officielle de {0} : {1} ajoutés, {2} mis à jour, {3} gardés avec vos modifications, {4} supprimés",
+        "La carte officielle n’a pas changé depuis son importation.",
+        "L’adresse de la carte n’est pas une adresse https.",
+        "L’adresse de la carte redirige vers une adresse qui n’est pas https.",
+        "L’adresse de la carte a redirigé plus de {0} fois.",
+        "Le serveur a répondu {0}.",
+        "La carte officielle a été importée, mais sa copie n’a pas pu être enregistrée : {0}",
+        "Impossible de mémoriser ce choix : {0}",
     ],
     // de
     [
@@ -11856,7 +12003,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Dieses Bild ist selbst verkleinert zu groß. Eine Karte nimmt Bilder bis 2 MB pro Bild und 20 MB insgesamt auf.",
         "Diese Karte hat {0} Räume und {2} Ausgänge, eine Karte fasst aber höchstens {1} Räume und {3} Ausgänge. Es wurde nichts importiert.",
         "Das ist eine binäre Mudlet-Karte (.dat), die Wandur nicht lesen kann. Wandur liest stattdessen Mudlets JSON-Export der Karte. Um ihn in Mudlet zu erstellen, öffne die Karteneinstellungen und exportiere die Karte als JSON, oder gib lua saveJsonMap(getMudletHomeDir() .. \"/map.json\") in Mudlets Befehlszeile ein. Importiere dann diese .json-Datei hier.",
-        "Das ist keine Kartendatei, die Wandur lesen kann. Wähle eine Wandur-Kartendatei oder Mudlets JSON-Export der Karte.",
+        "Das ist keine Kartendatei, die Wandur lesen kann. Wähle eine Wandur-Kartendatei, Mudlets JSON-Export der Karte oder eine XML-Karte (Mudlet Mapping Protocol).",
         "Die Datei ist größer als 64 MB.",
         "Raum {0}",
         "Gebiete: {0}",
@@ -11912,7 +12059,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Beschriftung gelöscht",
         "Karte in {0} importiert",
         "Karte importieren",
-        "Hol eine Wandur-Kartendatei oder Mudlets JSON-Export der Karte herein. Eine Wandur-Datei ersetzt die Karte der Welt, eine Mudlet-Karte wird ihr hinzugefügt. Nichts ändert sich, bevor du auf Importieren drückst, und Rückgängig nimmt es zurück.",
+        "Hol eine Wandur-Kartendatei, Mudlets JSON-Export der Karte oder eine XML-Karte (Mudlet Mapping Protocol) herein. Eine Wandur-Datei ersetzt die Karte der Welt, die anderen werden ihr hinzugefügt. Nichts ändert sich, bevor du auf Importieren drückst, und Rückgängig nimmt es zurück.",
         "Öffne zuerst eine Sitzung oder speichere eine Welt: Eine Karte gehört zu einer Welt.",
         "Importieren in",
         "Datei wählen…",
@@ -11927,9 +12074,30 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Ausgelassen oder geändert:",
         "Der Import ersetzt die ganze Karte der Welt.",
         "Räume, Ausgänge und Beschriftungen werden der Karte der Welt hinzugefügt; früher importierte werden aktualisiert. Dieselbe Datei erneut zu importieren ändert nichts.",
-        "Kartendateien (JSON, Mudlet-.dat)",
+        "Kartendateien (JSON, XML, Mudlet-.dat)",
         "{0} (offene Sitzung)",
         "Die Karte hat schon alles aus dieser Datei.",
+        "Eine Karte im Mudlet Mapping Protocol (XML):",
+        "Diese XML-Datei ist keine Karte, die Wandur lesen kann ({0}).",
+        "Diese XML-Datei deklariert eine DTD oder verwendet Entitäten, die Wandur nicht liest.",
+        "Diese Karte überschreitet die Grenze für {0}: Wandur liest höchstens {1}. Es wurde nichts importiert.",
+        "Gebiete",
+        "Umgebungen",
+        "Ausgänge eines Raums",
+        "Dieses Spiel bietet eine offizielle Karte an.",
+        "Herunterladen",
+        "Nicht jetzt",
+        "Nie",
+        "Offizielle Karte wird heruntergeladen…",
+        "Die offizielle Karte konnte nicht importiert werden: {0}",
+        "Offizielle Karte für {0}: {1} hinzugefügt, {2} aktualisiert, {3} mit deinen Änderungen behalten, {4} entfernt",
+        "Die offizielle Karte hat sich seit dem Import nicht geändert.",
+        "Die Adresse der Karte ist keine https-Adresse.",
+        "Die Adresse der Karte leitet auf eine Adresse um, die nicht https ist.",
+        "Die Adresse der Karte hat mehr als {0}-mal umgeleitet.",
+        "Der Server antwortete mit {0}.",
+        "Die offizielle Karte wurde importiert, aber ihre Kopie konnte nicht gespeichert werden: {0}",
+        "Diese Wahl konnte nicht gespeichert werden: {0}",
     ],
     // pt-BR
     [
@@ -13346,7 +13514,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Esta imagem é grande demais, mesmo reduzida. Um mapa aceita imagens de até 2 MB cada e 20 MB no total.",
         "Este mapa tem {0} salas e {2} saídas, mas um mapa aceita no máximo {1} salas e {3} saídas. Nada foi importado.",
         "Este é um mapa binário do Mudlet (.dat), que o Wandur não consegue ler. O Wandur lê a exportação do mapa do Mudlet em JSON. Para criá-la no Mudlet, abra as configurações do mapa e exporte o mapa como JSON, ou digite lua saveJsonMap(getMudletHomeDir() .. \"/map.json\") na linha de comando do Mudlet. Depois importe aqui esse arquivo .json.",
-        "Este não é um arquivo de mapa que o Wandur leia. Escolha um arquivo de mapa do Wandur ou a exportação do mapa do Mudlet em JSON.",
+        "Este não é um arquivo de mapa que o Wandur leia. Escolha um arquivo de mapa do Wandur, a exportação do mapa do Mudlet em JSON ou um mapa XML (Mudlet Mapping Protocol).",
         "O arquivo tem mais de 64 MB.",
         "Sala {0}",
         "Áreas: {0}",
@@ -13402,7 +13570,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Rótulo excluído",
         "Mapa importado em {0}",
         "Importar mapa",
-        "Traga um arquivo de mapa do Wandur ou a exportação do mapa do Mudlet em JSON. Um arquivo do Wandur substitui o mapa do mundo; um mapa do Mudlet é adicionado a ele. Nada muda até você pressionar Importar, e Desfazer reverte.",
+        "Traga um arquivo de mapa do Wandur, a exportação do mapa do Mudlet em JSON ou um mapa XML (Mudlet Mapping Protocol). Um arquivo do Wandur substitui o mapa do mundo; os outros são adicionados a ele. Nada muda até você pressionar Importar, e Desfazer reverte.",
         "Primeiro abra uma sessão ou salve um mundo: um mapa pertence a um mundo.",
         "Importar em",
         "Escolher arquivo…",
@@ -13417,8 +13585,29 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Deixado de fora ou alterado:",
         "Importar substitui todo o mapa do mundo.",
         "Salas, saídas e rótulos são adicionados ao mapa do mundo; os importados antes são atualizados. Importar o mesmo arquivo de novo não muda nada.",
-        "Arquivos de mapa (JSON, .dat do Mudlet)",
+        "Arquivos de mapa (JSON, XML, .dat do Mudlet)",
         "{0} (sessão aberta)",
         "O mapa já tem tudo o que há neste arquivo.",
+        "Um mapa do Mudlet Mapping Protocol (XML):",
+        "Este arquivo XML não é um mapa que o Wandur consiga ler ({0}).",
+        "Este arquivo XML declara uma DTD ou usa entidades, que o Wandur não lê.",
+        "Este mapa passa do limite de {0}: o Wandur lê no máximo {1}. Nada foi importado.",
+        "áreas",
+        "ambientes",
+        "saídas de uma sala",
+        "Este jogo oferece um mapa oficial.",
+        "Baixar",
+        "Agora não",
+        "Nunca",
+        "Baixando o mapa oficial…",
+        "Não foi possível importar o mapa oficial: {0}",
+        "Mapa oficial de {0}: {1} adicionados, {2} atualizados, {3} mantidos com suas edições, {4} removidos",
+        "O mapa oficial não mudou desde que foi importado.",
+        "O endereço do mapa não é um endereço https.",
+        "O endereço do mapa redirecionou para um endereço que não é https.",
+        "O endereço do mapa redirecionou mais de {0} vezes.",
+        "O servidor respondeu {0}.",
+        "O mapa oficial foi importado, mas sua cópia não pôde ser salva: {0}",
+        "Não foi possível lembrar esta escolha: {0}",
     ],
 ];

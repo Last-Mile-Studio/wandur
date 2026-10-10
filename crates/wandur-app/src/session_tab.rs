@@ -380,6 +380,10 @@ pub struct SessionTab {
     recorder_drains: Vec<std::thread::JoinHandle<()>>,
     /// The notice strip's message for this session.
     pub strip: Option<StripNotice>,
+    /// The map address the server last named with GMCP `Client.Map`, for the app to take.
+    pub client_map: Option<String>,
+    /// The game's official map offer ([`crate::official_map`]), once the server named one.
+    pub official_map: Option<crate::official_map::OfficialMap>,
     /// The local model agent (goals, runner, the public observation).
     pub agent: crate::agent_session::AgentSession,
     /// Commands the agent sent (tests and the probe).
@@ -634,6 +638,8 @@ impl SessionTab {
             recorder: None,
             recorder_drains: Vec::new(),
             strip: None,
+            client_map: None,
+            official_map: None,
             agent: Default::default(),
             agent_commands_sent: 0,
         };
@@ -1402,6 +1408,10 @@ impl SessionTab {
                 if public {
                     self.channels.receive_gmcp(message, std::time::SystemTime::now());
                     self.agent.feed_gmcp(message);
+                }
+                // The game's official map (the app offers it), whatever the privacy, as rooms.
+                if let Some(url) = wandur_core::map::official::client_map_url(message) {
+                    self.client_map = Some(url);
                 }
                 // Rooms update the map whatever the privacy, as in C#.
                 if let Some(room) = wandur_core::map::decode::from_gmcp(message) {

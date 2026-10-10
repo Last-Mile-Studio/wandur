@@ -27,6 +27,8 @@ fn clock_ms_now() -> u64 {
 }
 /// Serve the GMCP demo world (`--page gmcp`) instead of generated text.
 pub static GMCP_DEMO: AtomicBool = AtomicBool::new(false);
+/// The official map address the GMCP demo world names with `Client.Map` (`--client-map URL`).
+pub static CLIENT_MAP: std::sync::OnceLock<String> = std::sync::OnceLock::new();
 /// Offer GMCP and put a Legends of the Jedi-like room (`Room.Info` without a description, and
 /// its text) every few lines of the flood (`--page lotj`, the shell bench's LotJ scenario).
 pub static LOTJ_ROOMS: AtomicBool = AtomicBool::new(false);

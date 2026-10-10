@@ -12,7 +12,10 @@
 //! - [`merge`] and [`store`]: saved maps in `wandur.db`, merged across sessions.
 //! - [`format`]: the versioned map file and its checks.
 //! - [`images`]: label pictures (hashing, checks, scaling down, base64).
-//! - [`mudlet`]: Mudlet's JSON map export read into a map to merge (File > Import map).
+//! - [`mudlet`]: Mudlet's JSON map export and MMP XML maps read into a map to merge (File >
+//!   Import map).
+//! - [`official`]: a game's official map (GMCP `Client.Map`): the offer, the download, the file
+//!   kept per world and the three-way merge of a new version.
 //! - [`session`]: one session's map, its protocol evidence and verified walking.
 
 pub mod decode;
@@ -22,6 +25,7 @@ pub mod images;
 pub mod merge;
 pub mod model;
 pub mod mudlet;
+pub mod official;
 pub mod route;
 pub mod search;
 pub mod session;

@@ -388,7 +388,7 @@
   <data name="MapImageTooLarge" xml:space="preserve"><value>Cette image est trop grande, même réduite. Une carte accepte des images de 2 Mo au plus chacune et 20 Mo au total.</value></data>
   <data name="MapImportTooBig" xml:space="preserve"><value>Cette carte compte {0} pièces et {2} sorties, mais une carte accepte au plus {1} pièces et {3} sorties. Rien n’a été importé.</value></data>
   <data name="MapImportMudletDat" xml:space="preserve"><value>Ceci est une carte binaire de Mudlet (.dat), que Wandur ne sait pas lire. Wandur lit à la place l’export JSON de la carte de Mudlet. Pour le créer dans Mudlet, ouvrez les réglages de la carte et exportez la carte en JSON, ou tapez lua saveJsonMap(getMudletHomeDir() .. "/map.json") dans la ligne de commande de Mudlet. Importez ensuite ce fichier .json ici.</value></data>
-  <data name="MapImportUnknownFile" xml:space="preserve"><value>Ce n’est pas un fichier de carte que Wandur sait lire. Choisissez un fichier de carte Wandur ou l’export JSON de la carte de Mudlet.</value></data>
+  <data name="MapImportUnknownFile" xml:space="preserve"><value>Ce n’est pas un fichier de carte que Wandur sait lire. Choisissez un fichier de carte Wandur, l’export JSON de la carte de Mudlet ou une carte XML (Mudlet Mapping Protocol).</value></data>
   <data name="MapImportFileTooLarge" xml:space="preserve"><value>Le fichier dépasse 64 Mo.</value></data>
   <data name="MapImportRoomName" xml:space="preserve"><value>Pièce {0}</value></data>
   <data name="MapImportCountAreas" xml:space="preserve"><value>Zones : {0}</value></data>
@@ -444,7 +444,7 @@
   <data name="ToastDeletedLabel" xml:space="preserve"><value>Étiquette supprimée</value></data>
   <data name="ToastImportedMap" xml:space="preserve"><value>Carte importée dans {0}</value></data>
   <data name="MapImportTitle" xml:space="preserve"><value>Importer une carte</value></data>
-  <data name="MapImportIntro" xml:space="preserve"><value>Importez un fichier de carte Wandur ou l’export JSON de la carte de Mudlet. Un fichier Wandur remplace la carte du monde ; une carte Mudlet s’y ajoute. Rien ne change avant d’appuyer sur Importer, et Annuler revient en arrière.</value></data>
+  <data name="MapImportIntro" xml:space="preserve"><value>Importez un fichier de carte Wandur, l’export JSON de la carte de Mudlet ou une carte XML (Mudlet Mapping Protocol). Un fichier Wandur remplace la carte du monde ; les autres s’y ajoutent. Rien ne change avant d’appuyer sur Importer, et Annuler revient en arrière.</value></data>
   <data name="MapImportNoWorld" xml:space="preserve"><value>Ouvrez d’abord une session ou enregistrez un monde : une carte appartient à un monde.</value></data>
   <data name="MapImportWorld" xml:space="preserve"><value>Importer dans</value></data>
   <data name="MapImportChooseFile" xml:space="preserve"><value>Choisir un fichier…</value></data>
@@ -459,7 +459,28 @@
   <data name="MapImportLeftOut" xml:space="preserve"><value>Ignoré ou modifié :</value></data>
   <data name="MapImportReplaceNote" xml:space="preserve"><value>L’importation remplace toute la carte du monde.</value></data>
   <data name="MapImportMergeNote" xml:space="preserve"><value>Les pièces, sorties et étiquettes s’ajoutent à la carte du monde ; celles importées auparavant sont mises à jour. Importer de nouveau le même fichier ne change rien.</value></data>
-  <data name="MapImportFileTypes" xml:space="preserve"><value>Fichiers de carte (JSON, .dat de Mudlet)</value></data>
+  <data name="MapImportFileTypes" xml:space="preserve"><value>Fichiers de carte (JSON, XML, .dat de Mudlet)</value></data>
   <data name="MapImportOpenSession" xml:space="preserve"><value>{0} (session ouverte)</value></data>
   <data name="MapImportNothingNew" xml:space="preserve"><value>La carte contient déjà tout ce que ce fichier apporte.</value></data>
+  <data name="MapImportKindMudletXml" xml:space="preserve"><value>Une carte Mudlet Mapping Protocol (XML) :</value></data>
+  <data name="MapImportXmlInvalid" xml:space="preserve"><value>Ce fichier XML n’est pas une carte que Wandur sait lire ({0}).</value></data>
+  <data name="MapImportXmlDtd" xml:space="preserve"><value>Ce fichier XML déclare une DTD ou utilise des entités, que Wandur ne lit pas.</value></data>
+  <data name="MapImportXmlTooMany" xml:space="preserve"><value>Cette carte dépasse la limite de {0} : Wandur en lit au plus {1}. Rien n’a été importé.</value></data>
+  <data name="MapImportXmlAreas" xml:space="preserve"><value>zones</value></data>
+  <data name="MapImportXmlEnvironments" xml:space="preserve"><value>environnements</value></data>
+  <data name="MapImportXmlRoomExits" xml:space="preserve"><value>sorties d’une salle</value></data>
+  <data name="OfficialMapOffer" xml:space="preserve"><value>Ce jeu propose une carte officielle.</value></data>
+  <data name="OfficialMapDownload" xml:space="preserve"><value>Télécharger</value></data>
+  <data name="OfficialMapNotNow" xml:space="preserve"><value>Pas maintenant</value></data>
+  <data name="OfficialMapNever" xml:space="preserve"><value>Jamais</value></data>
+  <data name="OfficialMapDownloading" xml:space="preserve"><value>Téléchargement de la carte officielle…</value></data>
+  <data name="OfficialMapFailed" xml:space="preserve"><value>La carte officielle n’a pas pu être importée : {0}</value></data>
+  <data name="OfficialMapImported" xml:space="preserve"><value>Carte officielle de {0} : {1} ajoutés, {2} mis à jour, {3} gardés avec vos modifications, {4} supprimés</value></data>
+  <data name="OfficialMapUpToDate" xml:space="preserve"><value>La carte officielle n’a pas changé depuis son importation.</value></data>
+  <data name="OfficialMapNotHttps" xml:space="preserve"><value>L’adresse de la carte n’est pas une adresse https.</value></data>
+  <data name="OfficialMapRedirectNotHttps" xml:space="preserve"><value>L’adresse de la carte redirige vers une adresse qui n’est pas https.</value></data>
+  <data name="OfficialMapTooManyRedirects" xml:space="preserve"><value>L’adresse de la carte a redirigé plus de {0} fois.</value></data>
+  <data name="OfficialMapHttpStatus" xml:space="preserve"><value>Le serveur a répondu {0}.</value></data>
+  <data name="OfficialMapSaveFailed" xml:space="preserve"><value>La carte officielle a été importée, mais sa copie n’a pas pu être enregistrée : {0}</value></data>
+  <data name="OfficialMapPreferenceFailed" xml:space="preserve"><value>Impossible de mémoriser ce choix : {0}</value></data>
 </root>

@@ -101,6 +101,9 @@ pub struct Options {
     pub show: Option<String>,
     /// Use this fetcher instead of HTTP (tests).
     pub fetcher: Option<Arc<dyn Fetcher>>,
+    /// Fetch official maps with this instead of HTTP (tests). With a test `fetcher` and none
+    /// here, official maps are never fetched.
+    pub official_fetch: Option<crate::official_map::Fetch>,
     /// Save nothing (settings, layout, database writes): a scene for screenshots, set up in
     /// memory over whatever data directory it is given. Its database is an empty one of its
     /// own in a temporary folder; the data directory's `wandur.db` is never opened.
@@ -409,6 +412,8 @@ pub struct WandurApp {
     log_repaints: bool,
     data_dir: Option<PathBuf>,
     fetcher: Arc<dyn Fetcher>,
+    /// Fetches official maps (GMCP `Client.Map`).
+    official_fetch: crate::official_map::Fetch,
     directory: DirectoryService,
     directory_status: DirectoryStatus,
     /// The directory setting last applied (a change restarts the directory service).
@@ -797,6 +802,20 @@ impl WandurApp {
             Some(f) => f,
             None => default_fetcher(&install),
         };
+        let official_fetch = match (&options.official_fetch, &options.fetcher) {
+            (Some(f), _) => Arc::clone(f),
+            // A test run never goes out to the network.
+            (None, Some(_)) => {
+                let offline: crate::official_map::Fetch =
+                    Arc::new(|_: &str, _: &wandur_core::map::official::store::Validators| {
+                        Err(wandur_core::map::official::download::DownloadError::Network(
+                            "offline".into(),
+                        ))
+                    });
+                offline
+            }
+            (None, None) => crate::official_map::default_fetch(),
+        };
         // An ephemeral run keeps no offline copy of what it fetched, and no thumbnails.
         let cache_dir = dir.clone().filter(|_| !options.ephemeral);
         let directory = start_directory(&directory_setting, cache_dir.as_deref(), &fetcher, ctx);
@@ -873,6 +892,7 @@ impl WandurApp {
             log_repaints: std::env::var_os("WANDUR_REPAINT_LOG").is_some(),
             data_dir: dir,
             fetcher,
+            official_fetch,
             directory_status: DirectoryStatus::default(),
             directory_setting_seen,
             directory,
@@ -4682,6 +4702,125 @@ impl WandurApp {
         }
     }
 
+    /// Official maps (GMCP `Client.Map`): start an offer when a session's server names its map,
+    /// take what the offers' workers sent, and merge a downloaded map into its session's map
+    /// once that map is loaded. Without a data directory to keep the file in, nothing is offered.
+    fn run_official_maps(&mut self, ctx: &egui::Context) {
+        let store = match (&self.saver, &self.data_dir) {
+            (Some(_), Some(dir)) => Some(wandur_core::map::official::store::OfficialStore::new(dir)),
+            _ => None,
+        };
+        let mut ready = Vec::new();
+        for entry in self.sessions.iter_mut() {
+            let tab = &mut entry.tab;
+            if let Some(url) = tab.client_map.take()
+                && let Some(store) = &store
+                && let Some(world) = tab.map_world()
+                && tab.official_map.as_ref().is_none_or(|o| o.url != url)
+            {
+                let key = wandur_core::map::official::store::world_key(world);
+                let not_now = tab.official_map.as_ref().is_some_and(|o| o.not_now);
+                tab.official_map = Some(crate::official_map::OfficialMap::new(
+                    &url,
+                    &key,
+                    store.clone(),
+                    not_now,
+                    Arc::clone(&self.official_fetch),
+                    repaint_waker(ctx),
+                ));
+            }
+            let loaded = tab.map.is_loaded();
+            if let Some(offer) = &mut tab.official_map {
+                offer.poll();
+                if loaded && let Some(r) = offer.take_ready() {
+                    ready.push((tab.id, r));
+                }
+            }
+        }
+        for (id, r) in ready {
+            self.merge_official_map(id, r);
+        }
+    }
+
+    /// Merge a downloaded official map into a session's map as one undoable step; the toast
+    /// says what changed and offers it back. The file is then kept as the next merge's base.
+    fn merge_official_map(&mut self, id: SessionId, ready: Box<crate::official_map::Ready>) {
+        let Some(entry) = self.sessions.get_mut(id) else {
+            return;
+        };
+        entry.tab.stop_walk();
+        let result = wandur_core::map::official::merge::merge(
+            entry.tab.map.tracker_mut(),
+            ready.base.as_ref(),
+            &ready.prepared.map,
+        );
+        for state in [self.full_maps.get_mut(&id), self.maps.get_mut(&id)]
+            .into_iter()
+            .flatten()
+        {
+            crate::map_view::editor::reset_after_import(state);
+        }
+        if let Some(inference) = &mut entry.tab.inference {
+            inference.rescan();
+        }
+        let title = entry.tab.title().to_string();
+        let edit = entry.tab.map.tracker().last_edit();
+        let Some(offer) = &mut entry.tab.official_map else {
+            return;
+        };
+        match result {
+            Ok(report) => {
+                offer.keep(ready, report);
+                if !report.changed() {
+                    self.notes.insert(0, t(S::MapImportNothingNew).to_string());
+                    return;
+                }
+                let text = tf(
+                    S::OfficialMapImported,
+                    &[
+                        &title,
+                        &report.added,
+                        &report.updated,
+                        &report.kept_local,
+                        &report.removed,
+                    ],
+                );
+                if let Some(edit) = edit {
+                    self.set_toast(Toast::new(text, Undo::Map { session: id, edit }));
+                }
+                self.actions.push(AppAction::OpenFullMap(id));
+            }
+            Err(e) => offer.phase = crate::official_map::Phase::Message(tf(S::OfficialMapFailed, &[&e.0])),
+        }
+    }
+
+    /// The official map strip for the shown session: Download, Not now, Never (or a message).
+    fn official_map_strip(&mut self, ui: &mut Ui) {
+        use crate::official_map::StripAction;
+        let Some(id) = self.active_session.filter(|_| !self.directory_active) else {
+            return;
+        };
+        let Some(offer) = self
+            .sessions
+            .get_mut(id)
+            .and_then(|e| e.tab.official_map.as_mut())
+            .filter(|o| o.visible())
+        else {
+            return;
+        };
+        match crate::official_map::strip(ui, &offer.phase, &self.theme) {
+            None => {}
+            Some(StripAction::Download) => offer.download(),
+            Some(StripAction::NotNow) => offer.not_now(),
+            Some(StripAction::Dismiss) => offer.dismiss(),
+            Some(StripAction::Never) => {
+                if let Err(e) = offer.never() {
+                    self.notes.insert(0, tf(S::OfficialMapPreferenceFailed, &[&e]));
+                }
+            }
+        }
+    }
+
     /// The strips of unpinned panels on the left, right and bottom edges, with a tab per panel:
     /// hovering one slides its panel out, clicking keeps it out.
     /// The notice strip under the toolbar for the shown session (the C# notice bar): the
@@ -5088,6 +5227,7 @@ impl eframe::App for WandurApp {
             ctx.request_repaint_after(deadline.saturating_duration_since(now).max(Duration::from_millis(1)));
         }
         self.run_updates(ctx, now);
+        self.run_official_maps(ctx);
         if self.directory.revision() != self.directory_status.revision {
             self.directory_status = self.directory.status();
             self.refresh_session_mappings();
@@ -5164,6 +5304,7 @@ impl eframe::App for WandurApp {
         }
         self.update_strip(ui);
         self.notice_strip(ui);
+        self.official_map_strip(ui);
         egui::Panel::bottom("status-bar")
             .frame(
                 egui::Frame::new()
@@ -9506,3 +9647,7 @@ mod tabs_tests;
 #[cfg(test)]
 #[path = "map_import/app/tests.rs"]
 mod map_import_tests;
+
+#[cfg(test)]
+#[path = "official_map/app/tests.rs"]
+mod official_map_tests;

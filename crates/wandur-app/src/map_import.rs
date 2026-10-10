@@ -1,5 +1,6 @@
-//! File > Import map... (and the full map's Import with nothing selected): a Wandur map file or
-//! Mudlet's JSON map export brought into a world's map ([`wandur_core::map::mudlet`]).
+//! File > Import map... (and the full map's Import with nothing selected): a Wandur map file,
+//! Mudlet's JSON map export or a Mudlet Mapping Protocol XML map brought into a world's map
+//! ([`wandur_core::map::mudlet`]).
 //!
 //! The dialog asks which world the map goes into (the active session's by default), reads the
 //! file on a worker thread with progress, and shows a summary (counts per kind, what was left
@@ -318,6 +319,7 @@ fn summary(ui: &mut egui::Ui, prepared: &Prepared, theme: &Theme) {
     let kind = match s.kind {
         mudlet::SourceKind::Wandur => t(S::MapImportKindWandur),
         mudlet::SourceKind::Mudlet => t(S::MapImportKindMudlet),
+        mudlet::SourceKind::MudletXml => t(S::MapImportKindMudletXml),
     };
     ui.label(RichText::new(kind).size(15.0).strong().color(theme.text));
     ui.add_space(4.0);
@@ -396,12 +398,13 @@ pub fn import_detached(store: &MapStore, world: MapWorld, prepared: &Prepared) -
     })
 }
 
-/// The file picker: map files (JSON) and Mudlet's binary map, so picking one can be explained.
+/// The file picker: map files (JSON, XML) and Mudlet's binary map, so picking one can be
+/// explained.
 #[cfg(feature = "native-dialogs")]
 pub fn pick_file() -> Option<PathBuf> {
     rfd::FileDialog::new()
         .set_title(t(S::MapImportTitle))
-        .add_filter(t(S::MapImportFileTypes), &["json", "dat"])
+        .add_filter(t(S::MapImportFileTypes), &["json", "xml", "dat"])
         .pick_file()
 }
 

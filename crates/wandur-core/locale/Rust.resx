@@ -388,7 +388,7 @@
   <data name="MapImageTooLarge" xml:space="preserve"><value>This picture is too large, even scaled down. A map holds pictures of up to 2 MB each and 20 MB in all.</value></data>
   <data name="MapImportTooBig" xml:space="preserve"><value>This map has {0} rooms and {2} exits, but a map holds at most {1} rooms and {3} exits. Nothing was imported.</value></data>
   <data name="MapImportMudletDat" xml:space="preserve"><value>This is a Mudlet binary map (.dat), which Wandur cannot read. Wandur reads Mudlet's JSON map export instead. To make one in Mudlet, open the map settings and export the map as JSON, or type lua saveJsonMap(getMudletHomeDir() .. "/map.json") in Mudlet's command line. Then import that .json file here.</value></data>
-  <data name="MapImportUnknownFile" xml:space="preserve"><value>This is not a map file Wandur reads. Pick a Wandur map file or Mudlet's JSON map export.</value></data>
+  <data name="MapImportUnknownFile" xml:space="preserve"><value>This is not a map file Wandur reads. Pick a Wandur map file, Mudlet's JSON map export or an XML map (Mudlet Mapping Protocol).</value></data>
   <data name="MapImportFileTooLarge" xml:space="preserve"><value>The file is larger than 64 MB.</value></data>
   <data name="MapImportRoomName" xml:space="preserve"><value>Room {0}</value></data>
   <data name="MapImportCountAreas" xml:space="preserve"><value>Areas: {0}</value></data>
@@ -444,7 +444,7 @@
   <data name="ToastDeletedLabel" xml:space="preserve"><value>Deleted label</value></data>
   <data name="ToastImportedMap" xml:space="preserve"><value>Imported a map into {0}</value></data>
   <data name="MapImportTitle" xml:space="preserve"><value>Import map</value></data>
-  <data name="MapImportIntro" xml:space="preserve"><value>Bring in a Wandur map file or Mudlet's JSON map export. A Wandur file replaces the world's map; a Mudlet map is added to it. Nothing changes until you press Import, and Undo takes it back.</value></data>
+  <data name="MapImportIntro" xml:space="preserve"><value>Bring in a Wandur map file, Mudlet's JSON map export or an XML map (Mudlet Mapping Protocol). A Wandur file replaces the world's map; the others are added to it. Nothing changes until you press Import, and Undo takes it back.</value></data>
   <data name="MapImportNoWorld" xml:space="preserve"><value>Open a session or save a world first: a map belongs to a world.</value></data>
   <data name="MapImportWorld" xml:space="preserve"><value>Import into</value></data>
   <data name="MapImportChooseFile" xml:space="preserve"><value>Choose file…</value></data>
@@ -459,7 +459,28 @@
   <data name="MapImportLeftOut" xml:space="preserve"><value>Left out or changed:</value></data>
   <data name="MapImportReplaceNote" xml:space="preserve"><value>Importing replaces the world's whole map.</value></data>
   <data name="MapImportMergeNote" xml:space="preserve"><value>Rooms, exits and labels are added to the world's map; ones imported before are updated. Importing the same file again changes nothing.</value></data>
-  <data name="MapImportFileTypes" xml:space="preserve"><value>Map files (JSON, Mudlet .dat)</value></data>
+  <data name="MapImportFileTypes" xml:space="preserve"><value>Map files (JSON, XML, Mudlet .dat)</value></data>
   <data name="MapImportOpenSession" xml:space="preserve"><value>{0} (open session)</value></data>
   <data name="MapImportNothingNew" xml:space="preserve"><value>The map already has everything in this file.</value></data>
+  <data name="MapImportKindMudletXml" xml:space="preserve"><value>A Mudlet Mapping Protocol map (XML):</value></data>
+  <data name="MapImportXmlInvalid" xml:space="preserve"><value>This XML file is not a map Wandur can read ({0}).</value></data>
+  <data name="MapImportXmlDtd" xml:space="preserve"><value>This XML file declares a DTD or uses entities, which Wandur does not read.</value></data>
+  <data name="MapImportXmlTooMany" xml:space="preserve"><value>This map is past the limit for {0}: Wandur reads at most {1}. Nothing was imported.</value></data>
+  <data name="MapImportXmlAreas" xml:space="preserve"><value>areas</value></data>
+  <data name="MapImportXmlEnvironments" xml:space="preserve"><value>environments</value></data>
+  <data name="MapImportXmlRoomExits" xml:space="preserve"><value>exits of one room</value></data>
+  <data name="OfficialMapOffer" xml:space="preserve"><value>This game offers an official map.</value></data>
+  <data name="OfficialMapDownload" xml:space="preserve"><value>Download</value></data>
+  <data name="OfficialMapNotNow" xml:space="preserve"><value>Not now</value></data>
+  <data name="OfficialMapNever" xml:space="preserve"><value>Never</value></data>
+  <data name="OfficialMapDownloading" xml:space="preserve"><value>Downloading the official map…</value></data>
+  <data name="OfficialMapFailed" xml:space="preserve"><value>The official map could not be imported: {0}</value></data>
+  <data name="OfficialMapImported" xml:space="preserve"><value>Official map for {0}: {1} added, {2} updated, {3} kept with your edits, {4} removed</value></data>
+  <data name="OfficialMapUpToDate" xml:space="preserve"><value>The official map has not changed since it was imported.</value></data>
+  <data name="OfficialMapNotHttps" xml:space="preserve"><value>The map's address is not an https address.</value></data>
+  <data name="OfficialMapRedirectNotHttps" xml:space="preserve"><value>The map's address redirected to an address that is not https.</value></data>
+  <data name="OfficialMapTooManyRedirects" xml:space="preserve"><value>The map's address redirected more than {0} times.</value></data>
+  <data name="OfficialMapHttpStatus" xml:space="preserve"><value>The server answered {0}.</value></data>
+  <data name="OfficialMapSaveFailed" xml:space="preserve"><value>The official map was imported, but its copy could not be saved: {0}</value></data>
+  <data name="OfficialMapPreferenceFailed" xml:space="preserve"><value>Could not remember this choice: {0}</value></data>
 </root>

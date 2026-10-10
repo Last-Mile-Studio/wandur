@@ -38,6 +38,7 @@ pub mod mark_channel;
 pub mod markdown_editor;
 pub mod menus;
 pub mod native_menu;
+pub mod official_map;
 pub mod pacer;
 pub mod panel_header;
 pub mod panel_view;

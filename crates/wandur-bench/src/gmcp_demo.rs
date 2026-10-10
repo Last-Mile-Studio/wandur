@@ -1,7 +1,8 @@
 //! A small GMCP world for trying the Channels and Map panels on a loopback server: it offers
 //! GMCP, walks a loop of rooms (sending `Room.Info` with numbered exits, including stairs), and
-//! talks on a few channels (`Comm.Channel.Text`, with the line printed as worlds usually do). It
-//! ignores what the client sends.
+//! talks on a few channels (`Comm.Channel.Text`, with the line printed as worlds usually do). With
+//! `--client-map URL` it names that address as its official map (`Client.Map`) first. It ignores
+//! what the client sends.
 
 use std::io::Write;
 use std::net::TcpStream;
@@ -120,7 +121,11 @@ pub fn serve(stream: &mut TcpStream, stop: &AtomicBool, sent: &std::sync::atomic
     }
     // Give the client time to answer DO GMCP.
     thread::sleep(Duration::from_millis(300));
-    let mut out = b"\x1b[1;32mTown Gate\x1b[0m\r\nA wide gate in the old wall. Roads lead north and east.\r\n".to_vec();
+    let mut out = Vec::new();
+    if let Some(url) = crate::mud_server::CLIENT_MAP.get() {
+        out.extend(gmcp("Client.Map", &serde_json::json!({ "url": url }).to_string()));
+    }
+    out.extend_from_slice(b"\x1b[1;32mTown Gate\x1b[0m\r\nA wide gate in the old wall. Roads lead north and east.\r\n");
     out.extend(room_info(100));
     if !write(&out) {
         return;

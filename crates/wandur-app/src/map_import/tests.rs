@@ -97,3 +97,16 @@ fn an_import_into_a_saved_world_is_merged_and_saved() {
     assert_eq!(again.changed, 0);
     let _ = std::fs::remove_dir_all(dir);
 }
+
+#[test]
+fn an_xml_map_file_is_read_through_the_same_dialog() {
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../wandur-core/tests/fixtures/mudlet/ember-vale-map.xml");
+    let mut d = dialog();
+    d.read_file(&path);
+    wait(&mut d);
+    let prepared = d.prepared().expect("read");
+    assert_eq!(prepared.summary.kind, mudlet::SourceKind::MudletXml);
+    assert_eq!(prepared.summary.rooms, 7);
+    assert!(!prepared.replaces());
+}

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The official map of the bench's GMCP demo world (wandur-bench mud-server --page gmcp):
+     the same room numbers, so it lines up with the rooms the world sends in Room.Info.
+     Hand-written and fictional, for trying GMCP Client.Map by hand: put this file on any https
+     address and start the bench with the client-map option: https://.../lantern-town-map.xml -->
+<map>
+ <areas>
+  <area id="1" name="Lantern Town" />
+  <area id="2" name="Greenway" />
+ </areas>
+ <rooms>
+  <room id="100" area="1" title="Town Gate" environment="1">
+   <coord x="0" y="0" z="0" />
+   <exit direction="north" target="101" />
+   <exit direction="east" target="103" />
+  </room>
+  <room id="101" area="1" title="Market Road" environment="1">
+   <coord x="0" y="1" z="0" />
+   <exit direction="south" target="100" />
+   <exit direction="north" target="102" />
+   <exit direction="east" target="104" />
+  </room>
+  <room id="102" area="1" title="Old Square" environment="1">
+   <coord x="0" y="2" z="0" />
+   <exit direction="south" target="101" />
+   <exit direction="east" target="105" />
+   <exit direction="up" target="108" />
+  </room>
+  <room id="103" area="1" title="Smithy" environment="2">
+   <coord x="1" y="0" z="0" />
+   <exit direction="west" target="100" />
+   <exit direction="north" target="104" />
+  </room>
+  <room id="104" area="1" title="Fountain" environment="1">
+   <coord x="1" y="1" z="0" />
+   <exit direction="west" target="101" />
+   <exit direction="south" target="103" />
+   <exit direction="north" target="105" />
+   <exit direction="east" target="106" />
+  </room>
+  <room id="105" area="1" title="Temple Steps" environment="1">
+   <coord x="1" y="2" z="0" />
+   <exit direction="west" target="102" />
+   <exit direction="south" target="104" />
+  </room>
+  <room id="106" area="2" title="East Field" environment="3">
+   <coord x="2" y="1" z="0" />
+   <exit direction="west" target="104" />
+   <exit direction="northeast" target="107" />
+  </room>
+  <room id="107" area="2" title="Willow Copse" environment="4">
+   <coord x="3" y="2" z="0" />
+   <exit direction="southwest" target="106" />
+  </room>
+  <room id="108" area="1" title="Bell Tower" environment="2">
+   <coord x="0" y="2" z="1" />
+   <exit direction="down" target="102" />
+  </room>
+ </rooms>
+ <environments>
+  <environment id="1" name="Urban" color="7" />
+  <environment id="2" name="Indoors" color="3" />
+  <environment id="3" name="Field" color="10" />
+  <environment id="4" name="Forest" color="2" />
+ </environments>
+</map>

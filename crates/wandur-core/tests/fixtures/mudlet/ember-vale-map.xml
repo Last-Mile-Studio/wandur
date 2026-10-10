@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A hand-written, fictional Mudlet Mapping Protocol map for the XML reader's tests.
+     Written from the public description of the format (wiki.mudlet.org, Standards:MMP). -->
+<map>
+ <areas>
+  <area id="1" name="Ember Vale" />
+  <area id="2" name="Ashwood &amp; Hollow" />
+ </areas>
+ <rooms>
+  <room id="500" area="1" title="Vale Gate" environment="3">
+   <coord x="0" y="0" z="0" />
+   <exit direction="north" target="501" />
+   <exit direction="east" target="502" door="2" />
+   <exit direction="west" target="999" />
+  </room>
+  <room id="501" area="1" title="Cinder Square" environment="3">
+   <coord x="0" y="1" z="0" />
+   <exit direction="south" target="500" />
+   <exit direction="up" target="503" />
+   <exit direction="climb rope" target="510" />
+  </room>
+  <room id="502" area="1" title="Smoke Lane" environment="7">
+   <coord x="1" y="0" z="0" />
+   <exit direction="west" target="500" />
+  </room>
+  <room id="503" area="1" title="Bell Loft" environment="7">
+   <coord x="0" y="1" z="1" />
+   <exit direction="down" target="501" />
+  </room>
+  <room id="510" area="2" title="Ash Clearing" environment="4">
+   <coord x="5" y="5" z="0" />
+   <exit direction="se" target="511" />
+   <exit direction="climb rope" target="501" />
+  </room>
+  <room id="511" area="2" title="Hollow Stump" environment="44">
+   <coord x="6" y="4" z="0" />
+   <exit direction="northwest" target="510" />
+  </room>
+  <room id="520" area="9" title="Lost Glade">
+   <coord x="20" y="20" z="0" />
+  </room>
+ </rooms>
+ <environments>
+  <environment id="3" name="Town" color="3" />
+  <environment id="4" name="Forest" color="2" />
+  <environment id="7" name="Indoors" color="7" />
+  <environment id="44" name="Swamp" color="6" htmlcolor="#336655" />
+ </environments>
+</map>

@@ -1,8 +1,9 @@
 //! File > Import map: a map file read into a map to bring in, with a summary to show first.
 //!
-//! Two kinds of file are read: this client's own map file ([`super::format`], which replaces
-//! the map, as the C# client's import does) and Mudlet's JSON map export (`saveJsonMap`, or the
-//! mapper's export), which is merged into the world's map. Mudlet's binary `.dat` map is
+//! Three kinds of file are read: this client's own map file ([`super::format`], which replaces
+//! the map, as the C# client's import does), Mudlet's JSON map export (`saveJsonMap`, or the
+//! mapper's export) and the Mudlet Mapping Protocol's XML map ([`xml`], what games publish
+//! through GMCP `Client.Map`), both merged into the world's map. Mudlet's binary `.dat` map is
 //! recognised and refused with a note on how to make the JSON export.
 //!
 //! Clean room: Mudlet is GPL-3.0 and none of its source was read. The reader follows Mudlet's
@@ -48,6 +49,8 @@ pub enum SourceKind {
     Wandur,
     /// Mudlet's JSON export: merged into the map.
     Mudlet,
+    /// A Mudlet Mapping Protocol XML map (a game's official map): merged into the map.
+    MudletXml,
 }
 
 /// Why a file could not be imported.
@@ -285,6 +288,9 @@ struct Probe {
 /// Read a picked file (`extension` is its file name's) into a map with its summary. Runs on a
 /// worker thread: `progress` is told how far it got.
 pub fn read(extension: Option<&str>, bytes: &[u8], progress: &dyn Fn(Progress)) -> Result<Prepared, ImportError> {
+    if extension.is_some_and(|e| e.eq_ignore_ascii_case("xml")) || xml::looks_like_xml(bytes) {
+        return xml::read(bytes, progress);
+    }
     if is_mudlet_binary(extension, bytes) {
         return Err(ImportError::MudletBinary);
     }
@@ -1162,6 +1168,8 @@ fn stub_number(n: i64) -> Option<&'static str> {
         _ => return None,
     })
 }
+
+pub mod xml;
 
 #[cfg(test)]
 mod tests;
