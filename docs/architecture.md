@@ -34,6 +34,8 @@ crates/
                    HTTP client (ureq, `http` feature), DirectoryService (worker thread, offline cache)
     channels.rs    (M3) GMCP channel messages: All and per-channel tabs, 500 each, unread, replies
     map.rs         (M3) initial room map from GMCP Room.Info
+    command_line.rs, client_commands.rs   the command line's shorthand in the chosen style: the
+                   client's commands as one table, and one scanner for sending, checking and the caret
     import/csharp/ the C# client's data: read-only snapshot of its wandur.db, one merge transaction,
                    credential copy (docs/csharp-import.md)
   wandur-term/     the terminal model: alacritty_terminal (Apache-2.0) fed bytes directly
@@ -45,6 +47,7 @@ crates/
     pacer.rs       output redraw cap
     fonts.rs       bundled JetBrains Mono Regular and Bold, Ubuntu Medium (the interface's bold), lazy system fallback (fontdb, skrifa)
     terminal_view.rs  grid painter, mouse selection, scrollbar, copy, status line, input line
+    command_help.rs   the client's commands in the input line: the list, parameter hints, problems
     grid_text.rs   (M4) the grid's plain text as one reused mesh of cached glyph quads; AtlasWatch
     autohide.rs    (M4) pinned and auto-hidden tool panels: state, where to put a panel back
     session_tab.rs per-session state over Connection: grid, input, history, prompts, protocols, activity

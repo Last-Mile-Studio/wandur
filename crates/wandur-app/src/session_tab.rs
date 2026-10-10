@@ -1838,8 +1838,18 @@ impl SessionTab {
             let syntax = self.command_style().syntax();
             match wandur_core::command_line::expand(&line, syntax) {
                 Err(error) => {
-                    self.notice(&expand_error(&error, syntax));
+                    self.notice(&wandur_core::command_line::error_message(&error, syntax));
                     return Err(line);
+                }
+                Ok(steps) if matches!(steps.as_slice(), [Step::Help(_)]) => {
+                    // `/help` alone answers at once, connected or not.
+                    self.remember(line);
+                    self.history_pos = None;
+                    self.draft.clear();
+                    if let Some(Step::Help(topic)) = steps.into_iter().next() {
+                        self.print_help(topic);
+                    }
+                    return Ok(());
                 }
                 Ok(steps) if !matches!(steps.as_slice(), [Step::Send(only)] if *only == line) => {
                     // A new line replaces what an earlier one still had to do.
@@ -1898,10 +1908,18 @@ impl SessionTab {
                 self.queue_next = (!self.queued.is_empty()).then(|| now + QUEUE_GAP);
                 // Only commands to the world are paced: a wait starts as the command before it
                 // goes, so a quick answer is not missed.
-                if matches!(self.queued.front(), Some(Step::WaitText { .. } | Step::WaitTime(_))) {
+                if matches!(
+                    self.queued.front(),
+                    Some(Step::WaitText { .. } | Step::WaitTime(_) | Step::Help(_))
+                ) {
                     self.queue_next = Some(now);
                     self.pump_queue(now);
                 }
+            }
+            Some(Step::Help(topic)) => {
+                self.print_help(topic);
+                self.queue_next = Some(now);
+                self.pump_queue(now);
             }
             Some(Step::WaitTime(time)) => self.queue_next = Some(now + time),
             Some(Step::WaitText { text, timeout }) => {
@@ -1916,6 +1934,15 @@ impl SessionTab {
                 self.queue_next = None;
             }
         }
+    }
+
+    /// `/help`: the client's commands (or one of them) in the transcript, in the session's style.
+    fn print_help(&mut self, topic: Option<wandur_core::client_commands::CommandId>) {
+        let lead = if self.terminal.at_line_start() { "" } else { "\n" };
+        let lines = wandur_core::client_commands::help_lines(topic, self.command_style().syntax());
+        self.terminal
+            .feed_local(&format!("{lead}{}\n", lines.join("\n")), LOCAL_ECHO_COLOR);
+        self.terminal.scroll_to_bottom();
     }
 
     /// Server text while a `/wait {text}` holds the queue: a match lets the rest go on. Only text
@@ -2511,18 +2538,6 @@ struct Waiting {
     matched: bool,
 }
 
-/// What is wrong with a typed line's shorthand, in the person's language and with the style's
-/// command character.
-fn expand_error(error: &wandur_core::command_line::ExpandError, syntax: Syntax) -> String {
-    use wandur_core::command_line::{ExpandError, MAX_COMMANDS, MAX_REPEAT, MAX_WAIT_SECS};
-    match error {
-        ExpandError::BadCount(head) => tf(S::CommandRepeatCount, &[head, &MAX_REPEAT]),
-        ExpandError::Unclosed => tf(S::CommandRepeatUnclosed, &[]),
-        ExpandError::TooMany => tf(S::CommandTooMany, &[&MAX_COMMANDS]),
-        ExpandError::BadWait => tf(S::CommandWaitUsage, &[&syntax.command, &MAX_WAIT_SECS]),
-    }
-}
-
 #[cfg(test)]
 pub(crate) mod test_support {
     use super::*;
@@ -2733,6 +2748,38 @@ mod tests {
             global_command_style: CommandStyle::TinTin,
             ..TabOptions::default()
         })
+    }
+
+    /// `/help` prints the client's commands in the session's style and sends nothing; a chain
+    /// prints it in its turn; a name it does not know is refused and the line stays.
+    #[test]
+    fn help_prints_the_commands_into_the_transcript() {
+        let (mut tab, mut server) = local_tab();
+        pump_until(&mut tab, SessionTab::is_connected);
+        tab.input = "/help".into();
+        tab.submit();
+        let text = tab.terminal.transcript();
+        assert!(text.contains(&t(S::CmdWaitSummary).to_string()), "{text}");
+        assert!(text.contains("/<"), "the repeat, with the style's character: {text}");
+        assert_eq!(tab.history(), ["/help"]);
+        assert!(tab.input.is_empty());
+        assert_eq!(tab.queue_progress(), None);
+
+        tab.input = "/help wait;look".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["look"], "only look reaches the world");
+        assert!(tab.terminal.transcript().contains("/wait <"));
+
+        tab.input = "/help dance".into();
+        tab.submit();
+        assert_eq!(tab.input, "/help dance", "refused, the line stays");
+        assert!(tab.terminal.transcript().contains("dance"));
+
+        let (mut tab, _server) = tintin_tab();
+        pump_until(&mut tab, SessionTab::is_connected);
+        tab.input = "#help".into();
+        tab.submit();
+        assert!(tab.terminal.transcript().contains("#wait"));
     }
 
     #[test]

@@ -41,6 +41,7 @@ pub mod agent;
 pub mod channels;
 pub mod charset;
 pub mod classify;
+pub mod client_commands;
 pub mod command_line;
 pub mod completion;
 pub mod connection;

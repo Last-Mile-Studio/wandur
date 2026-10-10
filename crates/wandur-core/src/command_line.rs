@@ -6,17 +6,26 @@
 //! for longer), and `/wait 2` pauses two seconds, so a repeat can wait for each round to finish:
 //! `/10 {say 1;kill droid;/wait {the droid is dead}}`. A `/` not followed by a count or `wait` and
 //! a space is ordinary text and goes to the world unchanged; a line that starts `//` goes with one
-//! `/` removed and nothing else applied (`//me waves` sends `/me waves`).
+//! `/` removed and nothing else applied (`//me waves` sends `/me waves`). `/help` lists the
+//! client's commands in the transcript, and `/help wait` explains one.
+//!
+//! The commands themselves are listed in [`crate::client_commands`]; one scanner here reads a
+//! line for [`expand`] (what is sent), [`check`] (problems, with where they are) and
+//! [`context_at`] (what the caret is in, for the command box's list and hints), so the three
+//! cannot disagree.
 //!
 //! The TinTin++ style (as zMUD and CMUD before it) spells the same with `#` (`#10 say 1`,
 //! `#wait 2`, `##` to send a `#`). The MUSH-safe style keeps `/` but separates commands with `;;`,
 //! because on a MUSH a `;` starts a pose: there a single `;` is ordinary text, and `\;` is still a
 //! literal `;` (so `\;;` sends `;;`).
 
-use std::fmt;
+use std::ops::Range;
 use std::time::Duration;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::client_commands::{CommandId, CommandSpec, Head, ParamKind};
+use crate::l10n::{S, tf};
 
 /// The most times one `/N` may repeat.
 pub const MAX_REPEAT: u32 = 100;
@@ -149,10 +158,12 @@ pub enum Step {
     WaitText { text: String, timeout: Duration },
     /// Hold the rest this long.
     WaitTime(Duration),
+    /// `/help`: list the client's commands in the transcript, or explain one.
+    Help(Option<CommandId>),
 }
 
-/// Why a line could not be expanded; nothing is sent. The person's text for it is the app's
-/// (localized, naming the active command character).
+/// Why a line could not be expanded; nothing is sent. The person's text for it is
+/// [`Diagnostic::message`] (localized, naming the active command character).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ExpandError {
     /// `/0 ...` or a count over [`MAX_REPEAT`].
@@ -163,16 +174,65 @@ pub enum ExpandError {
     TooMany,
     /// `/wait` without text or with seconds outside 1 to [`MAX_WAIT_SECS`].
     BadWait,
+    /// `/help` with a name that is not one of the client's commands.
+    UnknownCommand(String),
 }
 
-impl fmt::Display for ExpandError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::BadCount(n) => write!(f, "{n}: a repeat count runs from 1 to {MAX_REPEAT}"),
-            Self::Unclosed => write!(f, "a {{ after a repeat count needs its closing }}"),
-            Self::TooMany => write!(f, "that line makes more than {MAX_COMMANDS} commands"),
-            Self::BadWait => write!(f, "wait takes seconds from 1 to {MAX_WAIT_SECS}, or text"),
+/// What [`check`] finds in a line.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Problem {
+    /// The line is refused as it stands.
+    Refused(ExpandError),
+    /// `/3` with no command after it: it goes to the world as text, which may not be meant.
+    LoneCount(String),
+}
+
+/// A problem and the bytes of the line it is about.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Diagnostic {
+    pub problem: Problem,
+    pub span: Range<usize>,
+    /// More typing at the end can fix it (an open brace, `/wait` with nothing yet): shown muted,
+    /// never as an error while typing, though Enter still refuses it.
+    pub incomplete: bool,
+}
+
+impl Diagnostic {
+    fn refused(error: ExpandError, span: Range<usize>, incomplete: bool) -> Self {
+        Self {
+            problem: Problem::Refused(error),
+            span,
+            incomplete,
         }
+    }
+
+    /// Enter would refuse the line.
+    pub fn refuses(&self) -> bool {
+        matches!(self.problem, Problem::Refused(_))
+    }
+
+    /// Certainly wrong: more typing at the end cannot fix it.
+    pub fn is_wrong(&self) -> bool {
+        self.refuses() && !self.incomplete
+    }
+
+    /// The person's text for it, in the current language, with the style's characters.
+    pub fn message(&self, syntax: Syntax) -> String {
+        match &self.problem {
+            Problem::Refused(error) => error_message(error, syntax),
+            Problem::LoneCount(head) => tf(S::CmdLoneCount, &[head]),
+        }
+    }
+}
+
+/// The person's text for an error, in the current language, with the style's characters.
+pub fn error_message(error: &ExpandError, syntax: Syntax) -> String {
+    match error {
+        ExpandError::BadCount(head) => tf(S::CommandRepeatCount, &[head, &MAX_REPEAT]),
+        ExpandError::Unclosed => tf(S::CommandRepeatUnclosed, &[]),
+        ExpandError::TooMany => tf(S::CommandTooMany, &[&MAX_COMMANDS]),
+        ExpandError::BadWait => tf(S::CommandWaitUsage, &[&syntax.command, &MAX_WAIT_SECS]),
+        ExpandError::UnknownCommand(name) => tf(S::CmdHelpUnknown, &[name, &syntax.command]),
     }
 }
 
@@ -180,164 +240,507 @@ impl fmt::Display for ExpandError {
 /// exactly (spacing kept); pieces of a chain are trimmed and empty ones dropped. A line that
 /// starts with the command character twice comes back once, with one of them removed.
 pub fn expand(line: &str, syntax: Syntax) -> Result<Vec<Step>, ExpandError> {
-    let start = line.trim_start();
-    if let Some(rest) = literal(start, syntax) {
-        let lead = line.len() - start.len();
-        return Ok(vec![Step::Send(format!("{}{rest}", &line[..lead]))]);
+    let parse = Parser::parse(line, syntax);
+    if let Some(problem) = parse.diagnostics.into_iter().find_map(|d| match d.problem {
+        Problem::Refused(error) => Some(error),
+        Problem::LoneCount(_) => None,
+    }) {
+        return Err(problem);
     }
-    if !line.contains(syntax.separator)
+    let plain = !line.contains(syntax.separator)
         && !line.contains("\\;")
-        && repeat_prefix(start, syntax).is_none()
-        && wait_prefix(start, syntax).is_none()
-    {
+        && matches!(parse.items.as_slice(), [] | [Item::Send(_)]);
+    if plain && !parse.literal {
         return Ok(vec![Step::Send(line.to_string())]);
     }
     let mut out = Vec::new();
-    sequence(line, syntax, &mut out)?;
+    flatten(&parse.items, &mut out)?;
     Ok(out)
 }
 
-/// Whether the line would use one of the client's commands (a repeat or a wait) in this style,
-/// anywhere in its chain. A line that starts with the command character twice uses none.
+/// Whether the line would use one of the client's commands that send or wait (a repeat or a
+/// wait) in this style, anywhere in its chain. A line that starts with the command character
+/// twice uses none, and `/help` does not count: the word is too common on a MUD to mean a style.
 pub fn uses_commands(line: &str, syntax: Syntax) -> bool {
-    let mut s = line.trim_start();
-    if literal(s, syntax).is_some() {
-        return false;
+    fn any(items: &[Item]) -> bool {
+        items.iter().any(|item| match item {
+            Item::Send(_) | Item::Step(Step::Help(_) | Step::Send(_)) => false,
+            Item::Repeat(..) | Item::Step(_) => true,
+        })
     }
-    while !s.is_empty() {
-        if repeat_prefix(s, syntax).is_some() || wait_prefix(s, syntax).is_some() {
-            return true;
+    any(&Parser::parse(line, syntax).items)
+}
+
+/// Everything wrong or worth a word in a line, in the order it appears: what [`expand`] would
+/// refuse (certainly wrong, or incomplete), and a lone `/3`.
+pub fn check(line: &str, syntax: Syntax) -> Vec<Diagnostic> {
+    let parse = Parser::parse(line, syntax);
+    let mut diagnostics = parse.diagnostics;
+    if !diagnostics.iter().any(Diagnostic::refuses) && flatten(&parse.items, &mut Vec::new()).is_err() {
+        diagnostics.push(Diagnostic::refused(ExpandError::TooMany, 0..line.len(), false));
+    }
+    diagnostics
+}
+
+/// Where a caret is, in client-command terms, for the command box's list and hints.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Context {
+    /// Not in a client command: plain text, a world command.
+    None,
+    /// Typing a head at a command start: `range` is the whole head (`/`, `/w`, `/10`), the caret
+    /// inside it or at its end.
+    Head { range: Range<usize> },
+    /// After a client command's head: which command, the forms (indices into its `forms`) that
+    /// still fit what is typed, the parameter the caret is in or comes to next (an index into
+    /// each fitting form), and whether that parameter has text yet.
+    Args {
+        id: CommandId,
+        head: Range<usize>,
+        fitting: Vec<usize>,
+        active: usize,
+        typed: bool,
+    },
+}
+
+impl Context {
+    /// The parameters still to type, as placeholders after the caret (`<seconds> {text}`): the
+    /// first fitting form's from the one the caret is in (when it is still empty) or the next.
+    pub fn remaining(&self, syntax: Syntax) -> Option<String> {
+        let Context::Args {
+            id,
+            fitting,
+            active,
+            typed,
+            ..
+        } = self
+        else {
+            return None;
+        };
+        let form = CommandSpec::get(*id).forms.get(*fitting.first()?)?;
+        let from = active + usize::from(*typed);
+        let rest: Vec<String> = form.params.get(from..)?.iter().map(|p| p.placeholder(syntax)).collect();
+        (!rest.is_empty()).then(|| rest.join(" "))
+    }
+}
+
+/// What the caret at byte `caret` of `line` is in.
+pub fn context_at(line: &str, caret: usize, syntax: Syntax) -> Context {
+    let parse = Parser::parse(line, syntax);
+    for &start in &parse.starts {
+        if !line[start..].starts_with(syntax.command) {
+            continue;
         }
-        s = piece(s, syntax).1.trim_start();
+        let after = start + syntax.command.len_utf8();
+        let end = line[after..]
+            .find(|c: char| !c.is_ascii_alphanumeric())
+            .map_or(line.len(), |i| after + i);
+        if start < caret && caret <= end {
+            return Context::Head { range: start..end };
+        }
     }
-    false
+    let Some(found) = parse
+        .uses
+        .iter()
+        .filter(|u| u.head.end < caret && caret <= u.end)
+        .min_by_key(|u| u.end - u.head.start)
+    else {
+        return Context::None;
+    };
+    let (active, typed) = match found.args.iter().position(|(_, r)| r.start <= caret && caret <= r.end) {
+        Some(i) => (i, true),
+        None => (found.args.iter().filter(|(_, r)| r.end < caret).count(), false),
+    };
+    let spec = CommandSpec::get(found.id);
+    let fitting = (0..spec.forms.len())
+        .filter(|&i| {
+            let params = spec.forms[i].params;
+            params.len() >= found.args.len() && found.args.iter().zip(params).all(|((kind, _), p)| *kind == p.kind)
+        })
+        .collect();
+    Context::Args {
+        id: found.id,
+        head: found.head.clone(),
+        fitting,
+        active,
+        typed,
+    }
+}
+
+/// A line read into commands, with what the command box needs to know about it.
+struct Parse {
+    items: Vec<Item>,
+    diagnostics: Vec<Diagnostic>,
+    /// Byte offsets where a command starts: the line's first non-blank character, the first
+    /// after a separator, the first inside a repeat's braces.
+    starts: Vec<usize>,
+    /// Every client command found, with where its parts are.
+    uses: Vec<Use>,
+    /// The line starts with the command character twice.
+    literal: bool,
+}
+
+/// One client command in a line (a lone `/3` too, so its hint can show).
+struct Use {
+    id: CommandId,
+    /// The command character and the head (`/wait`, `/10`).
+    head: Range<usize>,
+    /// The parameters typed, in order, with their bytes (a repeat's count first).
+    args: Vec<(ParamKind, Range<usize>)>,
+    /// Where the command's own text ends (before a separator).
+    end: usize,
+}
+
+/// A piece of a line before repeats are multiplied out.
+enum Item {
+    Send(String),
+    Repeat(u32, Vec<Item>),
+    Step(Step),
+}
+
+/// The steps `items` stand for, into `out`, refused past [`MAX_COMMANDS`].
+fn flatten(items: &[Item], out: &mut Vec<Step>) -> Result<(), ExpandError> {
+    for item in items {
+        match item {
+            Item::Send(command) => push(out, Step::Send(command.clone()))?,
+            Item::Step(step) => push(out, step.clone())?,
+            Item::Repeat(count, body) => {
+                let mut once = Vec::new();
+                flatten(body, &mut once)?;
+                for _ in 0..*count {
+                    if out.len() + once.len() > MAX_COMMANDS {
+                        return Err(ExpandError::TooMany);
+                    }
+                    out.extend(once.iter().cloned());
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn push(out: &mut Vec<Step>, step: Step) -> Result<(), ExpandError> {
+    if out.len() >= MAX_COMMANDS {
+        return Err(ExpandError::TooMany);
+    }
+    out.push(step);
+    Ok(())
+}
+
+/// The one scanner behind [`expand`], [`check`] and [`context_at`], so the command box cannot
+/// disagree with what is sent. It reads the whole line even past a problem, so a caret after an
+/// open brace still finds its command starts.
+struct Parser<'a> {
+    line: &'a str,
+    syntax: Syntax,
+    diagnostics: Vec<Diagnostic>,
+    starts: Vec<usize>,
+    uses: Vec<Use>,
+}
+
+impl<'a> Parser<'a> {
+    fn parse(line: &'a str, syntax: Syntax) -> Parse {
+        let lead = line.len() - line.trim_start().len();
+        if let Some(rest) = literal(&line[lead..], syntax) {
+            return Parse {
+                items: vec![Item::Send(format!("{}{rest}", &line[..lead]))],
+                diagnostics: Vec::new(),
+                starts: Vec::new(),
+                uses: Vec::new(),
+                literal: true,
+            };
+        }
+        let mut parser = Parser {
+            line,
+            syntax,
+            diagnostics: Vec::new(),
+            starts: Vec::new(),
+            uses: Vec::new(),
+        };
+        let items = parser.sequence(0, line.len());
+        Parse {
+            items,
+            diagnostics: parser.diagnostics,
+            starts: parser.starts,
+            uses: parser.uses,
+            literal: false,
+        }
+    }
+
+    /// A separated sequence of commands between `at` and `end`.
+    fn sequence(&mut self, mut at: usize, end: usize) -> Vec<Item> {
+        let mut items = Vec::new();
+        loop {
+            at = self.skip_space(at, end);
+            if at >= end {
+                return items;
+            }
+            self.starts.push(at);
+            let (item, next) = match self.word_head(at, end) {
+                Some(CommandId::Wait) => self.wait(at, end),
+                Some(_) => self.help(at, end),
+                None => match self.count_head(at, end) {
+                    Some(digits) => self.repeat(at, digits, end),
+                    None => {
+                        let (command, _, next) = self.piece(at, end);
+                        ((!command.is_empty()).then_some(Item::Send(command)), next)
+                    }
+                },
+            };
+            items.extend(item);
+            at = next;
+        }
+    }
+
+    /// A word head (`/wait`, `/help`, any case) standing alone at `at`.
+    fn word_head(&self, at: usize, end: usize) -> Option<CommandId> {
+        let rest = self.line[at..end].strip_prefix(self.syntax.command)?;
+        crate::client_commands::COMMANDS.into_iter().find_map(|spec| {
+            let Head::Word(word) = spec.head else {
+                return None;
+            };
+            let after = &rest[rest.get(..word.len()).filter(|w| w.eq_ignore_ascii_case(word))?.len()..];
+            (after.is_empty() || after.starts_with(char::is_whitespace) || after.starts_with(self.syntax.separator))
+                .then_some(spec.id)
+        })
+    }
+
+    /// A repeat's count at `at` (the digits' bytes) when a space and a command follow it. A count
+    /// with nothing after it (`/3`, `/3 `) is text, but it is noted ([`Problem::LoneCount`] and a
+    /// use, for the repeat's hint) so the box can say so.
+    fn count_head(&mut self, at: usize, end: usize) -> Option<Range<usize>> {
+        let first = at + self.syntax.command.len_utf8();
+        if !self.line[at..end].starts_with(self.syntax.command) {
+            return None;
+        }
+        let digits_end = self.line[first..end]
+            .find(|c: char| !c.is_ascii_digit())
+            .map_or(end, |i| first + i);
+        if digits_end == first {
+            return None;
+        }
+        let after = &self.line[digits_end..end];
+        let rest = after.trim_start();
+        let spaced = rest.len() < after.len();
+        if spaced && !rest.is_empty() && !rest.starts_with(self.syntax.separator) {
+            return Some(first..digits_end);
+        }
+        if after.is_empty() || (spaced && (rest.is_empty() || rest.starts_with(self.syntax.separator))) {
+            let head = format!("{}{}", self.syntax.command, &self.line[first..digits_end]);
+            self.diagnostics.push(Diagnostic {
+                problem: Problem::LoneCount(head),
+                span: at..digits_end,
+                incomplete: true,
+            });
+            self.uses.push(Use {
+                id: CommandId::Repeat,
+                head: at..digits_end,
+                args: vec![(ParamKind::Count, first..digits_end)],
+                end: end - rest.len(),
+            });
+        }
+        None
+    }
+
+    /// `/N command` or `/N {commands}`; `digits` are the count's bytes.
+    fn repeat(&mut self, at: usize, digits: Range<usize>, end: usize) -> (Option<Item>, usize) {
+        let text = &self.line[digits.clone()];
+        let count = match text.parse::<u32>().ok().filter(|n| (1..=MAX_REPEAT).contains(n)) {
+            Some(n) => n,
+            None => {
+                let head = format!("{}{text}", self.syntax.command);
+                self.diagnostics
+                    .push(Diagnostic::refused(ExpandError::BadCount(head), digits.clone(), false));
+                0
+            }
+        };
+        let mut args = vec![(ParamKind::Count, digits.clone())];
+        let r = self.skip_space(digits.end, end);
+        let use_at = self.uses.len();
+        self.uses.push(Use {
+            id: CommandId::Repeat,
+            head: at..digits.end,
+            args: Vec::new(),
+            end,
+        });
+        let (body, next, own_end) = if self.line[r..end].starts_with('{') {
+            match closing_brace(&self.line[r + 1..end]) {
+                Some(close) => {
+                    let close = r + 1 + close;
+                    args.push((ParamKind::Group, r..close + 1));
+                    (self.sequence(r + 1, close), close + 1, close + 1)
+                }
+                None => {
+                    self.diagnostics
+                        .push(Diagnostic::refused(ExpandError::Unclosed, r..end, true));
+                    args.push((ParamKind::Group, r..end));
+                    (self.sequence(r + 1, end), end, end)
+                }
+            }
+        } else {
+            let (command, separator, next) = self.piece(r, end);
+            args.push((ParamKind::Command, r..self.trim_end(r, separator)));
+            (vec![Item::Send(command)], next, separator)
+        };
+        let own = &mut self.uses[use_at];
+        own.args = args;
+        own.end = own_end;
+        (Some(Item::Repeat(count, body)), next)
+    }
+
+    /// `/wait {text}`, `/wait text`, `/wait 120 {text}` or `/wait 2`.
+    fn wait(&mut self, at: usize, end: usize) -> (Option<Item>, usize) {
+        let head = at..at + self.syntax.command.len_utf8() + "wait".len();
+        let r = self.skip_space(head.end, end);
+        let mut args = Vec::new();
+        let mut wrong = false;
+        let digits_end = self.line[r..end]
+            .find(|c: char| !c.is_ascii_digit())
+            .map_or(end, |i| r + i);
+        let finish = |parser: &mut Self, args, own_end, item: Option<Item>, next| {
+            parser.uses.push(Use {
+                id: CommandId::Wait,
+                head: head.clone(),
+                args,
+                end: own_end,
+            });
+            (item, next)
+        };
+        let (timeout, pos) = if digits_end > r {
+            let secs = self.line[r..digits_end]
+                .parse::<u64>()
+                .ok()
+                .filter(|n| (1..=MAX_WAIT_SECS).contains(n));
+            if secs.is_none() {
+                self.diagnostics
+                    .push(Diagnostic::refused(ExpandError::BadWait, r..digits_end, false));
+                wrong = true;
+            }
+            args.push((ParamKind::Seconds, r..digits_end));
+            let after = self.skip_space(digits_end, end);
+            if after == end || self.line[after..end].starts_with(self.syntax.separator) {
+                let item = secs.map(|s| Item::Step(Step::WaitTime(Duration::from_secs(s))));
+                return finish(self, args, after, item, after);
+            }
+            if !self.line[after..end].starts_with('{') {
+                let (_, separator, next) = self.piece(after, end);
+                let text_end = self.trim_end(after, separator);
+                args.push((ParamKind::Text, after..text_end));
+                if !wrong {
+                    self.diagnostics
+                        .push(Diagnostic::refused(ExpandError::BadWait, after..text_end, false));
+                }
+                return finish(self, args, separator, None, next);
+            }
+            (Duration::from_secs(secs.unwrap_or(1)), after)
+        } else {
+            (DEFAULT_WAIT, r)
+        };
+        let (text, own_end, next) = if self.line[pos..end].starts_with('{') {
+            match closing_brace(&self.line[pos + 1..end]) {
+                Some(close) => {
+                    let close = pos + 1 + close;
+                    args.push((ParamKind::Text, pos..close + 1));
+                    (self.line[pos + 1..close].trim().to_string(), close + 1, close + 1)
+                }
+                None => {
+                    self.diagnostics
+                        .push(Diagnostic::refused(ExpandError::Unclosed, pos..end, true));
+                    args.push((ParamKind::Text, pos..end));
+                    wrong = true;
+                    (self.line[pos + 1..end].trim().to_string(), end, end)
+                }
+            }
+        } else {
+            let (text, separator, next) = self.piece(pos, end);
+            if !text.is_empty() {
+                args.push((ParamKind::Text, pos..self.trim_end(pos, separator)));
+            }
+            (text, separator, next)
+        };
+        if text.is_empty() && !wrong {
+            // `/wait` with nothing yet can still be finished; `/wait {}` cannot.
+            let incomplete = pos == end;
+            let span = if incomplete { head.clone() } else { pos..own_end };
+            self.diagnostics
+                .push(Diagnostic::refused(ExpandError::BadWait, span, incomplete));
+            wrong = true;
+        }
+        let item = (!wrong).then_some(Item::Step(Step::WaitText { text, timeout }));
+        finish(self, args, own_end, item, next)
+    }
+
+    /// `/help` or `/help wait` (the name with or without the command character).
+    fn help(&mut self, at: usize, end: usize) -> (Option<Item>, usize) {
+        let head = at..at + self.syntax.command.len_utf8() + "help".len();
+        let r = self.skip_space(head.end, end);
+        let (name, separator, next) = self.piece(r, end);
+        let mut args = Vec::new();
+        let item = if name.is_empty() {
+            Some(Item::Step(Step::Help(None)))
+        } else {
+            let span = r..self.trim_end(r, separator);
+            args.push((ParamKind::Name, span.clone()));
+            let bare = name.strip_prefix(self.syntax.command).unwrap_or(&name);
+            match CommandSpec::named(bare) {
+                Some(spec) => Some(Item::Step(Step::Help(Some(spec.id)))),
+                None => {
+                    let lower = bare.to_ascii_lowercase();
+                    let incomplete = span.end == end
+                        && crate::client_commands::COMMANDS
+                            .iter()
+                            .any(|c| c.name().starts_with(&lower));
+                    self.diagnostics.push(Diagnostic::refused(
+                        ExpandError::UnknownCommand(name.clone()),
+                        span,
+                        incomplete,
+                    ));
+                    None
+                }
+            }
+        };
+        self.uses.push(Use {
+            id: CommandId::Help,
+            head,
+            args,
+            end: separator,
+        });
+        (item, next)
+    }
+
+    fn skip_space(&self, at: usize, end: usize) -> usize {
+        end - self.line[at..end].trim_start().len()
+    }
+
+    /// `end` moved back over trailing whitespace, not before `at`.
+    fn trim_end(&self, at: usize, end: usize) -> usize {
+        at + self.line[at..end].trim_end().len()
+    }
+
+    /// One command from `at` up to the next unescaped separator (trimmed, `\;` made a
+    /// semicolon), where the separator is (or `end`), and where the next command begins.
+    fn piece(&self, at: usize, end: usize) -> (String, usize, usize) {
+        let s = &self.line[at..end];
+        let separator = self.syntax.separator;
+        let mut command = String::new();
+        let mut chars = s.char_indices().peekable();
+        while let Some((i, c)) = chars.next() {
+            if c == '\\' && chars.peek().is_some_and(|&(_, n)| n == ';') {
+                command.push(';');
+                chars.next();
+            } else if s[i..].starts_with(separator) {
+                return (command.trim().to_string(), at + i, at + i + separator.len());
+            } else {
+                command.push(c);
+            }
+        }
+        (command.trim().to_string(), end, end)
+    }
 }
 
 /// The rest of a line that starts with the command character twice, after the first.
 fn literal(start: &str, syntax: Syntax) -> Option<&str> {
     let rest = start.strip_prefix(syntax.command)?;
     rest.starts_with(syntax.command).then_some(rest)
-}
-
-/// `/N` and the whitespace after it, when a command follows: the count's digits and the rest.
-fn repeat_prefix(piece: &str, syntax: Syntax) -> Option<(&str, &str)> {
-    let after_char = piece.strip_prefix(syntax.command)?;
-    let digits_end = after_char.find(|c: char| !c.is_ascii_digit())?;
-    let digits = &after_char[..digits_end];
-    let after = &after_char[digits_end..];
-    let rest = after.trim_start();
-    let spaced = rest.len() < after.len();
-    (!digits.is_empty() && spaced && !rest.is_empty() && !rest.starts_with(syntax.separator)).then_some((digits, rest))
-}
-
-/// `/wait` (any case) and what follows it, when it stands alone as a word.
-fn wait_prefix(piece: &str, syntax: Syntax) -> Option<&str> {
-    let rest = piece.strip_prefix(syntax.command)?;
-    let head = rest.get(..4)?;
-    let after = &rest[4..];
-    (head.eq_ignore_ascii_case("wait")
-        && (after.is_empty() || after.starts_with(char::is_whitespace) || after.starts_with(syntax.separator)))
-    .then(|| after.trim_start())
-}
-
-/// A `/wait`'s step from what follows the word, and the rest of the sequence.
-fn wait_step(rest: &str, syntax: Syntax) -> Result<(Step, &str), ExpandError> {
-    let digits = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
-    let (timeout, rest) = if digits > 0 {
-        let secs = rest[..digits]
-            .parse::<u64>()
-            .ok()
-            .filter(|n| (1..=MAX_WAIT_SECS).contains(n))
-            .ok_or(ExpandError::BadWait)?;
-        let after = rest[digits..].trim_start();
-        if after.is_empty() || after.starts_with(syntax.separator) {
-            return Ok((Step::WaitTime(Duration::from_secs(secs)), after));
-        }
-        if !after.starts_with('{') {
-            return Err(ExpandError::BadWait);
-        }
-        (Duration::from_secs(secs), after)
-    } else {
-        (DEFAULT_WAIT, rest)
-    };
-    let (text, next) = if let Some(group) = rest.strip_prefix('{') {
-        let close = closing_brace(group).ok_or(ExpandError::Unclosed)?;
-        (group[..close].trim().to_string(), &group[close + 1..])
-    } else {
-        piece(rest, syntax)
-    };
-    if text.is_empty() {
-        return Err(ExpandError::BadWait);
-    }
-    Ok((Step::WaitText { text, timeout }, next))
-}
-
-/// Expand a separated sequence into `out`.
-fn sequence(mut s: &str, syntax: Syntax, out: &mut Vec<Step>) -> Result<(), ExpandError> {
-    loop {
-        s = s.trim_start();
-        if s.is_empty() {
-            return Ok(());
-        }
-        if let Some(rest) = wait_prefix(s, syntax) {
-            let (step, next) = wait_step(rest, syntax)?;
-            if out.len() >= MAX_COMMANDS {
-                return Err(ExpandError::TooMany);
-            }
-            out.push(step);
-            s = next;
-        } else if let Some((digits, rest)) = repeat_prefix(s, syntax) {
-            let count = digits
-                .parse::<u32>()
-                .ok()
-                .filter(|n| (1..=MAX_REPEAT).contains(n))
-                .ok_or_else(|| ExpandError::BadCount(format!("{}{digits}", syntax.command)))?;
-            let mut once = Vec::new();
-            if let Some(group) = rest.strip_prefix('{') {
-                let close = closing_brace(group).ok_or(ExpandError::Unclosed)?;
-                sequence(&group[..close], syntax, &mut once)?;
-                s = &group[close + 1..];
-                // Anything after the group up to the next separator is a command of its own.
-            } else {
-                let (command, next) = piece(rest, syntax);
-                once.push(Step::Send(command));
-                s = next;
-            }
-            for _ in 0..count {
-                if out.len() + once.len() > MAX_COMMANDS {
-                    return Err(ExpandError::TooMany);
-                }
-                out.extend(once.iter().cloned());
-            }
-        } else {
-            let (command, next) = piece(s, syntax);
-            if !command.is_empty() {
-                if out.len() >= MAX_COMMANDS {
-                    return Err(ExpandError::TooMany);
-                }
-                out.push(Step::Send(command));
-            }
-            s = next;
-        }
-    }
-}
-
-/// One command up to the next unescaped separator (trimmed, `\;` made a semicolon), and what
-/// follows it.
-fn piece(s: &str, syntax: Syntax) -> (String, &str) {
-    let mut command = String::new();
-    let mut chars = s.char_indices().peekable();
-    while let Some((i, c)) = chars.next() {
-        if c == '\\' && chars.peek().is_some_and(|&(_, n)| n == ';') {
-            command.push(';');
-            chars.next();
-        } else if s[i..].starts_with(syntax.separator) {
-            return (command.trim().to_string(), &s[i + syntax.separator.len()..]);
-        } else {
-            command.push(c);
-        }
-    }
-    (command.trim().to_string(), "")
 }
 
 /// Where the brace matching an opening one (already consumed) closes, counting nested pairs.
@@ -367,6 +770,7 @@ mod tests {
                 Step::Send(command) => command,
                 Step::WaitText { text, timeout } => format!("<wait {}s {text}>", timeout.as_secs()),
                 Step::WaitTime(time) => format!("<wait {}s>", time.as_secs()),
+                Step::Help(topic) => format!("<help {topic:?}>"),
             })
             .collect()
     }
@@ -431,7 +835,7 @@ mod tests {
 
     #[test]
     fn a_hash_without_a_count_and_space_is_text() {
-        assert_eq!(ok("#help"), ["#help"]);
+        assert_eq!(ok("#helpful"), ["#helpful"]);
         assert_eq!(ok("say #1 fan"), ["say #1 fan"]);
         assert_eq!(ok("#3"), ["#3"], "no command after the count");
         assert_eq!(ok("#3x look"), ["#3x look"]);
@@ -624,5 +1028,158 @@ mod tests {
         assert!(!tt(""));
         assert!(uses_commands("/3 look", Syntax::WANDUR));
         assert!(!uses_commands("#3 look", Syntax::WANDUR));
+    }
+
+    /// `/help` is a client command: alone, or with a command's name.
+    #[test]
+    fn help_lists_or_explains_the_commands() {
+        let w = |line| steps(line, Syntax::WANDUR);
+        assert_eq!(w("/help"), ["<help None>"]);
+        assert_eq!(w("/HELP wait"), ["<help Some(Wait)>"]);
+        assert_eq!(
+            w("/help /wait"),
+            ["<help Some(Wait)>"],
+            "the name may keep its character"
+        );
+        assert_eq!(w("/help count"), ["<help Some(Repeat)>"]);
+        assert_eq!(w("look;/help;n"), ["look", "<help None>", "n"]);
+        assert_eq!(ok("#help"), ["<help None>"]);
+        assert_eq!(w("/helpme"), ["/helpme"], "a whole word only");
+        assert_eq!(
+            expand("/help dance", Syntax::WANDUR),
+            Err(ExpandError::UnknownCommand("dance".into()))
+        );
+        assert!(
+            !uses_commands("#help", Syntax::TINTIN),
+            "too common a word to mean a style"
+        );
+    }
+
+    /// Spans and kinds: certainly wrong, incomplete (more typing can fix it), or a note.
+    #[test]
+    fn check_tells_wrong_from_incomplete_with_spans() {
+        let one = |line: &str, syntax| -> (Problem, Range<usize>, bool) {
+            let found = check(line, syntax);
+            assert_eq!(found.len(), 1, "{line}: {found:?}");
+            let d = found.into_iter().next().unwrap();
+            (d.problem, d.span, d.incomplete)
+        };
+        let refused = |e| Problem::Refused(e);
+        for syntax in [Syntax::WANDUR, Syntax::TINTIN, Syntax::MUSH_SAFE] {
+            let c = syntax.command;
+            let l = |text: &str| crate::client_commands::styled(text, syntax);
+            assert_eq!(
+                one(&l("/0 look"), syntax),
+                (refused(ExpandError::BadCount(format!("{c}0"))), 1..2, false)
+            );
+            assert_eq!(one(&l("/101 look"), syntax).1, 1..4);
+            assert_eq!(
+                one(&l("/wait 601"), syntax),
+                (refused(ExpandError::BadWait), 6..9, false)
+            );
+            assert_eq!(one(&l("/wait 0"), syntax).1, 6..7);
+            assert_eq!(
+                one(&l("/wait 2 x y"), syntax),
+                (refused(ExpandError::BadWait), 8..11, false)
+            );
+            assert_eq!(
+                one(&l("/wait {}"), syntax),
+                (refused(ExpandError::BadWait), 6..8, false)
+            );
+            assert_eq!(one(&l("/wait"), syntax), (refused(ExpandError::BadWait), 0..5, true));
+            assert!(one(&l("/wait "), syntax).2);
+            assert_eq!(
+                one(&l("/3 {get coin"), syntax),
+                (refused(ExpandError::Unclosed), 3..12, true)
+            );
+            assert!(one(&l("/wait {the dro"), syntax).2);
+            assert_eq!(one(&l("/3"), syntax), (Problem::LoneCount(format!("{c}3")), 0..2, true));
+            assert_eq!(one(&l("/3 "), syntax).0, Problem::LoneCount(format!("{c}3")));
+            assert!(one(&l("/help wa"), syntax).2, "may become wait");
+            assert!(!one(&l("/help dance"), syntax).2);
+            let many = l("/100 n;/100 s;look");
+            assert_eq!(
+                one(&many, syntax),
+                (refused(ExpandError::TooMany), 0..many.len(), false)
+            );
+            for fine in ["/3 look", "/xyz", "say /3", "/wait 2", "/help", "look;n", "//3"] {
+                assert!(check(&l(fine), syntax).is_empty(), "{fine}");
+            }
+            // Expand refuses exactly what check calls wrong or incomplete; a note still sends.
+            for line in ["/0 look", "/wait", "/3 {a", "/help x", "/3", "/3 "] {
+                let line = l(line);
+                assert_eq!(
+                    expand(&line, syntax).is_err(),
+                    check(&line, syntax).iter().any(Diagnostic::refuses),
+                    "{line}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_caret_finds_heads_only_at_command_starts() {
+        let head = |line: &str, syntax| match context_at(line, line.len(), syntax) {
+            Context::Head { range } => Some(range),
+            _ => None,
+        };
+        let w = Syntax::WANDUR;
+        assert_eq!(head("/", w), Some(0..1));
+        assert_eq!(head("/w", w), Some(0..2));
+        assert_eq!(head("  /10", w), Some(2..5));
+        assert_eq!(head("get all;/w", w), Some(8..10));
+        assert_eq!(head("get all; /", w), Some(9..10));
+        assert_eq!(head("/3 {say 1;/wa", w), Some(10..13), "inside a repeat's braces");
+        assert_eq!(head("/3 {/", w), Some(4..5));
+        assert_eq!(head("say /", w), None, "mid-command");
+        assert_eq!(head("/wait {a;/", w), None, "inside wait text");
+        assert_eq!(head("say a\\;/", w), None, "an escaped separator starts nothing");
+        assert_eq!(head("say {hi;/", w), Some(8..9), "plain braces do not group");
+        assert_eq!(head("/3 /", w), None, "a repeated command is text");
+        assert_eq!(head("//", w), None, "the literal escape");
+        assert_eq!(head("#", w), None, "only the active character");
+        assert_eq!(head("#", Syntax::TINTIN), Some(0..1));
+        assert_eq!(head("look;/", Syntax::MUSH_SAFE), None, "a single ; is a pose there");
+        assert_eq!(head("look;;/", Syntax::MUSH_SAFE), Some(6..7));
+        // The caret inside the head.
+        assert_eq!(context_at("/wait", 2, w), Context::Head { range: 0..5 });
+        assert_eq!(context_at("/wait", 0, w), Context::None);
+    }
+
+    #[test]
+    fn after_a_head_the_caret_has_a_parameter_and_the_forms_that_fit() {
+        let w = Syntax::WANDUR;
+        let at_end = |line: &str| context_at(line, line.len(), w);
+        let args = |line: &str| match at_end(line) {
+            Context::Args {
+                id,
+                fitting,
+                active,
+                typed,
+                ..
+            } => (id, fitting, active, typed),
+            other => panic!("{line}: {other:?}"),
+        };
+        crate::l10n::override_thread(Some(crate::l10n::Language::En));
+        assert_eq!(args("/wait "), (CommandId::Wait, vec![0, 1, 2], 0, false));
+        assert_eq!(at_end("/wait ").remaining(w).as_deref(), Some("<seconds> {text}"));
+        assert_eq!(args("/wait 12"), (CommandId::Wait, vec![0, 2], 0, true));
+        assert_eq!(args("/wait 120 "), (CommandId::Wait, vec![0, 2], 1, false));
+        assert_eq!(at_end("/wait 120 ").remaining(w).as_deref(), Some("{text}"));
+        assert_eq!(args("/wait 120 {the dro"), (CommandId::Wait, vec![0], 1, true));
+        assert_eq!(at_end("/wait 120 {the dro").remaining(w), None);
+        assert_eq!(args("/wait the"), (CommandId::Wait, vec![1], 0, true));
+        assert_eq!(args("/10 "), (CommandId::Repeat, vec![0, 1], 1, false));
+        assert_eq!(at_end("/10 ").remaining(w).as_deref(), Some("<command>"));
+        assert_eq!(args("/10 {say 1;kill"), (CommandId::Repeat, vec![1], 1, true));
+        assert_eq!(
+            args("/3 {say 1;/wait "),
+            (CommandId::Wait, vec![0, 1, 2], 0, false),
+            "the innermost"
+        );
+        assert_eq!(args("/help "), (CommandId::Help, vec![0, 1], 0, false));
+        assert_eq!(at_end("/wait 2;look"), Context::None, "past the separator");
+        assert_eq!(at_end("look"), Context::None);
+        crate::l10n::override_thread(None);
     }
 }

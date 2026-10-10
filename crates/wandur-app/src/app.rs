@@ -316,6 +316,8 @@ pub struct SceneProbe {
     pub last_pending_link: Option<String>,
     /// The last session shows the command style tip.
     pub last_style_tip: bool,
+    /// What the last session's command box showed for the client's commands.
+    pub last_command_help: crate::command_help::Shown,
     /// Every scene step ran.
     pub steps_done: bool,
     /// The last session's vitals cards, Diagnostics messages and server details.
@@ -1769,6 +1771,7 @@ impl WandurApp {
             last_tail_rows: last.map_or(0, |e| e.view.tail_rows_drawn),
             last_pending_link: last.and_then(|e| e.view.pending_link.clone()),
             last_style_tip: last.is_some_and(|e| e.tab.style_tip_shown()),
+            last_command_help: last.map(|e| e.view.command_help.shown.clone()).unwrap_or_default(),
             steps_done: self.scene_input.is_empty(),
             last_vitals: last.map_or(0, |e| e.view.vitals.len()),
             last_messages: last.map_or(0, |e| e.tab.protocol.messages.len()),
@@ -1907,6 +1910,9 @@ impl WandurApp {
             entry.tab.caret_to_end = true;
             if step.submit {
                 entry.tab.submit();
+            } else {
+                // As if typed: the command box offers what typing would.
+                entry.view.command_help.treat_next_as_typed();
             }
             step.when.clear();
         }

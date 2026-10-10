@@ -3064,10 +3064,56 @@ pub enum S {
     CommandStyleUseHash,
     /// Keep /
     CommandStyleKeepSlash,
+    /// Repeat a command
+    CmdRepeatSummary,
+    /// Send the command this many times, 1 to {0}
+    CmdRepeatOne,
+    /// Repeat everything in the braces, in order
+    CmdRepeatGroup,
+    /// Wait for text or time
+    CmdWaitSummary,
+    /// Hold the rest until a line contains the text, up to this many seconds
+    CmdWaitTextFor,
+    /// Hold the rest until a line contains the text, {0} s at most
+    CmdWaitText,
+    /// Pause this many seconds, 1 to {0}
+    CmdWaitSeconds,
+    /// List Wandur’s commands
+    CmdHelpSummary,
+    /// Explain one command
+    CmdHelpOne,
+    /// List every command
+    CmdHelpAll,
+    /// count
+    CmdParamCount,
+    /// command
+    CmdParamCommand,
+    /// commands
+    CmdParamCommands,
+    /// seconds
+    CmdParamSeconds,
+    /// text
+    CmdParamText,
+    /// Wandur commands
+    CmdListName,
+    /// Tab completes · ↑ ↓ choose · Esc closes
+    CmdListKeys,
+    /// {0} needs a command after it; Enter sends {0} as it is
+    CmdLoneCount,
+    /// {0}: no such command; {1}help lists them
+    CmdHelpUnknown,
+    /// Wandur’s commands start with {0}; {1} separates commands and {0}{0} sends a {0}. {0}hel...
+    CmdHelpHeader,
+    /// Example: {0}
+    CmdHelpExample,
+    /// Enter a command, or {0} for Wandur’s own
+    EnterACommandOr,
+    /// {0}. Now: {1}
+    CmdA11ySignature,
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1529;
+pub const COUNT: usize = 1552;
 
 impl S {
     /// Every key, in table order.
@@ -4601,6 +4647,29 @@ impl S {
         S::CommandStyleTip,
         S::CommandStyleUseHash,
         S::CommandStyleKeepSlash,
+        S::CmdRepeatSummary,
+        S::CmdRepeatOne,
+        S::CmdRepeatGroup,
+        S::CmdWaitSummary,
+        S::CmdWaitTextFor,
+        S::CmdWaitText,
+        S::CmdWaitSeconds,
+        S::CmdHelpSummary,
+        S::CmdHelpOne,
+        S::CmdHelpAll,
+        S::CmdParamCount,
+        S::CmdParamCommand,
+        S::CmdParamCommands,
+        S::CmdParamSeconds,
+        S::CmdParamText,
+        S::CmdListName,
+        S::CmdListKeys,
+        S::CmdLoneCount,
+        S::CmdHelpUnknown,
+        S::CmdHelpHeader,
+        S::CmdHelpExample,
+        S::EnterACommandOr,
+        S::CmdA11ySignature,
     ];
 }
 
@@ -6135,6 +6204,29 @@ pub static NAMES: [&str; COUNT] = [
     "CommandStyleTip",
     "CommandStyleUseHash",
     "CommandStyleKeepSlash",
+    "CmdRepeatSummary",
+    "CmdRepeatOne",
+    "CmdRepeatGroup",
+    "CmdWaitSummary",
+    "CmdWaitTextFor",
+    "CmdWaitText",
+    "CmdWaitSeconds",
+    "CmdHelpSummary",
+    "CmdHelpOne",
+    "CmdHelpAll",
+    "CmdParamCount",
+    "CmdParamCommand",
+    "CmdParamCommands",
+    "CmdParamSeconds",
+    "CmdParamText",
+    "CmdListName",
+    "CmdListKeys",
+    "CmdLoneCount",
+    "CmdHelpUnknown",
+    "CmdHelpHeader",
+    "CmdHelpExample",
+    "EnterACommandOr",
+    "CmdA11ySignature",
 ];
 
 /// The text of every key in each language, in the order of `Language`.
@@ -7670,6 +7762,29 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Looks like TinTin++ / zMUD style. Use # for Wandur’s commands?",
         "Use #",
         "Keep /",
+        "Repeat a command",
+        "Send the command this many times, 1 to {0}",
+        "Repeat everything in the braces, in order",
+        "Wait for text or time",
+        "Hold the rest until a line contains the text, up to this many seconds",
+        "Hold the rest until a line contains the text, {0} s at most",
+        "Pause this many seconds, 1 to {0}",
+        "List Wandur’s commands",
+        "Explain one command",
+        "List every command",
+        "count",
+        "command",
+        "commands",
+        "seconds",
+        "text",
+        "Wandur commands",
+        "Tab completes · ↑ ↓ choose · Esc closes",
+        "{0} needs a command after it; Enter sends {0} as it is",
+        "{0}: no such command; {1}help lists them",
+        "Wandur’s commands start with {0}; {1} separates commands and {0}{0} sends a {0}. {0}help wait explains one.",
+        "Example: {0}",
+        "Enter a command, or {0} for Wandur’s own",
+        "{0}. Now: {1}",
     ],
     // es
     [
@@ -9202,6 +9317,29 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Parece el estilo de TinTin++ / zMUD. ¿Usar # para los comandos de Wandur?",
         "Usar #",
         "Mantener /",
+        "Repetir un comando",
+        "Envía el comando esta cantidad de veces, de 1 a {0}",
+        "Repite todo lo que está entre llaves, en orden",
+        "Esperar un texto o un tiempo",
+        "Retiene el resto hasta que una línea contenga el texto, como máximo estos segundos",
+        "Retiene el resto hasta que una línea contenga el texto, {0} s como máximo",
+        "Pausa de estos segundos, de 1 a {0}",
+        "Listar los comandos de Wandur",
+        "Explicar un comando",
+        "Listar todos los comandos",
+        "cantidad",
+        "comando",
+        "comandos",
+        "segundos",
+        "texto",
+        "Comandos de Wandur",
+        "Tab completa · ↑ ↓ elegir · Esc cierra",
+        "{0} necesita un comando después; Intro envía {0} tal cual",
+        "{0}: no existe ese comando; {1}help los lista",
+        "Los comandos de Wandur empiezan con {0}; {1} separa comandos y {0}{0} envía un {0}. {0}help wait explica uno.",
+        "Ejemplo: {0}",
+        "Introduce un comando, o {0} para los de Wandur",
+        "{0}. Ahora: {1}",
     ],
     // fr
     [
@@ -10734,6 +10872,29 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "On dirait le style TinTin++ / zMUD. Utiliser # pour les commandes de Wandur ?",
         "Utiliser #",
         "Garder /",
+        "Répéter une commande",
+        "Envoie la commande ce nombre de fois, de 1 à {0}",
+        "Répète tout ce qui est entre accolades, dans l’ordre",
+        "Attendre un texte ou un délai",
+        "Retient la suite jusqu’à ce qu’une ligne contienne le texte, au plus ce nombre de secondes",
+        "Retient la suite jusqu’à ce qu’une ligne contienne le texte, {0} s au plus",
+        "Pause de ce nombre de secondes, de 1 à {0}",
+        "Lister les commandes de Wandur",
+        "Expliquer une commande",
+        "Lister toutes les commandes",
+        "nombre",
+        "commande",
+        "commandes",
+        "secondes",
+        "texte",
+        "Commandes de Wandur",
+        "Tab complète · ↑ ↓ choisir · Échap ferme",
+        "{0} attend une commande après lui ; Entrée envoie {0} tel quel",
+        "{0} : commande inconnue ; {1}help les liste",
+        "Les commandes de Wandur commencent par {0} ; {1} sépare les commandes et {0}{0} envoie un {0}. {0}help wait en explique une.",
+        "Exemple : {0}",
+        "Saisissez une commande, ou {0} pour celles de Wandur",
+        "{0}. Maintenant : {1}",
     ],
     // de
     [
@@ -12266,6 +12427,29 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Sieht nach TinTin++ / zMUD aus. # für Wandurs Befehle verwenden?",
         "# verwenden",
         "/ behalten",
+        "Einen Befehl wiederholen",
+        "Sendet den Befehl so oft, 1 bis {0}",
+        "Wiederholt alles in den geschweiften Klammern, der Reihe nach",
+        "Auf Text oder Zeit warten",
+        "Hält den Rest an, bis eine Zeile den Text enthält, höchstens so viele Sekunden",
+        "Hält den Rest an, bis eine Zeile den Text enthält, höchstens {0} s",
+        "So viele Sekunden pausieren, 1 bis {0}",
+        "Wandurs Befehle auflisten",
+        "Einen Befehl erklären",
+        "Alle Befehle auflisten",
+        "Anzahl",
+        "Befehl",
+        "Befehle",
+        "Sekunden",
+        "Text",
+        "Wandur-Befehle",
+        "Tab ergänzt · ↑ ↓ wählen · Esc schließt",
+        "{0} braucht danach einen Befehl; Enter sendet {0} unverändert",
+        "{0}: kein solcher Befehl; {1}help listet sie auf",
+        "Wandurs Befehle beginnen mit {0}; {1} trennt Befehle und {0}{0} sendet ein {0}. {0}help wait erklärt einen.",
+        "Beispiel: {0}",
+        "Befehl eingeben, oder {0} für Wandurs eigene",
+        "{0}. Jetzt: {1}",
     ],
     // pt-BR
     [
@@ -13798,5 +13982,28 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Parece o estilo do TinTin++ / zMUD. Usar # para os comandos do Wandur?",
         "Usar #",
         "Manter /",
+        "Repetir um comando",
+        "Envia o comando esse número de vezes, de 1 a {0}",
+        "Repete tudo o que está entre chaves, em ordem",
+        "Esperar um texto ou um tempo",
+        "Segura o resto até uma linha conter o texto, por no máximo esses segundos",
+        "Segura o resto até uma linha conter o texto, no máximo {0} s",
+        "Pausa por esses segundos, de 1 a {0}",
+        "Listar os comandos do Wandur",
+        "Explicar um comando",
+        "Listar todos os comandos",
+        "quantidade",
+        "comando",
+        "comandos",
+        "segundos",
+        "texto",
+        "Comandos do Wandur",
+        "Tab completa · ↑ ↓ escolher · Esc fecha",
+        "{0} precisa de um comando depois; Enter envia {0} como está",
+        "{0}: esse comando não existe; {1}help lista todos",
+        "Os comandos do Wandur começam com {0}; {1} separa comandos e {0}{0} envia um {0}. {0}help wait explica um.",
+        "Exemplo: {0}",
+        "Digite um comando, ou {0} para os do Wandur",
+        "{0}. Agora: {1}",
     ],
 ];

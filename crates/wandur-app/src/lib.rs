@@ -19,6 +19,7 @@ pub mod app;
 pub mod artwork;
 pub mod autohide;
 pub mod channels_view;
+pub mod command_help;
 pub mod csharp_import;
 pub mod diagnostics_view;
 pub mod dialog_window;

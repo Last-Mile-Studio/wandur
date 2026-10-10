@@ -504,4 +504,27 @@
   <data name="CommandStyleTip" xml:space="preserve"><value>Parece el estilo de TinTin++ / zMUD. ¿Usar # para los comandos de Wandur?</value></data>
   <data name="CommandStyleUseHash" xml:space="preserve"><value>Usar #</value></data>
   <data name="CommandStyleKeepSlash" xml:space="preserve"><value>Mantener /</value></data>
+  <data name="CmdRepeatSummary" xml:space="preserve"><value>Repetir un comando</value></data>
+  <data name="CmdRepeatOne" xml:space="preserve"><value>Envía el comando esta cantidad de veces, de 1 a {0}</value></data>
+  <data name="CmdRepeatGroup" xml:space="preserve"><value>Repite todo lo que está entre llaves, en orden</value></data>
+  <data name="CmdWaitSummary" xml:space="preserve"><value>Esperar un texto o un tiempo</value></data>
+  <data name="CmdWaitTextFor" xml:space="preserve"><value>Retiene el resto hasta que una línea contenga el texto, como máximo estos segundos</value></data>
+  <data name="CmdWaitText" xml:space="preserve"><value>Retiene el resto hasta que una línea contenga el texto, {0} s como máximo</value></data>
+  <data name="CmdWaitSeconds" xml:space="preserve"><value>Pausa de estos segundos, de 1 a {0}</value></data>
+  <data name="CmdHelpSummary" xml:space="preserve"><value>Listar los comandos de Wandur</value></data>
+  <data name="CmdHelpOne" xml:space="preserve"><value>Explicar un comando</value></data>
+  <data name="CmdHelpAll" xml:space="preserve"><value>Listar todos los comandos</value></data>
+  <data name="CmdParamCount" xml:space="preserve"><value>cantidad</value></data>
+  <data name="CmdParamCommand" xml:space="preserve"><value>comando</value></data>
+  <data name="CmdParamCommands" xml:space="preserve"><value>comandos</value></data>
+  <data name="CmdParamSeconds" xml:space="preserve"><value>segundos</value></data>
+  <data name="CmdParamText" xml:space="preserve"><value>texto</value></data>
+  <data name="CmdListName" xml:space="preserve"><value>Comandos de Wandur</value></data>
+  <data name="CmdListKeys" xml:space="preserve"><value>Tab completa · ↑ ↓ elegir · Esc cierra</value></data>
+  <data name="CmdLoneCount" xml:space="preserve"><value>{0} necesita un comando después; Intro envía {0} tal cual</value></data>
+  <data name="CmdHelpUnknown" xml:space="preserve"><value>{0}: no existe ese comando; {1}help los lista</value></data>
+  <data name="CmdHelpHeader" xml:space="preserve"><value>Los comandos de Wandur empiezan con {0}; {1} separa comandos y {0}{0} envía un {0}. {0}help wait explica uno.</value></data>
+  <data name="CmdHelpExample" xml:space="preserve"><value>Ejemplo: {0}</value></data>
+  <data name="EnterACommandOr" xml:space="preserve"><value>Introduce un comando, o {0} para los de Wandur</value></data>
+  <data name="CmdA11ySignature" xml:space="preserve"><value>{0}. Ahora: {1}</value></data>
 </root>

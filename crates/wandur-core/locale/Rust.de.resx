@@ -504,4 +504,27 @@
   <data name="CommandStyleTip" xml:space="preserve"><value>Sieht nach TinTin++ / zMUD aus. # für Wandurs Befehle verwenden?</value></data>
   <data name="CommandStyleUseHash" xml:space="preserve"><value># verwenden</value></data>
   <data name="CommandStyleKeepSlash" xml:space="preserve"><value>/ behalten</value></data>
+  <data name="CmdRepeatSummary" xml:space="preserve"><value>Einen Befehl wiederholen</value></data>
+  <data name="CmdRepeatOne" xml:space="preserve"><value>Sendet den Befehl so oft, 1 bis {0}</value></data>
+  <data name="CmdRepeatGroup" xml:space="preserve"><value>Wiederholt alles in den geschweiften Klammern, der Reihe nach</value></data>
+  <data name="CmdWaitSummary" xml:space="preserve"><value>Auf Text oder Zeit warten</value></data>
+  <data name="CmdWaitTextFor" xml:space="preserve"><value>Hält den Rest an, bis eine Zeile den Text enthält, höchstens so viele Sekunden</value></data>
+  <data name="CmdWaitText" xml:space="preserve"><value>Hält den Rest an, bis eine Zeile den Text enthält, höchstens {0} s</value></data>
+  <data name="CmdWaitSeconds" xml:space="preserve"><value>So viele Sekunden pausieren, 1 bis {0}</value></data>
+  <data name="CmdHelpSummary" xml:space="preserve"><value>Wandurs Befehle auflisten</value></data>
+  <data name="CmdHelpOne" xml:space="preserve"><value>Einen Befehl erklären</value></data>
+  <data name="CmdHelpAll" xml:space="preserve"><value>Alle Befehle auflisten</value></data>
+  <data name="CmdParamCount" xml:space="preserve"><value>Anzahl</value></data>
+  <data name="CmdParamCommand" xml:space="preserve"><value>Befehl</value></data>
+  <data name="CmdParamCommands" xml:space="preserve"><value>Befehle</value></data>
+  <data name="CmdParamSeconds" xml:space="preserve"><value>Sekunden</value></data>
+  <data name="CmdParamText" xml:space="preserve"><value>Text</value></data>
+  <data name="CmdListName" xml:space="preserve"><value>Wandur-Befehle</value></data>
+  <data name="CmdListKeys" xml:space="preserve"><value>Tab ergänzt · ↑ ↓ wählen · Esc schließt</value></data>
+  <data name="CmdLoneCount" xml:space="preserve"><value>{0} braucht danach einen Befehl; Enter sendet {0} unverändert</value></data>
+  <data name="CmdHelpUnknown" xml:space="preserve"><value>{0}: kein solcher Befehl; {1}help listet sie auf</value></data>
+  <data name="CmdHelpHeader" xml:space="preserve"><value>Wandurs Befehle beginnen mit {0}; {1} trennt Befehle und {0}{0} sendet ein {0}. {0}help wait erklärt einen.</value></data>
+  <data name="CmdHelpExample" xml:space="preserve"><value>Beispiel: {0}</value></data>
+  <data name="EnterACommandOr" xml:space="preserve"><value>Befehl eingeben, oder {0} für Wandurs eigene</value></data>
+  <data name="CmdA11ySignature" xml:space="preserve"><value>{0}. Jetzt: {1}</value></data>
 </root>

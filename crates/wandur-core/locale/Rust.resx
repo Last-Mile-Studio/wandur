@@ -504,4 +504,27 @@
   <data name="CommandStyleTip" xml:space="preserve"><value>Looks like TinTin++ / zMUD style. Use # for Wandur’s commands?</value></data>
   <data name="CommandStyleUseHash" xml:space="preserve"><value>Use #</value></data>
   <data name="CommandStyleKeepSlash" xml:space="preserve"><value>Keep /</value></data>
+  <data name="CmdRepeatSummary" xml:space="preserve"><value>Repeat a command</value></data>
+  <data name="CmdRepeatOne" xml:space="preserve"><value>Send the command this many times, 1 to {0}</value></data>
+  <data name="CmdRepeatGroup" xml:space="preserve"><value>Repeat everything in the braces, in order</value></data>
+  <data name="CmdWaitSummary" xml:space="preserve"><value>Wait for text or time</value></data>
+  <data name="CmdWaitTextFor" xml:space="preserve"><value>Hold the rest until a line contains the text, up to this many seconds</value></data>
+  <data name="CmdWaitText" xml:space="preserve"><value>Hold the rest until a line contains the text, {0} s at most</value></data>
+  <data name="CmdWaitSeconds" xml:space="preserve"><value>Pause this many seconds, 1 to {0}</value></data>
+  <data name="CmdHelpSummary" xml:space="preserve"><value>List Wandur’s commands</value></data>
+  <data name="CmdHelpOne" xml:space="preserve"><value>Explain one command</value></data>
+  <data name="CmdHelpAll" xml:space="preserve"><value>List every command</value></data>
+  <data name="CmdParamCount" xml:space="preserve"><value>count</value></data>
+  <data name="CmdParamCommand" xml:space="preserve"><value>command</value></data>
+  <data name="CmdParamCommands" xml:space="preserve"><value>commands</value></data>
+  <data name="CmdParamSeconds" xml:space="preserve"><value>seconds</value></data>
+  <data name="CmdParamText" xml:space="preserve"><value>text</value></data>
+  <data name="CmdListName" xml:space="preserve"><value>Wandur commands</value></data>
+  <data name="CmdListKeys" xml:space="preserve"><value>Tab completes · ↑ ↓ choose · Esc closes</value></data>
+  <data name="CmdLoneCount" xml:space="preserve"><value>{0} needs a command after it; Enter sends {0} as it is</value></data>
+  <data name="CmdHelpUnknown" xml:space="preserve"><value>{0}: no such command; {1}help lists them</value></data>
+  <data name="CmdHelpHeader" xml:space="preserve"><value>Wandur’s commands start with {0}; {1} separates commands and {0}{0} sends a {0}. {0}help wait explains one.</value></data>
+  <data name="CmdHelpExample" xml:space="preserve"><value>Example: {0}</value></data>
+  <data name="EnterACommandOr" xml:space="preserve"><value>Enter a command, or {0} for Wandur’s own</value></data>
+  <data name="CmdA11ySignature" xml:space="preserve"><value>{0}. Now: {1}</value></data>
 </root>

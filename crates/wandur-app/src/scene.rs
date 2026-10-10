@@ -53,6 +53,9 @@ pub enum Show {
     SessionLink,
     /// The Lantern Road with `#3 look` entered in Wandur's style: the command style tip.
     SessionStyleTip,
+    /// The Lantern Road with a client command half typed in the command box (the text): its
+    /// list, signature help or problem above the box.
+    SessionCommandHelp(&'static str),
     /// The Lantern Road after `wisp`: a fight, the vitals strip with the opponent card.
     SessionVitals,
     /// The Lantern Road's Diagnostics page on a tab.
@@ -109,6 +112,7 @@ impl Show {
                 | Show::SessionTailSplit
                 | Show::SessionLink
                 | Show::SessionStyleTip
+                | Show::SessionCommandHelp(_)
                 | Show::SessionVitals
                 | Show::SessionDiagnostics(_)
                 | Show::SessionMarkChannel
@@ -844,6 +848,33 @@ pub const SCENES: &[Scene] = &[
         "Enter on \"#3 look\" in Wandur's style: Looks like TinTin++ / zMUD style, Use # or Keep /",
         "Hull",
         Show::SessionStyleTip,
+    ),
+    scene(
+        "command-suggestions",
+        "\"/\" typed in the command box: Wandur's commands listed above it, the first selected",
+        "Hull",
+        Show::SessionCommandHelp("/"),
+    ),
+    skinned(
+        scene(
+            "command-suggestions-midnight",
+            "\"/w\" typed: the list filtered to /wait (System skin, Midnight)",
+            "Midnight",
+            Show::SessionCommandHelp("/w"),
+        ),
+        "System",
+    ),
+    scene(
+        "command-signature",
+        "\"/wait \" typed: the forms that fit above the box, the parameters greyed after the caret",
+        "Hull",
+        Show::SessionCommandHelp("/wait "),
+    ),
+    scene(
+        "command-problem",
+        "\"/wait 601\" typed: 601 red in the box, why above it",
+        "Hull",
+        Show::SessionCommandHelp("/wait 601"),
     ),
     scene(
         "link-confirm",
@@ -2133,6 +2164,9 @@ pub fn configure(scene: &Scene, options: &mut Options) {
                 Show::SessionStyleTip => {
                     options.scene_input = vec![step("Lantern Crossroads >", "#3 look", true, None)];
                 }
+                Show::SessionCommandHelp(text) => {
+                    options.scene_input = vec![step("Lantern Crossroads >", text, false, None)];
+                }
                 Show::SessionChat => {
                     options.scene_input = vec![step("Lantern Crossroads >", "chat", true, None)];
                 }
@@ -2547,6 +2581,7 @@ fn ready(scene: &Scene, probe: &SceneProbe) -> bool {
         Show::SessionTailSplit => lantern && probe.steps_done && probe.last_tail_rows > 0,
         Show::SessionLink => lantern && probe.steps_done && probe.last_pending_link.is_some(),
         Show::SessionStyleTip => lantern && probe.steps_done && probe.last_style_tip,
+        Show::SessionCommandHelp(_) => lantern && probe.steps_done && probe.last_command_help.panel(),
         Show::SessionVitals => lantern && probe.steps_done && probe.last_vitals >= 4,
         Show::SessionDiagnostics(DiagTab::Server) => lantern && probe.steps_done && probe.last_server_details,
         Show::SessionDiagnostics(_) => lantern && probe.steps_done && probe.last_messages > 0,
@@ -2850,6 +2885,10 @@ mod tests {
             "session-tail-split",
             "link-confirm",
             "command-style-tip",
+            "command-suggestions",
+            "command-suggestions-midnight",
+            "command-signature",
+            "command-problem",
             "settings-mud-colors",
             "settings-terminal",
             "settings-input",

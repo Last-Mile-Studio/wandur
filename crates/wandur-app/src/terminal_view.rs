@@ -95,6 +95,8 @@ pub struct TerminalViewState {
     dismissed: Option<String>,
     /// The ghost text shown after the draft in the last frame.
     pub ghost: Option<String>,
+    /// The client's commands in the command box: the list, signature help, problems.
+    pub command_help: crate::command_help::CommandHelp,
     /// Where the last frame drew the transcript, the divider and the live view.
     pub transcript_rect: Option<Rect>,
     pub divider_rect: Option<Rect>,
@@ -1495,12 +1497,14 @@ fn play_body(
 const COMPOSER_HEIGHT: f32 = 46.0;
 
 /// Height of the command style tip above the composer.
-const STYLE_TIP_HEIGHT: f32 = 38.0;
+const STYLE_TIP_HEIGHT: f32 = 42.0;
 
 /// The one-time tip above the command box, in the notice strips' style, when Enter was pressed on
 /// a line that looks like TinTin++ shorthand while the style uses `/`. Returns the answer: Use #
-/// (true) or Keep / (false). Escape in the command box puts it away.
+/// (true) or Keep / (false). Escape in the command box puts it away. Its text and buttons are the
+/// size of the command suggestions' rows, so the two read as one family.
 fn style_tip(ui: &mut Ui, theme: &Theme) -> Option<bool> {
+    use crate::command_help::{ROW_HEIGHT, TEXT_SIZE};
     let mut answer = None;
     let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), STYLE_TIP_HEIGHT), Sense::hover());
     ui.painter().rect_filled(rect, 0.0, theme.panel);
@@ -1513,11 +1517,13 @@ fn style_tip(ui: &mut Ui, theme: &Theme) -> Option<bool> {
             .layout(egui::Layout::left_to_right(egui::Align::Center)),
         |ui| {
             ui.add_space(10.0);
-            ui.label(RichText::new(t(S::CommandStyleTip)).size(13.0).color(theme.text));
+            ui.label(RichText::new(t(S::CommandStyleTip)).size(TEXT_SIZE).color(theme.text));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.spacing_mut().item_spacing.x = 6.0;
+                ui.spacing_mut().item_spacing.x = 8.0;
+                ui.spacing_mut().button_padding = egui::vec2(12.0, 4.0);
+                let size = egui::vec2(72.0, ROW_HEIGHT);
                 if ui
-                    .add(egui::Button::new(RichText::new(t(S::CommandStyleKeepSlash)).size(12.0)))
+                    .add(egui::Button::new(RichText::new(t(S::CommandStyleKeepSlash)).size(TEXT_SIZE)).min_size(size))
                     .clicked()
                 {
                     answer = Some(false);
@@ -1526,11 +1532,12 @@ fn style_tip(ui: &mut Ui, theme: &Theme) -> Option<bool> {
                     .add(
                         egui::Button::new(
                             RichText::new(t(S::CommandStyleUseHash))
-                                .size(12.0)
+                                .size(TEXT_SIZE)
                                 .strong()
                                 .color(theme.on_primary()),
                         )
-                        .fill(theme.primary()),
+                        .fill(theme.primary())
+                        .min_size(size),
                     )
                     .clicked()
                 {
@@ -2097,7 +2104,9 @@ fn quick_commands(button: &egui::Response, theme: &Theme) -> Option<&'static str
 }
 
 /// The command box. Draws the ghost completion after the draft and takes Tab or Right (at the
-/// end) to accept it and Escape to put it away. Returns whether a ghost shows.
+/// end) to accept it and Escape to put it away; with the command character typed at a command
+/// start it lists the client's commands above the box and routes the keys to the list
+/// ([`crate::command_help`]). Returns whether a ghost shows.
 #[allow(clippy::too_many_arguments)]
 fn input_line(
     ui: &mut Ui,
@@ -2108,31 +2117,105 @@ fn input_line(
     suggestions: bool,
     width: f32,
 ) -> bool {
+    use crate::command_help::{self as help, Edit};
     let enabled = !tab.is_closed();
     let private = tab.private_input();
     let id = egui::Id::new(("wandur-input", tab.id));
+    let syntax = tab.command_style().syntax();
     let hint = if private {
-        t(S::PrivateHiddenFromEchoAndHistory)
+        t(S::PrivateHiddenFromEchoAndHistory).to_string()
     } else if enabled {
-        t(S::EnterACommand)
+        tf(S::EnterACommandOr, &[&syntax.command])
     } else {
-        t(S::Disconnected)
+        t(S::Disconnected).to_string()
     };
-    // What the ghost would say for the draft as it stands.
+    // Where the caret is (a char index), as the box left it.
+    let caret_chars = |ui: &Ui, input: &str| {
+        egui::TextEdit::load_state(ui.ctx(), id)
+            .and_then(|s| s.cursor.char_range())
+            .map_or(input.chars().count(), |r| r.primary.index.0)
+    };
     let caret_at_end = |ui: &Ui, input: &str| {
         egui::TextEdit::load_state(ui.ctx(), id)
             .and_then(|s| s.cursor.char_range())
             .is_none_or(|r| r.is_empty() && r.primary.index.0 >= input.chars().count())
     };
-    if std::mem::take(&mut tab.caret_to_end) {
+    let set_caret = |ui: &Ui, chars: usize| {
         let mut state = egui::TextEdit::load_state(ui.ctx(), id).unwrap_or_default();
-        let end = egui::text::CCursor::new(tab.input.chars().count());
-        state.cursor.set_char_range(Some(egui::text::CCursorRange::one(end)));
+        let at = egui::text::CCursor::new(chars);
+        state.cursor.set_char_range(Some(egui::text::CCursorRange::one(at)));
         state.store(ui.ctx(), id);
+    };
+    if std::mem::take(&mut tab.caret_to_end) {
+        set_caret(ui, tab.input.chars().count());
     }
     if view.dismissed.as_deref().is_some_and(|d| d != tab.input) {
         view.dismissed = None;
     }
+    // The client's commands: offered with the suggestions, never while private.
+    let commands_on = suggestions && enabled && !private;
+    view.command_help.begin(&tab.input);
+    let plan_now = |ui: &Ui, tab: &SessionTab, view: &TerminalViewState| {
+        if !commands_on {
+            return help::Plan::default();
+        }
+        let caret = help::byte_of(&tab.input, caret_chars(ui, &tab.input));
+        help::plan(&tab.input, caret, syntax, view.command_help.cycle_filter())
+    };
+    let focused = ui.memory(|m| m.has_focus(id));
+    let mut plan = plan_now(ui, tab, view);
+    let list_open = |plan: &help::Plan, tab: &SessionTab, view: &TerminalViewState| {
+        focused && !plan.entries.is_empty() && view.command_help.allowed(&tab.input)
+    };
+    let apply = |ui: &Ui, tab: &mut SessionTab, edit: Option<Edit>| {
+        if let Some(Edit::Set(text, caret)) = edit {
+            set_caret(ui, help::char_of(&text, caret));
+            tab.input = text;
+            true
+        } else {
+            false
+        }
+    };
+    // The open list takes Escape first (a running line keeps going), the arrows (history waits),
+    // Tab and Shift+Tab (cycling through the matches), and Enter after the arrows moved.
+    if list_open(&plan, tab, view) {
+        let count = plan.entries.len();
+        let (escape, up, down, back, tab_key, enter) = ui.input_mut(|i| {
+            (
+                i.consume_key(egui::Modifiers::NONE, Key::Escape),
+                i.consume_key(egui::Modifiers::NONE, Key::ArrowUp),
+                i.consume_key(egui::Modifiers::NONE, Key::ArrowDown),
+                i.consume_key(egui::Modifiers::SHIFT, Key::Tab),
+                i.consume_key(egui::Modifiers::NONE, Key::Tab),
+                i.key_pressed(Key::Enter),
+            )
+        });
+        let edited = if escape {
+            view.command_help.dismiss(&tab.input);
+            false
+        } else if up || down {
+            view.command_help.step(count, down);
+            false
+        } else if back || tab_key {
+            let edit = view.command_help.cycle(&tab.input, &plan, syntax, back);
+            apply(ui, tab, edit)
+        } else if enter && view.command_help.armed() {
+            ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Enter));
+            let row = view.command_help.selected(count);
+            let edit = view.command_help.accept(&tab.input, &plan, row, syntax);
+            apply(ui, tab, edit)
+        } else {
+            false
+        };
+        if edited || escape || up || down {
+            plan = plan_now(ui, tab, view);
+        }
+    }
+    let listing = list_open(&plan, tab, view);
+    let hinting = focused && !listing && plan.args.is_some() && view.command_help.allowed(&tab.input);
+
+    // What the ghost would say for the draft as it stands (nothing while the list is open: the
+    // two would offer different things at the same caret).
     let ghost = |ui: &Ui, tab: &SessionTab, view: &TerminalViewState| -> Option<String> {
         if !suggestions || !enabled || view.dismissed.is_some() {
             return None;
@@ -2145,16 +2228,19 @@ fn input_line(
             wandur_core::completion::suggest(&tab.input, at_end, private, tab.history(), words).map(str::to_string)
         })
     };
-    let mut suggestion = ghost(ui, tab, view);
-    let focused = ui.memory(|m| m.has_focus(id));
+    let mut suggestion = if listing { None } else { ghost(ui, tab, view) };
     // Escape puts the command style tip away (the line stays), then stops what a typed
-    // `/10 say 1` or `a;b` still has to send, before it dismisses a completion.
+    // `/10 say 1` or `a;b` still has to send, then puts signature help away, before it dismisses
+    // a completion.
     if focused && tab.style_tip_shown() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape)) {
         tab.dismiss_style_tip();
     }
     if focused && tab.queue_progress().is_some() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape))
     {
         tab.stop_queue(true);
+    }
+    if hinting && suggestion.is_none() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape)) {
+        view.command_help.dismiss(&tab.input);
     }
     if focused && let Some(rest) = &suggestion {
         // (The caret is read before the input lock is taken: both live in the context.)
@@ -2171,10 +2257,7 @@ fn input_line(
                 ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::ArrowRight));
             }
             tab.input.push_str(rest);
-            let mut state = egui::TextEdit::load_state(ui.ctx(), id).unwrap_or_default();
-            let end = egui::text::CCursor::new(tab.input.chars().count());
-            state.cursor.set_char_range(Some(egui::text::CCursorRange::one(end)));
-            state.store(ui.ctx(), id);
+            set_caret(ui, tab.input.chars().count());
             suggestion = ghost(ui, tab, view);
         } else if escape {
             view.dismissed = Some(tab.input.clone());
@@ -2183,46 +2266,65 @@ fn input_line(
     }
     let showing = suggestion.is_some();
     let field = crate::theme::mix(theme.terminal, theme.terminal_text, 0.06);
-    let keeps_escape = showing || tab.style_tip_shown() || tab.queue_progress().is_some();
-    let edit = egui::TextEdit::singleline(&mut tab.input)
+    let keeps_escape = showing || listing || hinting || tab.style_tip_shown() || tab.queue_progress().is_some();
+    let pasted = ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Paste(_))));
+    // The draft's wrong parts in red, from the same check the hints use.
+    let mut layouter = |ui: &Ui, buffer: &dyn egui::TextBuffer, _wrap: f32| {
+        let text = buffer.as_str();
+        let wrong = if commands_on {
+            help::plan(text, text.len(), syntax, None).wrong
+        } else {
+            Vec::new()
+        };
+        let job = help::layout_job(text, &wrong, font, theme.terminal_text, help::error_color(theme));
+        ui.fonts_mut(|f| f.layout_job(job))
+    };
+    let mut edit = egui::TextEdit::singleline(&mut tab.input)
         .id(id)
         .font(font.clone())
         .password(private)
         .text_color(theme.terminal_text)
         .background_color(field)
-        .hint_text(RichText::new(hint).color(crate::theme::mix(theme.terminal_text, theme.terminal, 0.45)))
+        .hint_text(RichText::new(hint.as_str()).color(crate::theme::mix(theme.terminal_text, theme.terminal, 0.45)))
         .desired_width(width)
         .margin(egui::Margin::symmetric(10, 8))
-        // While a ghost shows, Tab and Escape belong to it rather than to focus movement, and
-        // Escape also belongs to the style tip and to a running line (or egui would take focus
-        // away before they see it).
+        // While a ghost or the list shows, Tab and Escape belong to them rather than to focus
+        // movement, and Escape also belongs to the style tip, signature help and a running line
+        // (or egui would take focus away before they see it).
         .event_filter(egui::EventFilter {
-            tab: showing,
+            tab: showing || listing,
             escape: keeps_escape,
             horizontal_arrows: true,
             vertical_arrows: true,
         })
         .return_key(None);
+    if commands_on {
+        edit = edit.layouter(&mut layouter);
+    }
     let output = ui.add_enabled_ui(enabled, |ui| edit.show(ui)).inner;
     let response = output.response.response.clone();
-    crate::a11y::label(&response, hint);
+    crate::a11y::label(&response, &hint);
     if std::mem::take(&mut tab.focus_input) && enabled {
         response.request_focus();
     }
+    view.command_help.after_edit(&tab.input, pasted);
     // The ghost: muted, right after the typed text, clipped to the box. Never part of the text.
-    if let Some(rest) = &suggestion {
+    let ghost_at = |output: &egui::text_edit::TextEditOutput, input: &str| {
         let end = output
             .galley
-            .pos_from_cursor(egui::text::CCursor::new(tab.input.chars().count()));
-        let pos = output.galley_pos + end.min.to_vec2();
-        // The box's own text clip hugs the typed text, so the ghost clips to the box instead.
-        let painter = ui.painter_at(response.rect.shrink2(egui::vec2(8.0, 2.0)));
-        painter.text(
-            pos,
+            .pos_from_cursor(egui::text::CCursor::new(input.chars().count()));
+        output.galley_pos + end.min.to_vec2()
+    };
+    // The box's own text clip hugs the typed text, so the ghost clips to the box instead.
+    let ghost_painter = ui.painter_at(response.rect.shrink2(egui::vec2(8.0, 2.0)));
+    let ghost_color = crate::theme::mix(theme.terminal_text, theme.terminal, 0.5);
+    if let Some(rest) = &suggestion {
+        ghost_painter.text(
+            ghost_at(&output, &tab.input),
             Align2::LEFT_TOP,
             rest,
             font.clone(),
-            crate::theme::mix(theme.terminal_text, theme.terminal, 0.5),
+            ghost_color,
         );
     }
     view.ghost = suggestion;
@@ -2261,6 +2363,7 @@ fn input_line(
         let mut moved = false;
         if enter {
             tab.submit();
+            view.command_help.not_typed(&tab.input);
         } else if up {
             tab.history_back();
             moved = true;
@@ -2269,14 +2372,92 @@ fn input_line(
             moved = true;
         }
         if moved {
-            // Put the caret at the end of the recalled command.
-            if let Some(mut state) = egui::TextEdit::load_state(ui.ctx(), id) {
-                let end = egui::text::CCursor::new(tab.input.chars().count());
-                state.cursor.set_char_range(Some(egui::text::CCursorRange::one(end)));
-                state.store(ui.ctx(), id);
+            // Put the caret at the end of the recalled command; a recalled line opens nothing.
+            if egui::TextEdit::load_state(ui.ctx(), id).is_some() {
+                set_caret(ui, tab.input.chars().count());
             }
+            view.command_help.not_typed(&tab.input);
         }
     }
+
+    // The client's commands: the list or signature help above the box, the placeholders after
+    // the caret, a problem's line.
+    let plan = plan_now(ui, tab, view);
+    let listing = list_open(&plan, tab, view);
+    let allowed = view.command_help.allowed(&tab.input);
+    let hinting = focused && !listing && plan.args.is_some() && allowed;
+    let dismissed = view.command_help.is_dismissed(&tab.input);
+    let message = focused
+        && plan
+            .message
+            .as_ref()
+            .is_some_and(|(_, wrong)| *wrong || listing || hinting)
+        && !dismissed;
+    let mut shown = help::Shown {
+        wrong: plan.wrong.clone(),
+        ..Default::default()
+    };
+    if listing || hinting || message {
+        let anchor_byte = plan
+            .head
+            .as_ref()
+            .or(plan.args.as_ref().map(|a| &a.1))
+            .map_or(0, |r| r.start);
+        let anchor = output
+            .galley
+            .pos_from_cursor(egui::text::CCursor::new(help::char_of(&tab.input, anchor_byte)));
+        let anchor_x = output.galley_pos.x + anchor.min.x - help::PAD_X;
+        let bounds = ui.clip_rect().intersect(ui.max_rect().expand2(egui::vec2(400.0, 0.0)));
+        let selected = view.command_help.selected(plan.entries.len());
+        let out = help::show_panel(
+            ui,
+            tab.id,
+            id,
+            help::Panel {
+                plan: &plan,
+                list: listing,
+                forms: hinting,
+                message,
+                selected,
+            },
+            anchor_x,
+            response.rect,
+            bounds,
+            theme,
+            font,
+            syntax,
+        );
+        if let Some(row) = out.clicked {
+            let edit = view.command_help.accept(&tab.input, &plan, row, syntax);
+            apply(ui, tab, edit);
+            tab.focus_input = true;
+        }
+        shown = help::Shown {
+            wrong: shown.wrong,
+            ..out.shown
+        };
+    }
+    if hinting
+        && view.ghost.is_none()
+        && caret_at_end(ui, &tab.input)
+        && let Some(rest) = &plan.ghost
+    {
+        let lead = if tab.input.ends_with(char::is_whitespace) {
+            ""
+        } else {
+            " "
+        };
+        let text = format!("{lead}{rest}");
+        ghost_painter.text(
+            ghost_at(&output, &tab.input),
+            Align2::LEFT_TOP,
+            &text,
+            font.clone(),
+            ghost_color,
+        );
+        shown.ghost = Some(rest.clone());
+    }
+    view.command_help.shown = shown;
     showing
 }
 
@@ -2852,6 +3033,304 @@ mod tests {
         type_text(&mut tab, "wom");
         frame(&mut tab, &mut view, &options, vec![]);
         assert_eq!(view.ghost.as_deref(), Some("prat"));
+    }
+
+    /// A command-box rig: one session to a local server, frames with typed text and keys.
+    struct BoxRig {
+        ctx: egui::Context,
+        theme: Theme,
+        fonts: TermFonts,
+        fallback: FallbackFonts,
+        view: TerminalViewState,
+        options: PaintOptions,
+        tab: SessionTab,
+        server: std::net::TcpStream,
+    }
+
+    impl BoxRig {
+        fn new(theme: &str) -> Self {
+            use crate::session_tab::test_support::*;
+            let ctx = egui::Context::default();
+            crate::fonts::install(&ctx);
+            let (mut tab, server) = local_tab();
+            pump_until(&mut tab, SessionTab::is_connected);
+            let mut rig = Self {
+                ctx,
+                theme: Theme::preset(theme),
+                fonts: TermFonts::new(13.0),
+                fallback: FallbackFonts::new(),
+                view: TerminalViewState::default(),
+                options: PaintOptions::default(),
+                tab,
+                server,
+            };
+            rig.frame(vec![]);
+            rig.frame(vec![]);
+            rig
+        }
+
+        fn frame(&mut self, events: Vec<egui::Event>) -> egui::FullOutput {
+            let input = egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(900.0, 550.0))),
+                events,
+                ..Default::default()
+            };
+            let (tab, view, theme, fonts, fallback, options) = (
+                &mut self.tab,
+                &mut self.view,
+                &self.theme,
+                &self.fonts,
+                &mut self.fallback,
+                &self.options,
+            );
+            let mut out = self.ctx.run_ui(input, |ui| {
+                egui::CentralPanel::default().show(ui, |ui| {
+                    show(ui, tab, view, theme, fonts, fallback, options);
+                });
+            });
+            out.textures_delta.clear();
+            out
+        }
+
+        fn type_text(&mut self, text: &str) {
+            for c in text.chars() {
+                self.frame(vec![egui::Event::Text(c.to_string())]);
+            }
+            self.frame(vec![]);
+        }
+
+        fn key(&mut self, k: Key) {
+            self.frame(key(k));
+            self.frame(vec![]);
+        }
+
+        fn shown(&self) -> &crate::command_help::Shown {
+            &self.view.command_help.shown
+        }
+
+        fn clear(&mut self) {
+            self.tab.input.clear();
+            self.tab.caret_to_end = true;
+            self.frame(vec![]);
+        }
+    }
+
+    fn shift_tab() -> Vec<egui::Event> {
+        let mut events = key(Key::Tab);
+        for event in &mut events {
+            if let egui::Event::Key { modifiers, .. } = event {
+                *modifiers = egui::Modifiers::SHIFT;
+            }
+        }
+        events
+    }
+
+    /// Typing the command character at a command start lists the client's commands; typing
+    /// filters them; Tab and Shift+Tab cycle through the matches in the box; a space hands over to
+    /// signature help and grey placeholders; Escape puts it away for the draft.
+    #[test]
+    fn the_command_character_opens_a_list_that_typing_and_tab_drive() {
+        let mut rig = BoxRig::new("Hull");
+        assert!(!rig.shown().panel());
+        rig.type_text("/");
+        assert_eq!(rig.shown().list, ["/<count>", "/help", "/wait"]);
+        assert_eq!(rig.shown().selected, 0);
+        assert_eq!(rig.view.ghost, None, "no history ghost while the list is open");
+        rig.type_text("W");
+        assert_eq!(rig.shown().list, ["/wait"], "any case");
+
+        // Tab puts the match in the box; the list stays on it.
+        rig.key(Key::Tab);
+        assert_eq!(rig.tab.input, "/wait");
+        assert_eq!(rig.shown().list, ["/wait"]);
+
+        // A space: signature help above, the parameters still to type after the caret.
+        rig.type_text(" ");
+        assert!(rig.shown().list.is_empty());
+        assert_eq!(
+            rig.shown().forms,
+            ["/wait <seconds> {text}", "/wait {text}", "/wait <seconds>"]
+        );
+        assert_eq!(rig.shown().ghost.as_deref(), Some("<seconds> {text}"));
+        rig.type_text("120 ");
+        assert_eq!(rig.shown().forms, ["/wait <seconds> {text}", "/wait <seconds>"]);
+        assert_eq!(rig.shown().ghost.as_deref(), Some("{text}"));
+        rig.key(Key::Escape);
+        assert!(!rig.shown().panel(), "Escape puts the hints away");
+        assert_eq!(rig.shown().ghost, None);
+        assert_eq!(rig.tab.input, "/wait 120 ", "and keeps the line");
+        rig.frame(vec![]);
+        assert!(!rig.shown().panel(), "still away");
+        rig.type_text("{");
+        assert!(!rig.shown().forms.is_empty(), "back when the draft changes");
+
+        // Tab cycles from what was typed; Shift+Tab goes back.
+        rig.clear();
+        rig.type_text("/");
+        rig.key(Key::Tab);
+        assert_eq!(rig.tab.input, "/", "the repeat has nothing to put in");
+        rig.key(Key::Tab);
+        assert_eq!(rig.tab.input, "/help");
+        assert_eq!(rig.shown().list.len(), 3, "the list keeps every match while cycling");
+        assert_eq!(rig.shown().selected, 1);
+        rig.key(Key::Tab);
+        assert_eq!(rig.tab.input, "/wait");
+        rig.frame(shift_tab());
+        rig.frame(vec![]);
+        assert_eq!(rig.tab.input, "/help");
+
+        // Escape closes the list for this draft.
+        rig.key(Key::Escape);
+        assert!(rig.shown().list.is_empty());
+        assert_eq!(rig.tab.input, "/help");
+
+        // Only at a command start, and in a chain.
+        rig.clear();
+        rig.type_text("say /");
+        assert!(rig.shown().list.is_empty(), "mid-command");
+        rig.clear();
+        rig.type_text("get all;/w");
+        assert_eq!(rig.shown().list, ["/wait"]);
+        rig.clear();
+        rig.type_text("/wait {a;/");
+        assert!(rig.shown().list.is_empty(), "inside wait text");
+        rig.clear();
+        rig.type_text("/x");
+        assert!(!rig.shown().panel(), "no match, nothing in the way: /x goes as text");
+    }
+
+    /// Up and Down move in the open list and leave the history alone; Enter sends unless they
+    /// moved, then it takes the row. A recalled or pasted line opens nothing.
+    #[test]
+    fn enter_sends_unless_the_arrows_moved_and_history_waits_while_the_list_is_open() {
+        use crate::session_tab::test_support::read_lines;
+        let mut rig = BoxRig::new("Hull");
+        rig.tab.run_command("look");
+        assert_eq!(read_lines(&mut rig.server, 1), ["look"]);
+
+        rig.type_text("/he");
+        assert_eq!(rig.shown().list, ["/help"]);
+        rig.key(Key::Enter);
+        assert_eq!(rig.tab.input, "", "Enter sent the line as typed");
+        assert_eq!(read_lines(&mut rig.server, 1), ["/he"], "text to the world");
+
+        rig.type_text("/");
+        rig.key(Key::ArrowDown);
+        assert_eq!(rig.shown().selected, 1);
+        assert_eq!(rig.tab.input, "/", "the arrows do not recall history");
+        rig.key(Key::ArrowUp);
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.shown().selected, 2, "wraps");
+        rig.key(Key::Enter);
+        assert_eq!(rig.tab.input, "/wait ", "Enter took the row");
+        assert!(rig.shown().list.is_empty());
+        assert_eq!(rig.shown().forms.len(), 3, "signature help took over");
+
+        // With the list closed, Up recalls history, and the recalled line opens nothing.
+        rig.clear();
+        rig.tab.input = "/wait 2".into();
+        rig.tab.submit();
+        rig.tab.stop_queue(false);
+        rig.clear();
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.tab.input, "/wait 2");
+        assert!(!rig.shown().panel());
+        rig.clear();
+        rig.frame(vec![egui::Event::Paste("/".into())]);
+        rig.frame(vec![]);
+        assert_eq!(rig.tab.input, "/");
+        assert!(rig.shown().list.is_empty(), "a paste opens nothing");
+    }
+
+    /// Escape closes the open list before it stops a running line; never anything while
+    /// private or with suggestions off; a wrong part is red with its line above the box.
+    #[test]
+    #[allow(clippy::single_range_in_vec_init)]
+    fn escape_closes_the_list_first_and_private_input_shows_nothing() {
+        let mut rig = BoxRig::new("Hull");
+        rig.tab.input = "/5 look".into();
+        rig.tab.submit();
+        assert!(rig.tab.queue_progress().is_some());
+        rig.type_text("/");
+        assert_eq!(rig.shown().list.len(), 3);
+        rig.key(Key::Escape);
+        assert!(rig.shown().list.is_empty(), "the list closed");
+        assert!(rig.tab.queue_progress().is_some(), "the line keeps going");
+        rig.key(Key::Escape);
+        assert_eq!(rig.tab.queue_progress(), None, "the second Escape stops it");
+
+        rig.clear();
+        rig.tab.set_manual_private(true);
+        rig.type_text("/");
+        assert!(!rig.shown().panel(), "private");
+        rig.tab.set_manual_private(false);
+        rig.clear();
+        rig.options.suggestions = false;
+        rig.type_text("/");
+        assert!(!rig.shown().panel(), "suggestions off");
+        rig.options.suggestions = true;
+
+        rig.clear();
+        rig.type_text("/wait 601");
+        assert_eq!(rig.shown().wrong, [6..9]);
+        let (message, wrong) = rig.shown().message.clone().expect("a problem line");
+        assert!(wrong && message.contains("600"), "{message}");
+        rig.clear();
+        rig.type_text("/3");
+        let (message, wrong) = rig.shown().message.clone().expect("a hint");
+        assert!(!wrong && message.contains("/3"), "{message}");
+        rig.clear();
+        rig.type_text("/3 {get coin");
+        assert!(
+            rig.shown().wrong.is_empty() && rig.shown().message.is_none(),
+            "unfinished is not wrong"
+        );
+    }
+
+    /// The box is a combo box for screen readers while the list is open: expanded, pointing at
+    /// the selected row of a named list box; nothing unnamed.
+    #[test]
+    fn a_screen_reader_follows_the_list_from_the_box() {
+        let mut rig = BoxRig::new("Hull");
+        rig.ctx.enable_accesskit();
+        rig.type_text("/");
+        rig.frame(key(Key::ArrowDown));
+        let mut out = rig.frame(vec![]);
+        let update = out.platform_output.accesskit_update.take().expect("a tree");
+        let nodes: Vec<&egui::accesskit::Node> = update.nodes.iter().map(|(_, n)| n).collect();
+        use egui::accesskit::Role;
+        let list = update
+            .nodes
+            .iter()
+            .find(|(_, n)| n.role() == Role::ListBox)
+            .expect("a list box");
+        assert_eq!(list.1.label(), Some(t(S::CmdListName)));
+        let rows: Vec<&&egui::accesskit::Node> = nodes.iter().filter(|n| n.role() == Role::ListBoxOption).collect();
+        assert_eq!(rows.len(), 3);
+        let summary: Vec<(Option<&str>, Option<bool>)> = rows.iter().map(|r| (r.label(), r.is_selected())).collect();
+        assert!(
+            rows.iter()
+                .any(|r| r.is_selected() == Some(true) && r.label().is_some_and(|l| l.starts_with("/help"))),
+            "{summary:?}"
+        );
+        let input = nodes
+            .iter()
+            .find(|n| n.has_popup().is_some())
+            .expect("the command box has a popup");
+        assert_eq!(input.is_expanded(), Some(true));
+        assert_eq!(input.controls(), [list.0]);
+        let selected = update
+            .nodes
+            .iter()
+            .find(|(_, n)| n.role() == Role::ListBoxOption && n.is_selected() == Some(true))
+            .unwrap()
+            .0;
+        assert_eq!(input.active_descendant(), Some(selected));
+        assert!(
+            crate::a11y::unnamed(&update).is_empty(),
+            "{:?}",
+            crate::a11y::unnamed(&update)
+        );
     }
 
     /// Custom terminal colours and the text and background overrides are read when a frame is
