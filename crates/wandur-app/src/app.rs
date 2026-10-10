@@ -8,6 +8,7 @@ use std::time::{Duration, Instant};
 
 use egui::{RichText, Ui};
 use egui_dock::{DockArea, DockState};
+use wandur_core::command_line::CommandStyle;
 use wandur_core::db::scripts::{self, LibraryEntry};
 use wandur_core::db::{Database, DbWriter, worlds};
 use wandur_core::directory::client::{Fetcher, MAX_ART_BYTES, looks_like_image, resolve_base};
@@ -313,6 +314,8 @@ pub struct SceneProbe {
     pub last_ghost: Option<String>,
     pub last_tail_rows: usize,
     pub last_pending_link: Option<String>,
+    /// The last session shows the command style tip.
+    pub last_style_tip: bool,
     /// Every scene step ran.
     pub steps_done: bool,
     /// The last session's vitals cards, Diagnostics messages and server details.
@@ -1765,6 +1768,7 @@ impl WandurApp {
             last_ghost: last.and_then(|e| e.view.ghost.clone()),
             last_tail_rows: last.map_or(0, |e| e.view.tail_rows_drawn),
             last_pending_link: last.and_then(|e| e.view.pending_link.clone()),
+            last_style_tip: last.is_some_and(|e| e.tab.style_tip_shown()),
             steps_done: self.scene_input.is_empty(),
             last_vitals: last.map_or(0, |e| e.view.vitals.len()),
             last_messages: last.map_or(0, |e| e.tab.protocol.messages.len()),
@@ -2221,6 +2225,9 @@ impl WandurApp {
             channel_rules: saved.map(|w| w.channel_rules.clone()).unwrap_or_default(),
             world_theme: self.world_theme_for(endpoint, saved),
             codebase: self.world_codebase(endpoint, saved),
+            command_style: saved.and_then(|w| w.command_style),
+            global_command_style: self.settings.command_style,
+            command_style_tip: !self.settings.command_style_tip_answered,
             maps: self.maps_config(endpoint, saved),
             inference: self.classification.as_ref().map(|service| {
                 (
@@ -2272,21 +2279,44 @@ impl WandurApp {
     }
 
     /// A saved world changed: open sessions of it take its channel rules and codebase at once,
-    /// keeping the line in flight (C# `RefreshChannelRules`).
+    /// keeping the line in flight (C# `RefreshChannelRules`), and its command style.
     fn refresh_channel_rules(&mut self) {
-        let updates: Vec<(SessionId, Vec<wandur_core::channels::ChannelRule>, String)> = self
+        type Update = (
+            SessionId,
+            Vec<wandur_core::channels::ChannelRule>,
+            String,
+            Option<CommandStyle>,
+        );
+        let updates: Vec<Update> = self
             .sessions
             .iter()
             .filter_map(|e| {
                 let world = self.settings.worlds.get(e.tab.world?)?;
                 let codebase = self.world_codebase(Some(&e.tab.endpoint), Some(world));
-                Some((e.tab.id, world.channel_rules.clone(), codebase))
+                Some((e.tab.id, world.channel_rules.clone(), codebase, world.command_style))
             })
             .collect();
-        for (id, rules, codebase) in updates {
+        let (global, ask) = (self.settings.command_style, !self.settings.command_style_tip_answered);
+        for (id, rules, codebase, style) in updates {
             if let Some(e) = self.sessions.get_mut(id) {
                 e.tab.set_channel_rules(&rules, &codebase);
+                e.tab.set_command_style(style, global, ask);
             }
+        }
+    }
+
+    /// The one-time command style tip was answered: Use # makes TinTin++ the global style, Keep /
+    /// leaves it; either way it never asks again, and the line waiting in the box then goes in
+    /// the style now in force.
+    fn answer_style_tip(&mut self, ctx: &egui::Context, id: SessionId, use_hash: bool) {
+        if use_hash {
+            self.settings.command_style = CommandStyle::TinTin;
+        }
+        self.settings.command_style_tip_answered = true;
+        self.settings_changed(ctx);
+        if let Some(e) = self.sessions.get_mut(id) {
+            e.tab.submit();
+            e.tab.focus_input = true;
         }
     }
 
@@ -3164,6 +3194,7 @@ impl WandurApp {
             install_id: self.settings.install_id.clone(),
             last_update_check: self.settings.last_update_check.clone(),
             skipped_update_version: self.settings.skipped_update_version.clone(),
+            command_style_tip_answered: self.settings.command_style_tip_answered,
             ..settings
         };
         self.settings = settings;
@@ -3189,6 +3220,12 @@ impl WandurApp {
             tab.echo_commands = self.settings.local_echo;
             tab.set_learning(self.settings.composer_suggestions);
             tab.set_lua_scripts(self.settings.enable_lua_scripts, Instant::now());
+            let world = tab.world.and_then(|i| self.settings.worlds.get(i));
+            tab.set_command_style(
+                world.and_then(|w| w.command_style),
+                self.settings.command_style,
+                !self.settings.command_style_tip_answered,
+            );
             if let Some(inference) = &mut tab.inference {
                 inference.configure(
                     self.settings.classify_rooms_locally,
@@ -3513,6 +3550,7 @@ impl WandurApp {
                     self.save_settings();
                 }
                 AppAction::SettingsChanged => self.settings_changed(ctx),
+                AppAction::CommandStyleTip(id, use_hash) => self.answer_style_tip(ctx, id, use_hash),
                 AppAction::HideHistoryNotice => self.hide_history_notice(),
                 AppAction::DismissNotice(id) => {
                     if let Some(e) = self.sessions.get_mut(id) {
@@ -5507,6 +5545,7 @@ impl eframe::App for WandurApp {
         }
         if let Some(form) = &mut self.form {
             form.lua_enabled = self.settings.enable_lua_scripts;
+            form.global_command_style = self.settings.command_style;
             match form.show(&ctx, &self.theme, &self.settings.worlds) {
                 FormResult::Open => {}
                 FormResult::Cancelled => self.form = None,
@@ -6748,6 +6787,111 @@ mod tests {
             frame(app, ctx, vec![]);
             std::thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    /// The command style tip through the app, over loopback: Enter on `#2 look` while the style
+    /// uses `/` shows the tip and sends nothing; Escape puts it away and keeps the line; Use #
+    /// makes TinTin++ the global style and runs the line under it; Keep / sends the line as typed
+    /// and is remembered, in settings.json too. Escape also stops a running line.
+    #[test]
+    fn the_command_style_tip_switches_or_keeps_and_is_remembered() {
+        use crate::session_tab::test_support::read_lines;
+        let dir = superpowers_dir("app-style-tip");
+        let ctx = egui::Context::default();
+        let mut app = WandurApp::new(
+            &ctx,
+            Options {
+                language: Some(Language::En),
+                ..offline_options(&dir)
+            },
+        );
+        assert_eq!(app.settings.command_style, CommandStyle::Wandur, "the default");
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let i = app.save_world(
+            None,
+            SavedWorld {
+                name: "Realm".into(),
+                host: "127.0.0.1".into(),
+                port,
+                ..SavedWorld::default()
+            },
+        );
+        app.open(app.settings.worlds[i].endpoint(), Some(i));
+        let (mut server, _) = listener.accept().unwrap();
+        let id = app.active_session.unwrap();
+        frames_until(&mut app, &ctx, |a| {
+            a.sessions.get(id).is_some_and(|e| e.tab.is_connected())
+        });
+        fn tab(app: &mut WandurApp) -> &mut crate::session_tab::SessionTab {
+            let id = app.active_session.unwrap();
+            &mut app.sessions.get_mut(id).unwrap().tab
+        }
+        // The command box has the keyboard (asked once: asking again resets what it keeps).
+        tab(&mut app).focus_input = true;
+        frame(&mut app, &ctx, vec![]);
+        let press = |app: &mut WandurApp, key| {
+            frame(app, &ctx, vec![key_event(key, true, Default::default())]);
+            frame(app, &ctx, vec![key_event(key, false, Default::default())]);
+        };
+
+        tab(&mut app).input = "#2 look".into();
+        press(&mut app, egui::Key::Enter);
+        assert!(tab(&mut app).style_tip_shown(), "Enter asks");
+        assert_eq!(tab(&mut app).input, "#2 look");
+        assert!(tab(&mut app).history().is_empty(), "nothing went");
+        press(&mut app, egui::Key::Escape);
+        assert!(!tab(&mut app).style_tip_shown(), "Escape puts it away");
+        assert_eq!(tab(&mut app).input, "#2 look", "and keeps the line");
+
+        // Use #: TinTin++ becomes the global style and the line runs under it.
+        press(&mut app, egui::Key::Enter);
+        assert!(tab(&mut app).style_tip_shown());
+        app.actions.push(AppAction::CommandStyleTip(id, true));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.settings.command_style, CommandStyle::TinTin);
+        assert!(app.settings.command_style_tip_answered);
+        assert!(!tab(&mut app).style_tip_shown());
+        assert_eq!(tab(&mut app).command_style(), CommandStyle::TinTin);
+        assert_eq!(read_lines(&mut server, 1), ["look"]);
+        frames_until(&mut app, &ctx, |a| {
+            a.sessions.get(id).is_some_and(|e| e.tab.queue_progress().is_none())
+        });
+        assert_eq!(read_lines(&mut server, 1), ["look"]);
+        assert!(tab(&mut app).input.is_empty());
+
+        // Keep /: the line goes as typed, the style stays, and it never asks again.
+        app.settings.command_style = CommandStyle::Wandur;
+        app.settings.command_style_tip_answered = false;
+        app.actions.push(AppAction::SettingsChanged);
+        frame(&mut app, &ctx, vec![]);
+        tab(&mut app).input = "#3 n".into();
+        press(&mut app, egui::Key::Enter);
+        assert!(tab(&mut app).style_tip_shown());
+        app.actions.push(AppAction::CommandStyleTip(id, false));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(read_lines(&mut server, 1), ["#3 n"]);
+        assert_eq!(app.settings.command_style, CommandStyle::Wandur);
+        assert!(app.settings.command_style_tip_answered);
+        tab(&mut app).input = "#wait 2".into();
+        press(&mut app, egui::Key::Enter);
+        assert!(!tab(&mut app).style_tip_shown(), "answered: it never asks again");
+        assert_eq!(read_lines(&mut server, 1), ["#wait 2"]);
+
+        // Escape stops a running line: the command box keeps the keyboard for it.
+        tab(&mut app).input = "/50 n".into();
+        press(&mut app, egui::Key::Enter);
+        assert!(tab(&mut app).queue_progress().is_some());
+        press(&mut app, egui::Key::Escape);
+        assert_eq!(tab(&mut app).queue_progress(), None);
+        assert!(tab(&mut app).terminal.transcript().contains(" of 50 sent]"));
+
+        app.on_exit();
+        drop(app);
+        let (saved, _) = Settings::load(&dir, wandur_term::MAX_SCROLLBACK);
+        assert_eq!(saved.command_style, CommandStyle::Wandur);
+        assert!(saved.command_style_tip_answered);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// TeachChannelTests through the app, against a loopback SMAUG world: a right click on a

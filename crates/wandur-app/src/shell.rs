@@ -484,6 +484,9 @@ impl Viewer<'_> {
                 if actions.save_world {
                     self.actions.push(AppAction::SaveWorld(*id));
                 }
+                if let Some(use_hash) = actions.command_style_tip {
+                    self.actions.push(AppAction::CommandStyleTip(*id, use_hash));
+                }
                 if actions.disconnect {
                     self.actions.push(AppAction::Disconnect(*id));
                 }

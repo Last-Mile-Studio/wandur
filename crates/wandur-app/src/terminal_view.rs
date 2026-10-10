@@ -1191,6 +1191,8 @@ pub struct ViewActions {
     pub map_rect: Option<Rect>,
     /// The side-by-side divider settled on this map share (to remember for new sessions).
     pub split_share: Option<f32>,
+    /// The command style tip was answered: Use # (true) or Keep / (false).
+    pub command_style_tip: Option<bool>,
 }
 
 /// Draw a whole session tab.
@@ -1430,7 +1432,8 @@ fn play_body(
     view.vitals = crate::vitals_view::cards(tab.protocol.bindings(), tab.is_connected());
     view.vitals.extend(crate::vitals_view::script_cards(&tab.panels));
     let vitals_height = crate::vitals_view::height(&view.vitals, width);
-    let composer_height = COMPOSER_HEIGHT + reserve + vitals_height;
+    let tip_height = if tab.style_tip_shown() { STYLE_TIP_HEIGHT } else { 0.0 };
+    let composer_height = COMPOSER_HEIGHT + reserve + vitals_height + tip_height;
     let terminal_height = (ui.available_height() - composer_height).max(40.0);
     let mut output = TerminalOutput::default();
     // The session rail beside the transcript; the vitals strip and the composer span both.
@@ -1474,6 +1477,9 @@ fn play_body(
     actions.notice = output.notice;
     actions.mark_channel = output.mark_channel;
     crate::vitals_view::show(ui, &view.vitals, theme);
+    if tab.style_tip_shown() {
+        actions.command_style_tip = style_tip(ui, theme);
+    }
     composer(
         ui,
         tab,
@@ -1487,6 +1493,54 @@ fn play_body(
 
 /// Height of the composer row (the command box and its buttons).
 const COMPOSER_HEIGHT: f32 = 46.0;
+
+/// Height of the command style tip above the composer.
+const STYLE_TIP_HEIGHT: f32 = 38.0;
+
+/// The one-time tip above the command box, in the notice strips' style, when Enter was pressed on
+/// a line that looks like TinTin++ shorthand while the style uses `/`. Returns the answer: Use #
+/// (true) or Keep / (false). Escape in the command box puts it away.
+fn style_tip(ui: &mut Ui, theme: &Theme) -> Option<bool> {
+    let mut answer = None;
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), STYLE_TIP_HEIGHT), Sense::hover());
+    ui.painter().rect_filled(rect, 0.0, theme.panel);
+    ui.painter()
+        .hline(rect.x_range(), rect.top(), Stroke::new(1.0, theme.border));
+    let inner = rect.shrink2(egui::vec2(14.0, 6.0));
+    ui.scope_builder(
+        egui::UiBuilder::new()
+            .max_rect(inner)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+        |ui| {
+            ui.add_space(10.0);
+            ui.label(RichText::new(t(S::CommandStyleTip)).size(13.0).color(theme.text));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.spacing_mut().item_spacing.x = 6.0;
+                if ui
+                    .add(egui::Button::new(RichText::new(t(S::CommandStyleKeepSlash)).size(12.0)))
+                    .clicked()
+                {
+                    answer = Some(false);
+                }
+                if ui
+                    .add(
+                        egui::Button::new(
+                            RichText::new(t(S::CommandStyleUseHash))
+                                .size(12.0)
+                                .strong()
+                                .color(theme.on_primary()),
+                        )
+                        .fill(theme.primary()),
+                    )
+                    .clicked()
+                {
+                    answer = Some(true);
+                }
+            });
+        },
+    );
+    answer
+}
 
 /// Height of the session footer.
 const FOOTER_HEIGHT: f32 = 28.0;
@@ -2093,8 +2147,11 @@ fn input_line(
     };
     let mut suggestion = ghost(ui, tab, view);
     let focused = ui.memory(|m| m.has_focus(id));
-    // Escape stops what a typed `#10 say 1` or `a;b` still has to send, before it dismisses a
-    // completion.
+    // Escape puts the command style tip away (the line stays), then stops what a typed
+    // `/10 say 1` or `a;b` still has to send, before it dismisses a completion.
+    if focused && tab.style_tip_shown() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape)) {
+        tab.dismiss_style_tip();
+    }
     if focused && tab.queue_progress().is_some() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape))
     {
         tab.stop_queue(true);
@@ -2126,6 +2183,7 @@ fn input_line(
     }
     let showing = suggestion.is_some();
     let field = crate::theme::mix(theme.terminal, theme.terminal_text, 0.06);
+    let keeps_escape = showing || tab.style_tip_shown() || tab.queue_progress().is_some();
     let edit = egui::TextEdit::singleline(&mut tab.input)
         .id(id)
         .font(font.clone())
@@ -2135,10 +2193,12 @@ fn input_line(
         .hint_text(RichText::new(hint).color(crate::theme::mix(theme.terminal_text, theme.terminal, 0.45)))
         .desired_width(width)
         .margin(egui::Margin::symmetric(10, 8))
-        // While a ghost shows, Tab and Escape belong to it rather than to focus movement.
+        // While a ghost shows, Tab and Escape belong to it rather than to focus movement, and
+        // Escape also belongs to the style tip and to a running line (or egui would take focus
+        // away before they see it).
         .event_filter(egui::EventFilter {
             tab: showing,
-            escape: showing,
+            escape: keeps_escape,
             horizontal_arrows: true,
             vertical_arrows: true,
         })

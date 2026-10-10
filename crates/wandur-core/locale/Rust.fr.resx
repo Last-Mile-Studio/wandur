@@ -485,10 +485,23 @@
   <data name="OfficialMapPreferenceFailed" xml:space="preserve"><value>Impossible de mémoriser ce choix : {0}</value></data>
   <data name="CommandRepeating" xml:space="preserve"><value>Envoi {0} sur {1} · Échap pour arrêter</value></data>
   <data name="CommandRepeatStopped" xml:space="preserve"><value>Arrêté : {0} sur {1} envoyés</value></data>
-  <data name="CommandRepeatCount" xml:space="preserve"><value>#{0} : le nombre de répétitions va de 1 à {1}</value></data>
+  <data name="CommandRepeatCount" xml:space="preserve"><value>{0} : le nombre de répétitions va de 1 à {1}</value></data>
   <data name="CommandRepeatUnclosed" xml:space="preserve"><value>Une {{ après un nombre de répétitions doit être fermée par }}</value></data>
   <data name="CommandTooMany" xml:space="preserve"><value>Cette ligne produit plus de {0} commandes</value></data>
   <data name="CommandWaiting" xml:space="preserve"><value>En attente de « {0} » · Échap pour arrêter</value></data>
   <data name="CommandWaitTimedOut" xml:space="preserve"><value>Attente de « {0} » abandonnée après {1} s ; {2} sur {3} envoyés</value></data>
-  <data name="CommandWaitUsage" xml:space="preserve"><value>#wait prend des secondes de 1 à {0}, ou un texte : #wait {{the droid is dead}}</value></data>
+  <data name="CommandWaitUsage" xml:space="preserve"><value>{0}wait prend des secondes de 1 à {1}, ou un texte : {0}wait {{the droid is dead}}</value></data>
+  <data name="CommandStyle" xml:space="preserve"><value>Style de commandes</value></data>
+  <data name="CommandStyleWandur" xml:space="preserve"><value>Wandur</value></data>
+  <data name="CommandStyleTinTin" xml:space="preserve"><value>TinTin++ / zMUD / CMUD</value></data>
+  <data name="CommandStyleMushSafe" xml:space="preserve"><value>Compatible MUSH</value></data>
+  <data name="CommandStyleWandurHint" xml:space="preserve"><value>/ introduit les commandes de Wandur (/10 say hi, /wait 2), ; sépare les commandes, // envoie un /</value></data>
+  <data name="CommandStyleTinTinHint" xml:space="preserve"><value># introduit les commandes de Wandur (#10 say hi, #wait 2), ; sépare les commandes, ## envoie un #</value></data>
+  <data name="CommandStyleMushSafeHint" xml:space="preserve"><value>/ introduit les commandes de Wandur, ;; sépare les commandes pour que ; reste une pose, // envoie un /</value></data>
+  <data name="CommandStyleSettingsHint" xml:space="preserve"><value>Chaque monde peut choisir le sien quand vous le modifiez ; les mondes MUSH et MUX utilisent Compatible MUSH.</value></data>
+  <data name="CommandStyleDefault" xml:space="preserve"><value>Par défaut ({0})</value></data>
+  <data name="CommandStyleWorldHint" xml:space="preserve"><value>Par défaut suit Réglages &gt; Saisie, ou Compatible MUSH si le monde est un MUSH ou un MUX.</value></data>
+  <data name="CommandStyleTip" xml:space="preserve"><value>On dirait le style TinTin++ / zMUD. Utiliser # pour les commandes de Wandur ?</value></data>
+  <data name="CommandStyleUseHash" xml:space="preserve"><value>Utiliser #</value></data>
+  <data name="CommandStyleKeepSlash" xml:space="preserve"><value>Garder /</value></data>
 </root>

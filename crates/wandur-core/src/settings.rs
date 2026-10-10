@@ -86,6 +86,13 @@ pub struct SavedWorld {
         skip_serializing_if = "Option::is_none"
     )]
     pub theme: Option<crate::directory::WorldTheme>,
+    /// The world's own command style (the world editor's Connection section); `None` follows
+    /// the global one, or MUSH-safe on a MUSH or MUX.
+    #[serde(
+        deserialize_with = "crate::command_line::lenient_override",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub command_style: Option<crate::command_line::CommandStyle>,
 }
 
 impl Default for SavedWorld {
@@ -110,6 +117,7 @@ impl Default for SavedWorld {
             codebase: String::new(),
             channel_rules: Vec::new(),
             theme: None,
+            command_style: None,
         }
     }
 }
@@ -240,6 +248,13 @@ pub struct Settings {
     /// Let scripts written in Lua run (Settings > Input, a prototype, off by default);
     /// JavaScript is unaffected.
     pub enable_lua_scripts: bool,
+    /// How the command line spells its own commands (Settings > Input): `/` or `#` before them,
+    /// `;` or `;;` between them. A saved world may choose its own.
+    #[serde(deserialize_with = "crate::command_line::lenient_style")]
+    pub command_style: crate::command_line::CommandStyle,
+    /// The "Looks like TinTin++ / zMUD style" tip was answered (Use # or Keep /): it never shows
+    /// again.
+    pub command_style_tip_answered: bool,
     /// Let MUD text blink when the server asks for it (Settings > Terminal); off shows it steady.
     pub allow_blinking_text: bool,
     /// Wrap long MUD lines at word boundaries instead of at the last column (Settings >
@@ -489,6 +504,8 @@ impl Default for Settings {
             show_channels: true,
             composer_suggestions: true,
             enable_lua_scripts: false,
+            command_style: crate::command_line::CommandStyle::Wandur,
+            command_style_tip_answered: false,
             allow_blinking_text: false,
             wrap_words: true,
             wrap_indent: false,
@@ -1392,7 +1409,46 @@ mod tests {
             "map_editor",
             "the map editor's inspector width, closed sections and grid snap (ui/map-editor)",
         ),
+        (
+            "command_style",
+            "Settings > Input: how the command line spells its own commands",
+        ),
+        (
+            "command_style_tip_answered",
+            "the one-time tip offering # commands was answered",
+        ),
     ];
+
+    /// The command style: Wandur's by default and in files from before it existed; the global
+    /// one, the tip's answer and a world's own choice round-trip; a world without one writes none.
+    #[test]
+    fn the_command_style_round_trips_and_old_files_load_as_wandur() {
+        use crate::command_line::CommandStyle;
+        let old: Settings = serde_json::from_str(r#"{"version":1,"worlds":[{"name":"Old","host":"a.org"}]}"#).unwrap();
+        assert_eq!(old.command_style, CommandStyle::Wandur);
+        assert!(!old.command_style_tip_answered);
+        assert_eq!(old.worlds[0].command_style, None);
+        let mut settings = Settings {
+            command_style: CommandStyle::TinTin,
+            command_style_tip_answered: true,
+            ..Settings::default()
+        };
+        settings.worlds.push(SavedWorld {
+            command_style: Some(CommandStyle::MushSafe),
+            ..SavedWorld::default()
+        });
+        settings.worlds.push(SavedWorld::default());
+        let json = serde_json::to_value(&settings).unwrap();
+        assert_eq!(json["command_style"], "tintin");
+        assert_eq!(json["worlds"][0]["command_style"], "mush-safe");
+        assert!(json["worlds"][1].get("command_style").is_none());
+        let back: Settings = serde_json::from_value(json).unwrap();
+        assert_eq!(back, settings);
+        let later: Settings =
+            serde_json::from_str(r#"{"command_style":"later","worlds":[{"command_style":7}]}"#).unwrap();
+        assert_eq!(later.command_style, CommandStyle::Wandur, "a name from a later version");
+        assert_eq!(later.worlds[0].command_style, None);
+    }
 
     #[test]
     fn map_editor_prefs_round_trip_and_are_clamped() {

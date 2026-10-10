@@ -7,7 +7,7 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Instant;
 
 use wandur_core::channels::{ChannelRule, SessionChannels};
-use wandur_core::command_line::Step;
+use wandur_core::command_line::{CommandStyle, Step, Syntax};
 use wandur_core::completion::Vocabulary;
 use wandur_core::connection::{ConnectionState, Notice};
 use wandur_core::demo::DemoWorld;
@@ -33,7 +33,7 @@ use wandur_term::{TermSize, Terminal};
 /// Palette entry for locally echoed commands and client notices (grey, as the C# client does).
 pub const LOCAL_ECHO_COLOR: u8 = 8;
 
-/// The pause between the commands one typed line expands to, so a `#100` does not flood the world
+/// The pause between the commands one typed line expands to, so a `/100` does not flood the world
 /// (ten a second).
 pub const QUEUE_GAP: std::time::Duration = std::time::Duration::from_millis(100);
 
@@ -71,6 +71,12 @@ pub struct TabOptions {
     pub channel_rules: Vec<ChannelRule>,
     /// The world's codebase (picks the channel rule family); empty when unknown.
     pub codebase: String,
+    /// The saved world's own command style (none: the global one, or MUSH-safe on a MUSH).
+    pub command_style: Option<CommandStyle>,
+    /// The global command style (Settings > Input).
+    pub global_command_style: CommandStyle,
+    /// The one-time tip may still offer `#` commands (it was never answered).
+    pub command_style_tip: bool,
     /// Where the session's map is saved (none: kept in memory only).
     pub maps: Option<MapsConfig>,
     /// Room terrain inference: the classifier service, whether it is on, its threshold (none:
@@ -193,6 +199,9 @@ impl Default for TabOptions {
             history: None,
             channel_rules: Vec::new(),
             codebase: String::new(),
+            command_style: None,
+            global_command_style: CommandStyle::default(),
+            command_style_tip: false,
             maps: None,
             inference: None,
             world_theme: None,
@@ -360,14 +369,20 @@ pub struct SessionTab {
     pub scripts: SessionScripts,
     /// Typed commands waiting for the scripts' aliases, by ticket.
     pending_commands: std::collections::VecDeque<(u64, String)>,
-    /// The steps a typed line expanded to (`#10 say 1`, `get all;wear all`, `#wait {text}`) still
+    /// The steps a typed line expanded to (`/10 say 1`, `get all;wear all`, `/wait {text}`) still
     /// to go, commands one every [`QUEUE_GAP`]; how many commands the line made and how many have
-    /// gone; when the next step runs; and a `#wait {text}` in progress.
+    /// gone; when the next step runs; and a `/wait {text}` in progress.
     queued: std::collections::VecDeque<wandur_core::command_line::Step>,
     queued_total: usize,
     queued_sent: usize,
     queue_next: Option<Instant>,
     waiting: Option<Waiting>,
+    /// The saved world's own command style, the global one, whether the one-time tip may still
+    /// ask, and whether it is asking now (the typed line waits in the box for its answer).
+    style_override: Option<CommandStyle>,
+    global_style: CommandStyle,
+    ask_style_tip: bool,
+    style_tip: bool,
     script_effects: Vec<Effect>,
     script_outcomes: Vec<CommandOutcome>,
     /// Commands scripts sent (tests and the probe).
@@ -642,6 +657,10 @@ impl SessionTab {
             queued_sent: 0,
             queue_next: None,
             waiting: None,
+            style_override: options.command_style,
+            global_style: options.global_command_style,
+            ask_style_tip: options.command_style_tip,
+            style_tip: false,
             script_effects: Vec::new(),
             script_outcomes: Vec::new(),
             script_commands_sent: 0,
@@ -919,6 +938,59 @@ impl SessionTab {
         self.channels.configure(rules, codebase);
     }
 
+    /// The command style changed (Settings > Input, the world editor, or the tip's answer).
+    /// `ask_tip` is whether the one-time tip may still ask.
+    pub fn set_command_style(&mut self, world: Option<CommandStyle>, global: CommandStyle, ask_tip: bool) {
+        self.style_override = world;
+        self.global_style = global;
+        self.ask_style_tip = ask_tip;
+        if !ask_tip {
+            self.style_tip = false;
+        }
+    }
+
+    /// The command style in force: the saved world's own, else MUSH-safe when the world is a
+    /// MUSH or MUX (by its listing's codebase, else the server's MSSP), else the global one. A
+    /// session not opened from a saved world uses the global one.
+    pub fn command_style(&self) -> CommandStyle {
+        let codebase = self.world.and_then(|_| self.channels.codebase());
+        wandur_core::command_line::resolve(self.style_override, codebase, self.global_style)
+    }
+
+    /// The style comes from the global setting (not the world's own nor a MUSH's), so the tip's
+    /// Use # would change it.
+    fn style_is_global(&self) -> bool {
+        self.style_override.is_none()
+            && !(self.world.is_some()
+                && self
+                    .channels
+                    .codebase()
+                    .is_some_and(wandur_core::command_line::is_mush_family))
+    }
+
+    /// The one-time tip asks whether to use `#` (the typed line waits in the box).
+    pub fn style_tip_shown(&self) -> bool {
+        self.style_tip
+    }
+
+    /// Escape: the tip goes away, the line stays in the box, nothing is sent. It asks again on
+    /// the next such line until it is answered.
+    pub fn dismiss_style_tip(&mut self) {
+        self.style_tip = false;
+    }
+
+    /// Enter on a line that looks like TinTin++ shorthand (`#3 look`, `#wait 2`) while the style
+    /// uses `/` and the tip was never answered: ask instead of sending.
+    fn wants_style_tip(&self, line: &str) -> bool {
+        let syntax = self.command_style().syntax();
+        self.ask_style_tip
+            && !self.private_input()
+            && syntax.command == '/'
+            && self.style_is_global()
+            && wandur_core::command_line::uses_commands(line, Syntax::TINTIN)
+            && !wandur_core::command_line::uses_commands(line, syntax)
+    }
+
     /// The newest non-empty transcript lines, plain, oldest first (the teaching preview).
     pub fn recent_lines(&self, count: usize) -> Vec<String> {
         let transcript = self.terminal.transcript();
@@ -1051,7 +1123,7 @@ impl SessionTab {
     pub fn pump(&mut self, now: Instant) -> usize {
         self.pump_queue(now);
         let chars = self.pump_link(now);
-        // Text that just arrived may end a `#wait {text}`.
+        // Text that just arrived may end a `/wait {text}`.
         self.pump_queue(now);
         chars
     }
@@ -1741,6 +1813,10 @@ impl SessionTab {
     }
 
     pub fn submit_at(&mut self, now: Instant) {
+        self.style_tip = self.wants_style_tip(&self.input);
+        if self.style_tip {
+            return;
+        }
         let line = std::mem::take(&mut self.input);
         if let Err(line) = self.send_typed(line, now) {
             self.input = line;
@@ -1753,14 +1829,16 @@ impl SessionTab {
         self.send_typed(line.to_string(), Instant::now()).is_ok()
     }
 
-    /// A command from the person: the command line's shorthand (`#10 say 1`, `get all;wear all`,
-    /// never with private input), then aliases, private input, echo and history as for the command
-    /// line. Hands the line back if it could not be sent (or its shorthand is wrong).
+    /// A command from the person: the command line's shorthand in the session's style
+    /// (`/10 say 1`, `get all;wear all`, never with private input), then aliases, private input,
+    /// echo and history as for the command line. Hands the line back if it could not be sent (or
+    /// its shorthand is wrong).
     fn send_typed(&mut self, line: String, now: Instant) -> Result<(), String> {
         if !self.private_input() {
-            match wandur_core::command_line::expand(&line) {
+            let syntax = self.command_style().syntax();
+            match wandur_core::command_line::expand(&line, syntax) {
                 Err(error) => {
-                    self.notice(&expand_error(&error));
+                    self.notice(&expand_error(&error, syntax));
                     return Err(line);
                 }
                 Ok(steps) if !matches!(steps.as_slice(), [Step::Send(only)] if *only == line) => {
@@ -1840,7 +1918,7 @@ impl SessionTab {
         }
     }
 
-    /// Server text while a `#wait {text}` holds the queue: a match lets the rest go on. Only text
+    /// Server text while a `/wait {text}` holds the queue: a match lets the rest go on. Only text
     /// that arrives after the wait began counts; colours are ignored and case does not matter.
     fn observe_wait(&mut self, text: &str) {
         let Some(waiting) = &mut self.waiting else {
@@ -1872,7 +1950,7 @@ impl SessionTab {
         (!self.queued.is_empty() || self.waiting.is_some()).then_some((self.queued_sent, self.queued_total))
     }
 
-    /// The text a `#wait {text}` is waiting for, while it waits.
+    /// The text a `/wait {text}` is waiting for, while it waits.
     pub fn queue_waiting(&self) -> Option<&str> {
         self.waiting.as_ref().filter(|w| !w.matched).map(|w| w.text.as_str())
     }
@@ -2422,7 +2500,7 @@ impl SessionTab {
 }
 
 /// Loopback sessions for the tests of this module and of the views.
-/// A `#wait {text}` in progress: the text as typed and in lower case, how long it may take and
+/// A `/wait {text}` in progress: the text as typed and in lower case, how long it may take and
 /// until when, the server text seen since it began, and whether a line matched.
 struct Waiting {
     text: String,
@@ -2433,14 +2511,15 @@ struct Waiting {
     matched: bool,
 }
 
-/// What is wrong with a typed line's shorthand, in the person's language.
-fn expand_error(error: &wandur_core::command_line::ExpandError) -> String {
+/// What is wrong with a typed line's shorthand, in the person's language and with the style's
+/// command character.
+fn expand_error(error: &wandur_core::command_line::ExpandError, syntax: Syntax) -> String {
     use wandur_core::command_line::{ExpandError, MAX_COMMANDS, MAX_REPEAT, MAX_WAIT_SECS};
     match error {
-        ExpandError::BadCount(n) => tf(S::CommandRepeatCount, &[n, &MAX_REPEAT]),
+        ExpandError::BadCount(head) => tf(S::CommandRepeatCount, &[head, &MAX_REPEAT]),
         ExpandError::Unclosed => tf(S::CommandRepeatUnclosed, &[]),
         ExpandError::TooMany => tf(S::CommandTooMany, &[&MAX_COMMANDS]),
-        ExpandError::BadWait => tf(S::CommandWaitUsage, &[&MAX_WAIT_SECS]),
+        ExpandError::BadWait => tf(S::CommandWaitUsage, &[&syntax.command, &MAX_WAIT_SECS]),
     }
 }
 
@@ -2472,6 +2551,36 @@ pub(crate) mod test_support {
             tab.pump(Instant::now());
             std::thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    /// Read what the server received until `want` lines have arrived.
+    pub fn read_lines(server: &mut std::net::TcpStream, want: usize) -> Vec<String> {
+        use std::io::Read;
+        server.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
+        let mut got = Vec::new();
+        let mut buf = [0u8; 256];
+        while got.iter().filter(|&&b| b == b'\n').count() < want {
+            let n = server.read(&mut buf).unwrap();
+            assert!(n > 0, "connection closed");
+            got.extend_from_slice(&buf[..n]);
+        }
+        // Drop telnet negotiation (IAC, command, option).
+        let mut plain = Vec::new();
+        let mut i = 0;
+        while i < got.len() {
+            if got[i] == 255 {
+                i += 3;
+            } else {
+                plain.push(got[i]);
+                i += 1;
+            }
+        }
+        let got = plain;
+        String::from_utf8_lossy(&got)
+            .split("\r\n")
+            .filter(|l| !l.is_empty())
+            .map(str::to_owned)
+            .collect()
     }
 }
 
@@ -2613,42 +2722,22 @@ mod tests {
         ]
     }
 
-    /// Read what the server received until `want` lines have arrived.
-    fn read_lines(server: &mut std::net::TcpStream, want: usize) -> Vec<String> {
-        server.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
-        let mut got = Vec::new();
-        let mut buf = [0u8; 256];
-        while got.iter().filter(|&&b| b == b'\n').count() < want {
-            let n = server.read(&mut buf).unwrap();
-            assert!(n > 0, "connection closed");
-            got.extend_from_slice(&buf[..n]);
-        }
-        // Drop telnet negotiation (IAC, command, option).
-        let mut plain = Vec::new();
-        let mut i = 0;
-        while i < got.len() {
-            if got[i] == 255 {
-                i += 3;
-            } else {
-                plain.push(got[i]);
-                i += 1;
-            }
-        }
-        let got = plain;
-        String::from_utf8_lossy(&got)
-            .split("\r\n")
-            .filter(|l| !l.is_empty())
-            .map(str::to_owned)
-            .collect()
-    }
-
     /// Over loopback: the command line's shorthand. `#2 ford;say hi` runs the alias twice and then
     /// `say hi`, one command every [`QUEUE_GAP`], with the typed line in the history once; Escape's
     /// stop says how far it got; a wrong count is refused and the line stays; private input is
     /// sent exactly as typed.
+    /// A session in the TinTin++ style (`#` commands).
+    fn tintin_tab() -> (SessionTab, std::net::TcpStream) {
+        local_tab_with(TabOptions {
+            scrollback: 100,
+            global_command_style: CommandStyle::TinTin,
+            ..TabOptions::default()
+        })
+    }
+
     #[test]
     fn the_command_line_repeats_and_chains_commands_at_a_steady_pace() {
-        let (mut tab, mut server) = local_tab();
+        let (mut tab, mut server) = tintin_tab();
         tab.set_macros(Some("w".into()), macro_library(), Instant::now());
         pump_until(&mut tab, |t| t.is_connected() && t.macros.is_active());
 
@@ -2703,7 +2792,7 @@ mod tests {
     /// round; a wait that times out stops the rest and says so; `#wait 2` pauses two seconds.
     #[test]
     fn a_typed_line_waits_for_text_and_for_time() {
-        let (mut tab, mut server) = local_tab();
+        let (mut tab, mut server) = tintin_tab();
         pump_until(&mut tab, |t| t.is_connected());
 
         let t0 = Instant::now();
@@ -2757,6 +2846,152 @@ mod tests {
             "and nothing earlier, so the look was dropped"
         );
         assert_eq!(tab.queue_progress(), None);
+    }
+
+    /// Over loopback in Wandur's own style (the default): `/` commands repeat and wait, `//`
+    /// sends a line with one `/` removed, errors name `/`, and `#` forms are text for the world.
+    #[test]
+    fn the_wandur_style_runs_slash_commands_over_loopback() {
+        let (mut tab, mut server) = local_tab();
+        pump_until(&mut tab, |t| t.is_connected());
+        assert_eq!(tab.command_style(), CommandStyle::Wandur);
+
+        let t0 = Instant::now();
+        tab.input = "/2 {say 1;/wait {done}};look".into();
+        tab.submit_at(t0);
+        assert_eq!(read_lines(&mut server, 1), ["say 1"]);
+        assert_eq!(tab.queue_waiting(), Some("done"));
+        server.write_all(b"The work is done.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.queue_progress() == Some((2, 3)));
+        assert_eq!(read_lines(&mut server, 1), ["say 1"]);
+        server.write_all(b"Done again.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.queue_progress().is_none());
+        assert_eq!(read_lines(&mut server, 1), ["look"]);
+        assert_eq!(tab.history(), ["/2 {say 1;/wait {done}};look"]);
+
+        tab.input = "//me waves".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["/me waves"], "one / removed, once");
+        assert_eq!(tab.history().last().map(String::as_str), Some("//me waves"));
+
+        tab.input = "#2 look".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["#2 look"], "TinTin++ forms are text here");
+
+        tab.input = "/0 look".into();
+        tab.submit();
+        assert_eq!(tab.input, "/0 look");
+        tab.input = "/wait".into();
+        tab.submit();
+        assert_eq!(tab.input, "/wait");
+        let transcript = tab.terminal.transcript();
+        assert!(
+            transcript.contains("[/0: a repeat count runs from 1 to 100]"),
+            "{transcript}"
+        );
+        assert!(
+            transcript.contains("[/wait takes seconds from 1 to 600, or text: /wait {the droid is dead}]"),
+            "{transcript}"
+        );
+    }
+
+    /// The style a session uses: the world's own, else MUSH-safe for a MUSH or MUX world (by
+    /// the codebase it was opened with, or the server's MSSP), else the global one; a session not
+    /// opened from a saved world takes the global one. Under MUSH-safe a single `;` is a pose.
+    #[test]
+    fn the_style_comes_from_the_world_then_a_mush_then_the_global_one() {
+        let open = |world: Option<usize>, codebase: &str, own: Option<CommandStyle>| {
+            local_tab_with(TabOptions {
+                scrollback: 100,
+                world,
+                codebase: codebase.into(),
+                command_style: own,
+                global_command_style: CommandStyle::TinTin,
+                ..TabOptions::default()
+            })
+        };
+        let (tab, _s) = open(Some(0), "PennMUSH 1.8.8", Some(CommandStyle::Wandur));
+        assert_eq!(tab.command_style(), CommandStyle::Wandur, "the world's own");
+        let (tab, _s) = open(Some(0), "SMAUG 1.4a", None);
+        assert_eq!(tab.command_style(), CommandStyle::TinTin, "the global one");
+        let (tab, _s) = open(None, "TinyMUX 2.12", None);
+        assert_eq!(tab.command_style(), CommandStyle::TinTin, "an ad hoc session");
+
+        let (mut tab, mut server) = open(Some(0), "", None);
+        assert_eq!(tab.command_style(), CommandStyle::TinTin);
+        tab.channels.use_server_codebase("RhostMUSH 4.0");
+        assert_eq!(tab.command_style(), CommandStyle::MushSafe, "MSSP CODEBASE");
+        tab.set_command_style(Some(CommandStyle::TinTin), CommandStyle::Wandur, false);
+        assert_eq!(tab.command_style(), CommandStyle::TinTin, "the world editor's choice");
+        tab.set_command_style(None, CommandStyle::Wandur, false);
+        assert_eq!(tab.command_style(), CommandStyle::MushSafe);
+
+        pump_until(&mut tab, |t| t.is_connected());
+        tab.input = ";waves; then grins".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), [";waves; then grins"], "a pose goes whole");
+        tab.input = "get all;;wear all".into();
+        tab.submit_at(Instant::now());
+        assert_eq!(read_lines(&mut server, 1), ["get all"]);
+        pump_until(&mut tab, |t| t.queue_progress().is_none());
+        assert_eq!(read_lines(&mut server, 1), ["wear all"]);
+    }
+
+    /// The one-time tip: Enter on a TinTin++-looking line while the style uses `/` asks instead
+    /// of sending and keeps the line; Escape (dismiss) keeps it too; once answered it never asks
+    /// and the line goes in the style in force. Never with private input, nor when the style is
+    /// the world's own.
+    #[test]
+    fn the_style_tip_asks_before_sending_tintin_shorthand() {
+        let (mut tab, mut server) = local_tab_with(TabOptions {
+            scrollback: 100,
+            command_style_tip: true,
+            ..TabOptions::default()
+        });
+        pump_until(&mut tab, |t| t.is_connected());
+        tab.input = "look;#2 n".into();
+        tab.submit();
+        assert!(tab.style_tip_shown());
+        assert_eq!(tab.input, "look;#2 n", "nothing sent, the line stays");
+        assert!(tab.history().is_empty());
+        tab.dismiss_style_tip();
+        assert!(!tab.style_tip_shown());
+        assert_eq!(tab.input, "look;#2 n");
+
+        // Not for a line without TinTin++ forms.
+        tab.input = "#help".into();
+        tab.submit();
+        assert!(!tab.style_tip_shown());
+        assert_eq!(read_lines(&mut server, 1), ["#help"]);
+
+        // Keep /: it never asks again and the line goes as typed in Wandur's style.
+        tab.input = "#wait 2".into();
+        tab.submit();
+        assert!(tab.style_tip_shown());
+        tab.set_command_style(None, CommandStyle::Wandur, false);
+        assert!(!tab.style_tip_shown(), "answered elsewhere: the tip goes");
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["#wait 2"]);
+        tab.input = "#3 look".into();
+        tab.submit();
+        assert!(!tab.style_tip_shown());
+        assert_eq!(read_lines(&mut server, 1), ["#3 look"]);
+
+        // Private input never asks (and is never taken apart).
+        tab.set_command_style(None, CommandStyle::Wandur, true);
+        tab.set_manual_private(true);
+        tab.input = "#2 secret".into();
+        tab.submit();
+        assert!(!tab.style_tip_shown());
+        assert_eq!(read_lines(&mut server, 1), ["#2 secret"]);
+        tab.set_manual_private(false);
+
+        // A world that chose its style is not asked.
+        tab.set_command_style(Some(CommandStyle::Wandur), CommandStyle::Wandur, true);
+        tab.input = "#2 n".into();
+        tab.submit();
+        assert!(!tab.style_tip_shown());
+        assert_eq!(read_lines(&mut server, 1), ["#2 n"]);
     }
 
     /// Over loopback: a trigger answers a public server line; an alias replaces the typed

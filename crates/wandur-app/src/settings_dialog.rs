@@ -18,6 +18,7 @@ use crate::select::Select;
 use crate::skin::SkinId;
 use crate::theme::{Theme, mix, parse_hex, preset_colors, preset_label, to_hex};
 use crate::widgets::{Icon, paint_icon};
+use wandur_core::command_line::CommandStyle;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Section {
@@ -754,6 +755,19 @@ impl SettingsDialog {
         ui.checkbox(&mut self.draft.enable_lua_scripts, t(S::PreferencesEnableLua));
         ui.add_space(4.0);
         hint(ui, t(S::PreferencesEnableLuaHint), theme);
+        ui.add_space(8.0);
+        field_label(ui, t(S::CommandStyle), theme);
+        let styles = CommandStyle::ALL;
+        let mut index = styles.iter().position(|&s| s == self.draft.command_style).unwrap_or(0);
+        if Select::new("settings-command-style", t(S::CommandStyle))
+            .height(SELECT_H)
+            .show_index(ui, &mut index, styles.len(), |i| command_style_label(styles[i]))
+            .changed()
+        {
+            self.draft.command_style = styles[index];
+        }
+        hint(ui, command_style_hint(self.draft.command_style), theme);
+        hint(ui, t(S::CommandStyleSettingsHint), theme);
     }
 
     fn connections(&mut self, ui: &mut Ui, theme: &Theme, directory_base: &str, result: &mut SettingsResult) {
@@ -996,6 +1010,24 @@ fn color_box(ui: &mut Ui, text: &mut String, label: &str, theme: &Theme) {
             .margin(egui::Margin::symmetric(10, 7)),
     );
     crate::a11y::label(&field, label);
+}
+
+/// A command style's name in the Command style lists.
+pub fn command_style_label(style: CommandStyle) -> &'static str {
+    t(match style {
+        CommandStyle::Wandur => S::CommandStyleWandur,
+        CommandStyle::TinTin => S::CommandStyleTinTin,
+        CommandStyle::MushSafe => S::CommandStyleMushSafe,
+    })
+}
+
+/// What a command style does, in one line.
+pub fn command_style_hint(style: CommandStyle) -> &'static str {
+    t(match style {
+        CommandStyle::Wandur => S::CommandStyleWandurHint,
+        CommandStyle::TinTin => S::CommandStyleTinTinHint,
+        CommandStyle::MushSafe => S::CommandStyleMushSafeHint,
+    })
 }
 
 #[cfg(test)]

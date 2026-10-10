@@ -22,6 +22,8 @@ pub enum AppAction {
     ExploreWorld(usize),
     /// Save the session's endpoint as a world.
     SaveWorld(SessionId),
+    /// The command style tip was answered for this session's line: Use # (true) or Keep /.
+    CommandStyleTip(SessionId, bool),
     Focus(SessionId),
     Disconnect(SessionId),
     Reconnect(SessionId),

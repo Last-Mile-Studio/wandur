@@ -3026,7 +3026,7 @@ pub enum S {
     CommandRepeating,
     /// Stopped: {0} of {1} sent
     CommandRepeatStopped,
-    /// #{0}: a repeat count runs from 1 to {1}
+    /// {0}: a repeat count runs from 1 to {1}
     CommandRepeatCount,
     /// A {{ after a repeat count needs its closing }}
     CommandRepeatUnclosed,
@@ -3036,12 +3036,38 @@ pub enum S {
     CommandWaiting,
     /// Gave up waiting for “{0}” after {1} s; {2} of {3} sent
     CommandWaitTimedOut,
-    /// #wait takes seconds from 1 to {0}, or text: #wait {{the droid is dead}}
+    /// {0}wait takes seconds from 1 to {1}, or text: {0}wait {{the droid is dead}}
     CommandWaitUsage,
+    /// Command style
+    CommandStyle,
+    /// Wandur
+    CommandStyleWandur,
+    /// TinTin++ / zMUD / CMUD
+    CommandStyleTinTin,
+    /// MUSH-safe
+    CommandStyleMushSafe,
+    /// / starts Wandur’s commands (/10 say hi, /wait 2), ; separates commands, // sends a /
+    CommandStyleWandurHint,
+    /// # starts Wandur’s commands (#10 say hi, #wait 2), ; separates commands, ## sends a #
+    CommandStyleTinTinHint,
+    /// / starts Wandur’s commands, ;; separates commands so ; stays a pose, // sends a /
+    CommandStyleMushSafeHint,
+    /// Each world can choose its own when you edit it; MUSH and MUX worlds use MUSH-safe.
+    CommandStyleSettingsHint,
+    /// Default ({0})
+    CommandStyleDefault,
+    /// Default follows Settings > Input, or MUSH-safe when the world is a MUSH or MUX.
+    CommandStyleWorldHint,
+    /// Looks like TinTin++ / zMUD style. Use # for Wandur’s commands?
+    CommandStyleTip,
+    /// Use #
+    CommandStyleUseHash,
+    /// Keep /
+    CommandStyleKeepSlash,
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1516;
+pub const COUNT: usize = 1529;
 
 impl S {
     /// Every key, in table order.
@@ -4562,6 +4588,19 @@ impl S {
         S::CommandWaiting,
         S::CommandWaitTimedOut,
         S::CommandWaitUsage,
+        S::CommandStyle,
+        S::CommandStyleWandur,
+        S::CommandStyleTinTin,
+        S::CommandStyleMushSafe,
+        S::CommandStyleWandurHint,
+        S::CommandStyleTinTinHint,
+        S::CommandStyleMushSafeHint,
+        S::CommandStyleSettingsHint,
+        S::CommandStyleDefault,
+        S::CommandStyleWorldHint,
+        S::CommandStyleTip,
+        S::CommandStyleUseHash,
+        S::CommandStyleKeepSlash,
     ];
 }
 
@@ -6083,6 +6122,19 @@ pub static NAMES: [&str; COUNT] = [
     "CommandWaiting",
     "CommandWaitTimedOut",
     "CommandWaitUsage",
+    "CommandStyle",
+    "CommandStyleWandur",
+    "CommandStyleTinTin",
+    "CommandStyleMushSafe",
+    "CommandStyleWandurHint",
+    "CommandStyleTinTinHint",
+    "CommandStyleMushSafeHint",
+    "CommandStyleSettingsHint",
+    "CommandStyleDefault",
+    "CommandStyleWorldHint",
+    "CommandStyleTip",
+    "CommandStyleUseHash",
+    "CommandStyleKeepSlash",
 ];
 
 /// The text of every key in each language, in the order of `Language`.
@@ -7599,12 +7651,25 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Could not remember this choice: {0}",
         "Sending {0} of {1} · Esc to stop",
         "Stopped: {0} of {1} sent",
-        "#{0}: a repeat count runs from 1 to {1}",
+        "{0}: a repeat count runs from 1 to {1}",
         "A {{ after a repeat count needs its closing }}",
         "That line makes more than {0} commands",
         "Waiting for “{0}” · Esc to stop",
         "Gave up waiting for “{0}” after {1} s; {2} of {3} sent",
-        "#wait takes seconds from 1 to {0}, or text: #wait {{the droid is dead}}",
+        "{0}wait takes seconds from 1 to {1}, or text: {0}wait {{the droid is dead}}",
+        "Command style",
+        "Wandur",
+        "TinTin++ / zMUD / CMUD",
+        "MUSH-safe",
+        "/ starts Wandur’s commands (/10 say hi, /wait 2), ; separates commands, // sends a /",
+        "# starts Wandur’s commands (#10 say hi, #wait 2), ; separates commands, ## sends a #",
+        "/ starts Wandur’s commands, ;; separates commands so ; stays a pose, // sends a /",
+        "Each world can choose its own when you edit it; MUSH and MUX worlds use MUSH-safe.",
+        "Default ({0})",
+        "Default follows Settings > Input, or MUSH-safe when the world is a MUSH or MUX.",
+        "Looks like TinTin++ / zMUD style. Use # for Wandur’s commands?",
+        "Use #",
+        "Keep /",
     ],
     // es
     [
@@ -9118,12 +9183,25 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "No se pudo recordar esta elección: {0}",
         "Enviando {0} de {1} · Esc para detener",
         "Detenido: {0} de {1} enviados",
-        "#{0}: el número de repeticiones va de 1 a {1}",
+        "{0}: el número de repeticiones va de 1 a {1}",
         "Una {{ tras un número de repeticiones necesita su }} de cierre",
         "Esa línea genera más de {0} comandos",
         "Esperando «{0}» · Esc para detener",
         "Se dejó de esperar «{0}» tras {1} s; {2} de {3} enviados",
-        "#wait lleva segundos de 1 a {0}, o un texto: #wait {{the droid is dead}}",
+        "{0}wait lleva segundos de 1 a {1}, o un texto: {0}wait {{the droid is dead}}",
+        "Estilo de comandos",
+        "Wandur",
+        "TinTin++ / zMUD / CMUD",
+        "Apto para MUSH",
+        "/ inicia los comandos de Wandur (/10 say hi, /wait 2), ; separa comandos, // envía una /",
+        "# inicia los comandos de Wandur (#10 say hi, #wait 2), ; separa comandos, ## envía un #",
+        "/ inicia los comandos de Wandur, ;; separa comandos para que ; siga siendo una pose, // envía una /",
+        "Cada mundo puede elegir el suyo al editarlo; los mundos MUSH y MUX usan Apto para MUSH.",
+        "Predeterminado ({0})",
+        "Predeterminado sigue Configuración > Entrada, o Apto para MUSH si el mundo es un MUSH o MUX.",
+        "Parece el estilo de TinTin++ / zMUD. ¿Usar # para los comandos de Wandur?",
+        "Usar #",
+        "Mantener /",
     ],
     // fr
     [
@@ -10637,12 +10715,25 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Impossible de mémoriser ce choix : {0}",
         "Envoi {0} sur {1} · Échap pour arrêter",
         "Arrêté : {0} sur {1} envoyés",
-        "#{0} : le nombre de répétitions va de 1 à {1}",
+        "{0} : le nombre de répétitions va de 1 à {1}",
         "Une {{ après un nombre de répétitions doit être fermée par }}",
         "Cette ligne produit plus de {0} commandes",
         "En attente de « {0} » · Échap pour arrêter",
         "Attente de « {0} » abandonnée après {1} s ; {2} sur {3} envoyés",
-        "#wait prend des secondes de 1 à {0}, ou un texte : #wait {{the droid is dead}}",
+        "{0}wait prend des secondes de 1 à {1}, ou un texte : {0}wait {{the droid is dead}}",
+        "Style de commandes",
+        "Wandur",
+        "TinTin++ / zMUD / CMUD",
+        "Compatible MUSH",
+        "/ introduit les commandes de Wandur (/10 say hi, /wait 2), ; sépare les commandes, // envoie un /",
+        "# introduit les commandes de Wandur (#10 say hi, #wait 2), ; sépare les commandes, ## envoie un #",
+        "/ introduit les commandes de Wandur, ;; sépare les commandes pour que ; reste une pose, // envoie un /",
+        "Chaque monde peut choisir le sien quand vous le modifiez ; les mondes MUSH et MUX utilisent Compatible MUSH.",
+        "Par défaut ({0})",
+        "Par défaut suit Réglages > Saisie, ou Compatible MUSH si le monde est un MUSH ou un MUX.",
+        "On dirait le style TinTin++ / zMUD. Utiliser # pour les commandes de Wandur ?",
+        "Utiliser #",
+        "Garder /",
     ],
     // de
     [
@@ -12156,12 +12247,25 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Diese Wahl konnte nicht gespeichert werden: {0}",
         "Sende {0} von {1} · Esc zum Anhalten",
         "Angehalten: {0} von {1} gesendet",
-        "#{0}: Eine Wiederholungszahl geht von 1 bis {1}",
+        "{0}: Eine Wiederholungszahl geht von 1 bis {1}",
         "Eine {{ nach einer Wiederholungszahl braucht ihre schließende }}",
         "Diese Zeile ergibt mehr als {0} Befehle",
         "Warte auf „{0}“ · Esc zum Anhalten",
         "Warten auf „{0}“ nach {1} s aufgegeben; {2} von {3} gesendet",
-        "#wait braucht Sekunden von 1 bis {0} oder Text: #wait {{the droid is dead}}",
+        "{0}wait braucht Sekunden von 1 bis {1} oder Text: {0}wait {{the droid is dead}}",
+        "Befehlsstil",
+        "Wandur",
+        "TinTin++ / zMUD / CMUD",
+        "MUSH-sicher",
+        "/ leitet Wandurs Befehle ein (/10 say hi, /wait 2), ; trennt Befehle, // sendet ein /",
+        "# leitet Wandurs Befehle ein (#10 say hi, #wait 2), ; trennt Befehle, ## sendet ein #",
+        "/ leitet Wandurs Befehle ein, ;; trennt Befehle, damit ; eine Pose bleibt, // sendet ein /",
+        "Jede Welt kann beim Bearbeiten ihren eigenen wählen; MUSH- und MUX-Welten nutzen MUSH-sicher.",
+        "Standard ({0})",
+        "Standard folgt Einstellungen > Eingabe, oder MUSH-sicher, wenn die Welt ein MUSH oder MUX ist.",
+        "Sieht nach TinTin++ / zMUD aus. # für Wandurs Befehle verwenden?",
+        "# verwenden",
+        "/ behalten",
     ],
     // pt-BR
     [
@@ -13675,11 +13779,24 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Não foi possível lembrar esta escolha: {0}",
         "Enviando {0} de {1} · Esc para parar",
         "Parado: {0} de {1} enviados",
-        "#{0}: o número de repetições vai de 1 a {1}",
+        "{0}: o número de repetições vai de 1 a {1}",
         "Uma {{ depois de um número de repetições precisa do }} de fechamento",
         "Essa linha gera mais de {0} comandos",
         "Aguardando “{0}” · Esc para parar",
         "Desistiu de aguardar “{0}” após {1} s; {2} de {3} enviados",
-        "#wait recebe segundos de 1 a {0}, ou um texto: #wait {{the droid is dead}}",
+        "{0}wait recebe segundos de 1 a {1}, ou um texto: {0}wait {{the droid is dead}}",
+        "Estilo de comandos",
+        "Wandur",
+        "TinTin++ / zMUD / CMUD",
+        "Seguro para MUSH",
+        "/ inicia os comandos do Wandur (/10 say hi, /wait 2), ; separa comandos, // envia uma /",
+        "# inicia os comandos do Wandur (#10 say hi, #wait 2), ; separa comandos, ## envia um #",
+        "/ inicia os comandos do Wandur, ;; separa comandos para que ; continue sendo uma pose, // envia uma /",
+        "Cada mundo pode escolher o seu ao editá-lo; mundos MUSH e MUX usam Seguro para MUSH.",
+        "Padrão ({0})",
+        "Padrão segue Configurações > Entrada, ou Seguro para MUSH quando o mundo é um MUSH ou MUX.",
+        "Parece o estilo do TinTin++ / zMUD. Usar # para os comandos do Wandur?",
+        "Usar #",
+        "Manter /",
     ],
 ];

@@ -509,6 +509,8 @@ pub struct WorldForm {
     /// Lua scripts are allowed (the preference): the Scripts section offers the language
     /// picker and Run as Lua.
     pub lua_enabled: bool,
+    /// The global command style (Settings > Input), named in the Command style list's Default.
+    pub global_command_style: wandur_core::command_line::CommandStyle,
     /// The Agent settings section's draft (none when the app has no agent).
     #[cfg(feature = "agent")]
     pub agent: Option<crate::agent_settings::AgentDraft>,
@@ -540,6 +542,7 @@ impl WorldForm {
             vault_name: String::new(),
             saved_check: None,
             lua_enabled: false,
+            global_command_style: Default::default(),
             #[cfg(feature = "agent")]
             agent: None,
         }
@@ -1036,6 +1039,31 @@ impl WorldForm {
                                 (Charset::Latin1, charset_name(Charset::Latin1)),
                             ],
                         );
+                    ui.add_space(12.0);
+                    field_label(ui, t(S::CommandStyle), theme);
+                    ui.add_space(6.0);
+                    let default = tf(
+                        S::CommandStyleDefault,
+                        &[&crate::settings_dialog::command_style_label(self.global_command_style)],
+                    );
+                    let mut choices = vec![(None, default)];
+                    choices.extend(
+                        wandur_core::command_line::CommandStyle::ALL
+                            .map(|s| (Some(s), crate::settings_dialog::command_style_label(s).to_string())),
+                    );
+                    Select::new("world-form-command-style", t(S::CommandStyle))
+                        .width(width)
+                        .height(32.0)
+                        .show_value(ui, &mut self.world.command_style, &choices);
+                    ui.add_space(4.0);
+                    ui.label(
+                        RichText::new(match self.world.command_style {
+                            Some(style) => crate::settings_dialog::command_style_hint(style),
+                            None => t(S::CommandStyleWorldHint),
+                        })
+                        .size(11.0)
+                        .color(theme.muted),
+                    );
                     ui.add_space(12.0);
                     ui.checkbox(
                         &mut self.world.tls,

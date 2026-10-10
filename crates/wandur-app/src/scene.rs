@@ -51,6 +51,8 @@ pub enum Show {
     SessionTailSplit,
     /// The Lantern Road after `note`, its web address Ctrl+clicked: the "Open this link?" bar.
     SessionLink,
+    /// The Lantern Road with `#3 look` entered in Wandur's style: the command style tip.
+    SessionStyleTip,
     /// The Lantern Road after `wisp`: a fight, the vitals strip with the opponent card.
     SessionVitals,
     /// The Lantern Road's Diagnostics page on a tab.
@@ -106,6 +108,7 @@ impl Show {
                 | Show::SessionCompletion
                 | Show::SessionTailSplit
                 | Show::SessionLink
+                | Show::SessionStyleTip
                 | Show::SessionVitals
                 | Show::SessionDiagnostics(_)
                 | Show::SessionMarkChannel
@@ -837,6 +840,12 @@ pub const SCENES: &[Scene] = &[
         Show::SessionTailSplit,
     ),
     scene(
+        "command-style-tip",
+        "Enter on \"#3 look\" in Wandur's style: Looks like TinTin++ / zMUD style, Use # or Keep /",
+        "Hull",
+        Show::SessionStyleTip,
+    ),
+    scene(
         "link-confirm",
         "A web address in the transcript Ctrl+clicked: the Open this link? bar",
         "Hull",
@@ -863,7 +872,7 @@ pub const SCENES: &[Scene] = &[
     with(
         scene(
             "settings-input",
-            "Settings, Input: local echo and composer suggestions",
+            "Settings, Input: local echo, composer suggestions, Lua and the command style",
             "Hull",
             Show::Session,
         ),
@@ -2121,6 +2130,9 @@ pub fn configure(scene: &Scene, options: &mut Options) {
                 Show::SessionVitals => {
                     options.scene_input = vec![step("Lantern Crossroads >", "wisp", true, None)];
                 }
+                Show::SessionStyleTip => {
+                    options.scene_input = vec![step("Lantern Crossroads >", "#3 look", true, None)];
+                }
                 Show::SessionChat => {
                     options.scene_input = vec![step("Lantern Crossroads >", "chat", true, None)];
                 }
@@ -2534,6 +2546,7 @@ fn ready(scene: &Scene, probe: &SceneProbe) -> bool {
         Show::SessionCompletion => lantern && probe.last_ghost.as_deref() == Some("lighter"),
         Show::SessionTailSplit => lantern && probe.steps_done && probe.last_tail_rows > 0,
         Show::SessionLink => lantern && probe.steps_done && probe.last_pending_link.is_some(),
+        Show::SessionStyleTip => lantern && probe.steps_done && probe.last_style_tip,
         Show::SessionVitals => lantern && probe.steps_done && probe.last_vitals >= 4,
         Show::SessionDiagnostics(DiagTab::Server) => lantern && probe.steps_done && probe.last_server_details,
         Show::SessionDiagnostics(_) => lantern && probe.steps_done && probe.last_messages > 0,
@@ -2836,6 +2849,7 @@ mod tests {
             "session-completion",
             "session-tail-split",
             "link-confirm",
+            "command-style-tip",
             "settings-mud-colors",
             "settings-terminal",
             "settings-input",
