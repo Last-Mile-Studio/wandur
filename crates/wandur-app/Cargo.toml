@@ -65,6 +65,12 @@ libc.workspace = true
 # The native macOS menu bar (MIT or Apache-2.0, the Tauri project's menu crate).
 [target.'cfg(target_os = "macos")'.dependencies]
 muda = { version = "0.21", default-features = false }
+# Moving the native traffic lights onto a drawn skin's band (MIT; the versions eframe already
+# links).
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSGeometry"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "objc2-core-foundation", "NSResponder", "NSView", "NSWindow", "NSControl", "NSButton"] }
+raw-window-handle = "0.6"
 
 [dev-dependencies]
 # The C# import tests edit a copy of the synthetic C# fixture (same version as wandur-core's).

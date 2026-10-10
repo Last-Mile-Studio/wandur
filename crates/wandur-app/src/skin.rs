@@ -30,8 +30,11 @@ pub const APP_NAME: &str = "Wandur Mud Client";
 /// The plate's short form when the full name does not fit.
 pub const SHORT_NAME: &str = "Wandur";
 
-/// The space the native macOS traffic lights take at the left of the caption area.
+/// The space the native macOS traffic lights take at the left of the caption area where AppKit
+/// places them (System); the drawn skins move them and keep [`mac_caption_left`] clear.
 pub const MAC_CAPTION_LEFT: f32 = 88.0;
+/// The gap between the traffic lights' right edge and the first drawn title content.
+pub const MAC_LIGHTS_GAP: f32 = 18.0;
 /// The space kept for the caption buttons at the right on Windows and Linux.
 pub const CAPTION_BUTTONS_WIDTH: f32 = 144.0;
 /// The Skin, palette and full screen buttons beside the plate, at full size.
@@ -105,6 +108,9 @@ pub struct TitleBarMetrics {
     pub action_scale: f32,
     /// The height the buttons centre on; `None` is the middle of the band.
     pub actions_center: Option<f32>,
+    /// macOS: where the native traffic lights' close button starts from the window's left edge
+    /// (they centre on [`Self::traffic_lights_center`]).
+    pub traffic_lights_left: f32,
 }
 
 impl TitleBarMetrics {
@@ -123,6 +129,8 @@ impl TitleBarMetrics {
         action_button_size: 30.0,
         action_scale: 0.75,
         actions_center: None,
+        // Clear of the 6 point device edge, as far in as the lights sit down from the top.
+        traffic_lights_left: 12.0,
     };
 
     /// Armored: a 60 point band with a deeper plate projecting 8 points below it; the buttons
@@ -141,6 +149,8 @@ impl TitleBarMetrics {
         action_button_size: 30.0,
         action_scale: 0.75,
         actions_center: Some((4.0 + (60.0 - 18.0)) / 2.0),
+        // On the left wing plate, past its chamfered corner.
+        traffic_lights_left: 16.0,
     };
 
     pub fn plaque_height(&self) -> f32 {
@@ -149,6 +159,12 @@ impl TitleBarMetrics {
 
     pub fn actions_center(&self) -> f32 {
         self.actions_center.unwrap_or(self.band_height / 2.0)
+    }
+
+    /// macOS: the native traffic lights' vertical centre, level with the title buttons on the
+    /// right ([`Self::actions_center`]): the middle of the band on Fleet, the upper plate on Armored.
+    pub fn traffic_lights_center(&self) -> f32 {
+        self.actions_center()
     }
 
     /// The top of the buttons' full-size box, centred on [`Self::actions_center`].
@@ -277,10 +293,32 @@ pub fn plate_title(full: &str, short: &str, room: f32, measure: impl Fn(&str) ->
 /// The caption area kept clear at the left and right of the band on this platform: the native
 /// traffic lights on macOS, the drawn caption buttons elsewhere, and the title buttons.
 pub fn caption_exclusion(mac: bool, metrics: &TitleBarMetrics) -> (f32, f32) {
-    let left = if mac { MAC_CAPTION_LEFT } else { 0.0 };
+    let left = if mac { mac_caption_left(Some(metrics)) } else { 0.0 };
     (
         left,
         actions_right_inset(mac) + TITLE_ACTIONS_WIDTH * metrics.action_scale,
+    )
+}
+
+/// macOS: the room the traffic lights take at the band's left, from the window's left edge: where
+/// a drawn skin moves them ([`crate::traffic_lights`]), or AppKit's own place without a band.
+pub fn mac_caption_left(metrics: Option<&TitleBarMetrics>) -> f32 {
+    metrics.map_or(MAC_CAPTION_LEFT, |m| {
+        m.traffic_lights_left + crate::traffic_lights::LIGHTS_SPAN + MAC_LIGHTS_GAP
+    })
+}
+
+/// The native traffic lights' area on a drawn band (macOS), in points from the window's top
+/// left: the moved buttons plus a few points around them. The band's drag area leaves it to
+/// the buttons.
+pub fn mac_lights_rect(metrics: &TitleBarMetrics) -> Rect {
+    let h = 16.0 + 8.0;
+    Rect::from_min_size(
+        pos2(
+            metrics.traffic_lights_left - 4.0,
+            metrics.traffic_lights_center() - h / 2.0,
+        ),
+        vec2(crate::traffic_lights::LIGHTS_SPAN + 8.0, h),
     )
 }
 
@@ -1761,7 +1799,10 @@ mod tests {
     #[test]
     fn caption_areas_differ_by_platform() {
         let m = TitleBarMetrics::FLEET;
-        assert_eq!(caption_exclusion(true, &m), (88.0, 12.0 + 90.0));
+        assert_eq!(caption_exclusion(true, &m), (12.0 + 62.0 + 18.0, 12.0 + 90.0));
+        let a = TitleBarMetrics::ARMORED;
+        assert_eq!(caption_exclusion(true, &a).0, 16.0 + 62.0 + 18.0);
+        assert_eq!(mac_caption_left(None), MAC_CAPTION_LEFT);
         assert_eq!(caption_exclusion(false, &m), (0.0, 156.0 + 90.0));
     }
 

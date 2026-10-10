@@ -496,6 +496,28 @@ pub fn caption_buttons(
 pub fn drag_area(ui: &mut Ui, rect: Rect) {
     let response = ui.interact(rect, ui.id().with("title-drag"), Sense::click_and_drag());
     crate::a11y::control(&response, egui::accesskit::Role::TitleBar, t(S::A11yTitleBar));
+    drag_response(ui, &response);
+}
+
+/// [`drag_area`] over `rect`, except that a press inside `hole` (the native traffic lights on
+/// macOS) neither drags nor maximizes: that corner belongs to the buttons. One area, so the
+/// title bar stays one accessible node.
+pub fn drag_area_around(ui: &mut Ui, rect: Rect, hole: Option<Rect>) {
+    let response = ui.interact(rect, ui.id().with("title-drag"), Sense::click_and_drag());
+    crate::a11y::control(&response, egui::accesskit::Role::TitleBar, t(S::A11yTitleBar));
+    let origin = ui.input(|i| i.pointer.press_origin());
+    if leaves_to_the_lights(hole, origin) {
+        return;
+    }
+    drag_response(ui, &response);
+}
+
+/// Whether a press at `origin` is in the traffic lights' corner (left to AppKit).
+pub fn leaves_to_the_lights(hole: Option<Rect>, origin: Option<Pos2>) -> bool {
+    matches!((hole, origin), (Some(h), Some(o)) if h.contains(o))
+}
+
+fn drag_response(ui: &Ui, response: &Response) {
     if response.drag_started_by(egui::PointerButton::Primary) {
         ui.ctx().send_viewport_cmd(egui::ViewportCommand::StartDrag);
     }
@@ -554,4 +576,31 @@ pub fn system_identity(ui: &mut Ui, text: &str, theme: &Theme) {
             .halign(egui::Align::LEFT),
     )
     .on_hover_text(text);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_drag_area_leaves_the_traffic_lights_alone() {
+        use crate::skin::TitleBarMetrics;
+        for m in [TitleBarMetrics::FLEET, TitleBarMetrics::ARMORED] {
+            let hole = crate::skin::mac_lights_rect(&m);
+            let c = m.traffic_lights_center();
+            // Every moved button (16 points, 23 apart from the skin's inset) lies in the hole.
+            for i in 0..3 {
+                let x = m.traffic_lights_left + 23.0 * i as f32;
+                let button = Rect::from_min_size(pos2(x, c - 8.0), vec2(16.0, 16.0));
+                assert!(hole.contains_rect(button), "{button:?} in {hole:?}");
+                assert!(leaves_to_the_lights(Some(hole), Some(button.center())));
+            }
+            // The rest of the band drags, and without a hole (System, other platforms) all of it.
+            assert!(!leaves_to_the_lights(Some(hole), Some(pos2(300.0, c))));
+            assert!(!leaves_to_the_lights(None, Some(pos2(20.0, c))));
+            assert!(!leaves_to_the_lights(Some(hole), None));
+            // The hole stays clear of the drawn title content.
+            assert!(hole.right() <= crate::skin::mac_caption_left(Some(&m)));
+        }
+    }
 }

@@ -6,7 +6,7 @@
 //! [`workspace_panel`] (Find a MUD, open sessions), [`saved_worlds_panel`] and [`panel_header`] (the Saved worlds panel, panel actions and headers), [`world_form`],
 //! [`directory_view`] and [`world_page`] (the world directory), [`artwork`] (bounded, cancellable
 //! picture loading), [`channels_view`] and [`mark_channel`] (the Channels panel and the teaching dialog), [`map_view`], [`diagnostics_view`] and [`vitals_view`] (the Diagnostics page and the vitals strip), [`settings_dialog`], [`menus`], [`dialogs`], [`csharp_import`] (File > Import from Wandur (C#)... and `--import-csharp`), [`update_notice`] (the update check's strip and schedule), [`theme`], [`widgets`],
-//! [`scene`] (named screens for headless screenshots), [`a11y`] (AccessKit for the transcript), [`fonts`], [`grid_text`] (the grid's text as one mesh), [`pacer`] (output redraw cap), [`probe`]
+//! [`scene`] (named screens for headless screenshots), [`a11y`] (AccessKit for the transcript), [`fonts`], [`grid_text`] (the grid's text as one mesh), [`pacer`] (output redraw cap), [`traffic_lights`] and [`platform`] (the macOS window buttons on a drawn skin), [`probe`]
 //! and [`sysstat`] (opt-in measurement).
 
 pub mod a11y;
@@ -41,6 +41,7 @@ pub mod native_menu;
 pub mod pacer;
 pub mod panel_header;
 pub mod panel_view;
+pub mod platform;
 pub mod probe;
 pub mod saved_worlds_panel;
 pub mod scene;
@@ -58,6 +59,7 @@ pub mod terminal_view;
 pub mod theme;
 pub mod title_bar;
 pub mod toast;
+pub mod traffic_lights;
 pub mod update_notice;
 pub mod vitals_view;
 pub mod widgets;

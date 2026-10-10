@@ -500,6 +500,14 @@ pub struct WandurApp {
     decorations: Option<bool>,
     /// Bumped whenever `chrome` is rebuilt, so the baked frame, toolbar and plate follow it.
     chrome_generation: u64,
+    /// When to put macOS's traffic lights on the drawn band again (every platform, so the
+    /// schedule is tested everywhere; only macOS acts on it).
+    lights_schedule: crate::traffic_lights::Scheduler,
+    /// The window's full screen state as last reported, to follow changes made outside the app's
+    /// own command (the green button, Esc, the Window menu).
+    os_full_screen: Option<bool>,
+    #[cfg(target_os = "macos")]
+    lights: crate::platform::mac_traffic_lights::TrafficLights,
     baked_frame: skin::Baked,
     baked_toolbar: skin::Baked,
     baked_plate: skin::Baked,
@@ -888,6 +896,10 @@ impl WandurApp {
             title_plate: None,
             decorations: None,
             chrome_generation: 0,
+            lights_schedule: Default::default(),
+            os_full_screen: None,
+            #[cfg(target_os = "macos")]
+            lights: Default::default(),
             baked_frame: skin::Baked::default(),
             baked_toolbar: skin::Baked::default(),
             baked_plate: skin::Baked::default(),
@@ -3727,7 +3739,9 @@ impl WandurApp {
                 .frame(egui::Frame::NONE)
                 .show(ui, |ui| {
                     let band = ui.max_rect();
-                    title_bar::drag_area(ui, band);
+                    // macOS: the native traffic lights' corner is theirs, not the drag area's.
+                    let hole = mac.then(|| skin::mac_lights_rect(&metrics).translate(window.min.to_vec2()));
+                    title_bar::drag_area_around(ui, band, hole);
                     let mut right_edge = window.right() - skin::actions_right_inset(mac);
                     // The menu button: the last title control on macOS (the traffic lights hold
                     // the left), the first at the top left on Windows and Linux.
@@ -3929,6 +3943,61 @@ impl WandurApp {
         for action in actions {
             self.title_action(&ctx, action);
         }
+    }
+
+    /// Full screen entered or left outside the app's command (the green button, Esc): the band
+    /// and the traffic lights follow the window. Only a change in the reported state counts, so
+    /// the app's own toggle is not undone while the window is still on its way.
+    fn follow_full_screen(&mut self, ctx: &egui::Context) {
+        let reported = ctx.input(|i| i.viewport().fullscreen);
+        if reported != self.os_full_screen {
+            self.os_full_screen = reported;
+            if let Some(full) = reported {
+                self.full_screen = full;
+            }
+        }
+    }
+
+    /// macOS: keeps the native traffic lights centred on a drawn skin's band (and back where
+    /// AppKit puts them for System), re-applied after anything that may have reset them.
+    fn place_traffic_lights(&mut self, ctx: &egui::Context, frame: &eframe::Frame) {
+        use crate::traffic_lights::{Trigger, Want, want};
+        if self.platform != Platform::Mac {
+            return;
+        }
+        let (size, focused, minimized) = ctx.input(|i| {
+            let v = i.viewport();
+            let size = v
+                .inner_rect
+                .map_or([0, 0], |r| [r.width().round() as i32, r.height().round() as i32]);
+            (size, v.focused.unwrap_or(true), v.minimized.unwrap_or(false))
+        });
+        let full_screen = self.full_screen;
+        let zoom = ctx.zoom_factor();
+        let trigger = Trigger {
+            skin: self.chrome.skin.id,
+            size,
+            focused,
+            full_screen,
+            minimized,
+            theme: self.chrome_generation,
+            zoom: zoom.to_bits(),
+        };
+        let poll = self.lights_schedule.poll(trigger, Instant::now());
+        if let Some(after) = poll.wake_after {
+            ctx.request_repaint_after(after);
+        }
+        if !poll.apply {
+            return;
+        }
+        let wanted = match want(&self.chrome.skin, full_screen, minimized) {
+            Want::Place(p) => Want::Place(p.scaled(zoom)),
+            other => other,
+        };
+        #[cfg(target_os = "macos")]
+        self.lights.apply(frame, wanted);
+        #[cfg(not(target_os = "macos"))]
+        let _ = (frame, wanted);
     }
 
     /// Carry out what the title bar asked.
@@ -4997,14 +5066,16 @@ impl eframe::App for WandurApp {
         }
     }
 
-    fn ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut Ui, eframe_frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
         let frame = ctx.cumulative_pass_nr();
         self.art.begin_frame(&ctx);
         self.track_focus();
         self.track_edit_target(&ctx);
         self.refresh_appearance(&ctx);
+        self.follow_full_screen(&ctx);
         self.window_chrome(ui);
+        self.place_traffic_lights(&ctx, eframe_frame);
         let menu_list = menus::menus(self.platform, &self.menu_state());
         // No menu bar in the window (Chrome's way): the title bar's menu button opens the menus;
         // on macOS they are also in the menu bar at the top of the screen.
@@ -7255,6 +7326,55 @@ mod tests {
         frame(&mut app, &ctx, vec![]);
         let texts = drawn_text(&mut app, &ctx);
         assert!(texts.iter().any(|t| t.starts_with("WANDUR MUD CLIENT")), "{texts:?}");
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// One frame in which the window reports `full_screen`.
+    fn frame_full_screen(app: &mut WandurApp, ctx: &egui::Context, full_screen: bool) {
+        let mut eframe_frame = eframe::Frame::_new_kittest();
+        let mut input = RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(pos2(0.0, 0.0), vec2(1200.0, 800.0))),
+            ..Default::default()
+        };
+        input.viewports.entry(egui::ViewportId::ROOT).or_default().fullscreen = Some(full_screen);
+        let mut out = ctx.run_ui(input, |ui| {
+            app.logic(ui.ctx(), &mut eframe_frame);
+            app.ui(ui, &mut eframe_frame);
+        });
+        out.textures_delta.clear();
+    }
+
+    /// Full screen left with the green button or Esc (not the app's command) brings the band
+    /// back, and the traffic lights with it; the app's own toggle is not undone mid-transition.
+    #[test]
+    fn full_screen_follows_the_window_however_it_was_left() {
+        let dir = std::env::temp_dir().join(format!("wandur-app-fullscreen-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let ctx = egui::Context::default();
+        let mut app = WandurApp::new(
+            &ctx,
+            Options {
+                skin: Some("Armored".into()),
+                ..offline_options(&dir)
+            },
+        );
+        frame_full_screen(&mut app, &ctx, false);
+        assert!(!app.full_screen);
+        app.run_command(&ctx, Command::FullScreen);
+        assert!(app.full_screen);
+        // The window has not got there yet: the toggle stands.
+        frame_full_screen(&mut app, &ctx, false);
+        assert!(app.full_screen);
+        frame_full_screen(&mut app, &ctx, true);
+        assert!(app.full_screen);
+        // Left with the green button.
+        frame_full_screen(&mut app, &ctx, false);
+        assert!(!app.full_screen);
+        // And entered with it.
+        frame_full_screen(&mut app, &ctx, true);
+        assert!(app.full_screen);
         app.on_exit();
         drop(app);
         let _ = std::fs::remove_dir_all(&dir);
