@@ -13,6 +13,7 @@ use crate::directory_server::{DirectoryServer, latest_json};
 use crate::mud_server::MudServer;
 
 #[test]
+#[ignore = "slow (about 25 seconds): run with --include-ignored, or the ship profile"]
 fn every_scene_names_every_control() {
     let lantern = MudServer::start_lantern(0).unwrap();
     let (login, _log) = MudServer::start_login(0, false).unwrap();

@@ -1,0 +1,16 @@
+# cargo nextest (https://nexte.st): each test in its own process, run in parallel.
+#
+#   cargo nextest run                  everyday run; skips the slow end-to-end tests marked #[ignore]
+#   cargo nextest run --profile ship --run-ignored all
+#                                      everything, as ship-branch.sh runs it before a push
+#
+# A test that hangs (a lost drive, a stuck server) is stopped instead of holding up the run.
+
+[profile.default]
+# Reported as slow after 60 s, stopped after 3 periods (3 minutes).
+slow-timeout = { period = "60s", terminate-after = 3 }
+
+[profile.ship]
+fail-fast = false
+# The headless scene capture alone takes about 3 minutes; stop anything past 8.
+slow-timeout = { period = "120s", terminate-after = 4 }

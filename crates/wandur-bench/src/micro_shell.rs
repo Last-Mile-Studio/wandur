@@ -582,6 +582,7 @@ mod tests {
     /// frames take about 2 ms); it catches blocking work (file or network I/O, decoding) that
     /// lands on the UI thread.
     #[test]
+    #[ignore = "timing-sensitive, unreliable on a busy machine: run with --include-ignored, or the ship profile"]
     fn no_long_ui_thread_stalls_under_a_flood() {
         for name in [
             "flood 1 MB/s, panels with data",

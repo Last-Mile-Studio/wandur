@@ -425,6 +425,7 @@ mod tests {
     /// Every scene renders headless (wgpu, no window) against in-process loopback servers and is
     /// ready before the timeout: the session scene sees the whole Lantern Road.
     #[test]
+    #[ignore = "slow (about 3 minutes): run with --include-ignored, or the ship profile"]
     fn every_scene_captures_a_png_headless() {
         let mud = crate::mud_server::MudServer::start_lantern(0).unwrap();
         let (login, _) = crate::mud_server::MudServer::start_login(0, false).unwrap();

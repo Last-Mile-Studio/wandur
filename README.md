@@ -62,7 +62,11 @@ first time Find a MUD is shown and at most every five minutes after, with the Us
 ```sh
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
-cargo test
+# Everyday tests (about 10 s once built): cargo-nextest (brew install cargo-nextest), or plain cargo test.
+# Both skip the three slow end-to-end tests marked #[ignore].
+cargo nextest run
+# Everything, as the ship runs it before a push (about 3.5 minutes)
+cargo nextest run --profile ship --run-ignored all   # or: cargo test -- --include-ignored
 cargo build --release
 cargo run --release -p wandur-bench -- micro --label mine
 # Whole-app headless frames with per-panel time and allocation (sessions on a loopback server)
