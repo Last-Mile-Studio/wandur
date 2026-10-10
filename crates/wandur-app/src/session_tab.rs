@@ -7,6 +7,7 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Instant;
 
 use wandur_core::channels::{ChannelRule, SessionChannels};
+use wandur_core::command_line::Step;
 use wandur_core::completion::Vocabulary;
 use wandur_core::connection::{ConnectionState, Notice};
 use wandur_core::demo::DemoWorld;
@@ -31,6 +32,10 @@ use wandur_term::{TermSize, Terminal};
 
 /// Palette entry for locally echoed commands and client notices (grey, as the C# client does).
 pub const LOCAL_ECHO_COLOR: u8 = 8;
+
+/// The pause between the commands one typed line expands to, so a `#100` does not flood the world
+/// (ten a second).
+pub const QUEUE_GAP: std::time::Duration = std::time::Duration::from_millis(100);
 
 /// Commands kept per session for Up and Down.
 const HISTORY_LIMIT: usize = 500;
@@ -355,6 +360,14 @@ pub struct SessionTab {
     pub scripts: SessionScripts,
     /// Typed commands waiting for the scripts' aliases, by ticket.
     pending_commands: std::collections::VecDeque<(u64, String)>,
+    /// The steps a typed line expanded to (`#10 say 1`, `get all;wear all`, `#wait {text}`) still
+    /// to go, commands one every [`QUEUE_GAP`]; how many commands the line made and how many have
+    /// gone; when the next step runs; and a `#wait {text}` in progress.
+    queued: std::collections::VecDeque<wandur_core::command_line::Step>,
+    queued_total: usize,
+    queued_sent: usize,
+    queue_next: Option<Instant>,
+    waiting: Option<Waiting>,
     script_effects: Vec<Effect>,
     script_outcomes: Vec<CommandOutcome>,
     /// Commands scripts sent (tests and the probe).
@@ -624,6 +637,11 @@ impl SessionTab {
                 scripts
             },
             pending_commands: std::collections::VecDeque::new(),
+            queued: std::collections::VecDeque::new(),
+            queued_total: 0,
+            queued_sent: 0,
+            queue_next: None,
+            waiting: None,
             script_effects: Vec::new(),
             script_outcomes: Vec::new(),
             script_commands_sent: 0,
@@ -1031,6 +1049,14 @@ impl SessionTab {
     /// Apply everything the network delivered since the last call, run the reconnect and prompt
     /// timers, and return the characters of server text applied. Cheap when nothing happened.
     pub fn pump(&mut self, now: Instant) -> usize {
+        self.pump_queue(now);
+        let chars = self.pump_link(now);
+        // Text that just arrived may end a `#wait {text}`.
+        self.pump_queue(now);
+        chars
+    }
+
+    fn pump_link(&mut self, now: Instant) -> usize {
         let Link::Net(conn) = &mut self.link else {
             self.follow_history();
             self.follow_map(now);
@@ -1053,6 +1079,7 @@ impl SessionTab {
                 self.prompt_line.push(&drained.text[at..*offset]);
                 self.observe_words(&drained.text[at..*offset]);
                 self.observe_channels(&drained.text[at..*offset]);
+                self.observe_wait(&drained.text[at..*offset]);
                 self.observe_agent(&drained.text[at..*offset]);
                 let walk = self.walk_gate();
                 self.map.track_output(&drained.text[at..*offset], walk, now);
@@ -1076,6 +1103,7 @@ impl SessionTab {
             self.prompt_line.push(&drained.text[at..]);
             self.observe_words(&drained.text[at..]);
             self.observe_channels(&drained.text[at..]);
+            self.observe_wait(&drained.text[at..]);
             self.observe_agent(&drained.text[at..]);
             let walk = self.walk_gate();
             self.map.track_output(&drained.text[at..], walk, now);
@@ -1207,6 +1235,7 @@ impl SessionTab {
             self.map.track_output(&reply, walk, Instant::now());
             self.set_name(name);
             self.observe_agent(&reply);
+            self.observe_wait(&reply);
             // The demo's lines teach completion as a server's do.
             self.observe_words(&reply);
             self.completions.flush();
@@ -1217,10 +1246,17 @@ impl SessionTab {
     pub fn deadline(&self) -> Option<Instant> {
         let scripts = self.scripts.deadline();
         let save = self.maps.as_ref().and(self.map.save_deadline());
-        let map = [self.map.walk_deadline(), save, self.agent.deadline()]
-            .into_iter()
-            .flatten()
-            .min();
+        let waiting = self.waiting.as_ref().map(|w| w.until);
+        let map = [
+            self.map.walk_deadline(),
+            save,
+            self.agent.deadline(),
+            self.queue_next,
+            waiting,
+        ]
+        .into_iter()
+        .flatten()
+        .min();
         let Link::Net(conn) = &self.link else {
             return [self.macros.deadline(), scripts, map].into_iter().flatten().min();
         };
@@ -1717,9 +1753,145 @@ impl SessionTab {
         self.send_typed(line.to_string(), Instant::now()).is_ok()
     }
 
-    /// A command from the person: aliases, private input, echo and history as for the command
-    /// line. Hands the line back if it could not be sent.
+    /// A command from the person: the command line's shorthand (`#10 say 1`, `get all;wear all`,
+    /// never with private input), then aliases, private input, echo and history as for the command
+    /// line. Hands the line back if it could not be sent (or its shorthand is wrong).
     fn send_typed(&mut self, line: String, now: Instant) -> Result<(), String> {
+        if !self.private_input() {
+            match wandur_core::command_line::expand(&line) {
+                Err(error) => {
+                    self.notice(&expand_error(&error));
+                    return Err(line);
+                }
+                Ok(steps) if !matches!(steps.as_slice(), [Step::Send(only)] if *only == line) => {
+                    // A new line replaces what an earlier one still had to do.
+                    self.stop_queue(false);
+                    self.remember(line);
+                    self.history_pos = None;
+                    self.draft.clear();
+                    self.queued_total = steps.iter().filter(|s| matches!(s, Step::Send(_))).count();
+                    self.queued_sent = 0;
+                    self.queued = steps.into();
+                    self.queue_next = Some(now);
+                    self.pump_queue(now);
+                    return Ok(());
+                }
+                Ok(_) => {}
+            }
+        }
+        self.send_one(line, now, true)
+    }
+
+    /// Run the typed line's next step when its time has come: a command, the start of a pause, or
+    /// the start of a wait for text (which holds the rest until a line matches or it times out).
+    /// The queue stops when the session disconnects or input turns private.
+    fn pump_queue(&mut self, now: Instant) {
+        if self.queue_progress().is_none() {
+            return;
+        }
+        if !self.is_connected() || self.private_input() {
+            self.stop_queue(true);
+            return;
+        }
+        if let Some(waiting) = &self.waiting {
+            if waiting.matched {
+                self.waiting = None;
+                self.queue_next = Some(now);
+            } else if now >= waiting.until {
+                let (text, secs) = (waiting.text.clone(), waiting.timeout.as_secs());
+                let (sent, total) = (self.queued_sent, self.queued_total);
+                self.notice(&tf(S::CommandWaitTimedOut, &[&text, &secs, &sent, &total]));
+                self.stop_queue(false);
+                return;
+            } else {
+                return;
+            }
+        }
+        if self.queue_next.is_some_and(|at| at > now) {
+            return;
+        }
+        match self.queued.pop_front() {
+            None => self.queue_next = None,
+            Some(Step::Send(command)) => {
+                // Each command goes as if typed alone (aliases apply), without its own history
+                // entry.
+                let _ = self.send_one(command, now, false);
+                self.queued_sent += 1;
+                self.queue_next = (!self.queued.is_empty()).then(|| now + QUEUE_GAP);
+                // Only commands to the world are paced: a wait starts as the command before it
+                // goes, so a quick answer is not missed.
+                if matches!(self.queued.front(), Some(Step::WaitText { .. } | Step::WaitTime(_))) {
+                    self.queue_next = Some(now);
+                    self.pump_queue(now);
+                }
+            }
+            Some(Step::WaitTime(time)) => self.queue_next = Some(now + time),
+            Some(Step::WaitText { text, timeout }) => {
+                self.waiting = Some(Waiting {
+                    lower: text.to_lowercase(),
+                    text,
+                    timeout,
+                    until: now + timeout,
+                    seen: String::new(),
+                    matched: false,
+                });
+                self.queue_next = None;
+            }
+        }
+    }
+
+    /// Server text while a `#wait {text}` holds the queue: a match lets the rest go on. Only text
+    /// that arrives after the wait began counts; colours are ignored and case does not matter.
+    fn observe_wait(&mut self, text: &str) {
+        let Some(waiting) = &mut self.waiting else {
+            return;
+        };
+        if waiting.matched || text.is_empty() {
+            return;
+        }
+        waiting.seen.push_str(text);
+        // Enough for a long line and the wait's text across a chunk boundary.
+        const KEEP: usize = 8 * 1024;
+        if waiting.seen.len() > KEEP {
+            let mut cut = waiting.seen.len() - KEEP;
+            while !waiting.seen.is_char_boundary(cut) {
+                cut += 1;
+            }
+            waiting.seen.drain(..cut);
+        }
+        if wandur_core::channels::strip_ansi(&waiting.seen)
+            .to_lowercase()
+            .contains(&waiting.lower)
+        {
+            waiting.matched = true;
+        }
+    }
+
+    /// While a typed line is still going: how many of its commands have gone and how many in all.
+    pub fn queue_progress(&self) -> Option<(usize, usize)> {
+        (!self.queued.is_empty() || self.waiting.is_some()).then_some((self.queued_sent, self.queued_total))
+    }
+
+    /// The text a `#wait {text}` is waiting for, while it waits.
+    pub fn queue_waiting(&self) -> Option<&str> {
+        self.waiting.as_ref().filter(|w| !w.matched).map(|w| w.text.as_str())
+    }
+
+    /// Escape in the command line, a disconnect or private input: drop the steps still to go,
+    /// saying how far it got when `say` is set.
+    pub fn stop_queue(&mut self, say: bool) {
+        if let Some((sent, total)) = self.queue_progress()
+            && say
+        {
+            self.notice(&tf(S::CommandRepeatStopped, &[&sent, &total]));
+        }
+        self.queued.clear();
+        self.queue_next = None;
+        self.waiting = None;
+    }
+
+    /// One command as if typed alone; `remember` keeps it for Up and Down.
+    fn send_one(&mut self, line: String, now: Instant, remember: bool) -> Result<(), String> {
         // Manual input takes over from the agent (C# `ResetAgentContext("AgentManual")`) and
         // the login handshake.
         self.agent_reset(AgentStop::Manual);
@@ -1729,7 +1901,9 @@ impl SessionTab {
             && !gate.private
             && let Some(mut commands) = self.macros.on_command(&line, now, gate)
         {
-            self.remember(line);
+            if remember {
+                self.remember(line);
+            }
             self.send_from_macros(&mut commands);
             self.history_pos = None;
             self.draft.clear();
@@ -1743,13 +1917,15 @@ impl SessionTab {
         {
             // A script's alias may take it: it goes out when the scripts have answered.
             self.pending_commands.push_back((ticket, line.clone()));
-            self.remember(line);
+            if remember {
+                self.remember(line);
+            }
             self.history_pos = None;
             self.draft.clear();
             self.terminal.scroll_to_bottom();
             return Ok(());
         }
-        self.send_typed_now(line, private)
+        self.send_typed_now(line, private, remember)
     }
 
     /// A typed command no alias took, sent once the scripts answered.
@@ -1767,7 +1943,7 @@ impl SessionTab {
         }
     }
 
-    fn send_typed_now(&mut self, line: String, private: bool) -> Result<(), String> {
+    fn send_typed_now(&mut self, line: String, private: bool, remember: bool) -> Result<(), String> {
         if !self.send_line(&line) {
             return Err(line);
         }
@@ -1779,7 +1955,9 @@ impl SessionTab {
             if self.echo_commands {
                 self.terminal.feed_local(&format!("{line}\n"), LOCAL_ECHO_COLOR);
             }
-            self.remember(line);
+            if remember {
+                self.remember(line);
+            }
         }
         self.history_pos = None;
         self.draft.clear();
@@ -2244,6 +2422,28 @@ impl SessionTab {
 }
 
 /// Loopback sessions for the tests of this module and of the views.
+/// A `#wait {text}` in progress: the text as typed and in lower case, how long it may take and
+/// until when, the server text seen since it began, and whether a line matched.
+struct Waiting {
+    text: String,
+    lower: String,
+    timeout: std::time::Duration,
+    until: Instant,
+    seen: String,
+    matched: bool,
+}
+
+/// What is wrong with a typed line's shorthand, in the person's language.
+fn expand_error(error: &wandur_core::command_line::ExpandError) -> String {
+    use wandur_core::command_line::{ExpandError, MAX_COMMANDS, MAX_REPEAT, MAX_WAIT_SECS};
+    match error {
+        ExpandError::BadCount(n) => tf(S::CommandRepeatCount, &[n, &MAX_REPEAT]),
+        ExpandError::Unclosed => tf(S::CommandRepeatUnclosed, &[]),
+        ExpandError::TooMany => tf(S::CommandTooMany, &[&MAX_COMMANDS]),
+        ExpandError::BadWait => tf(S::CommandWaitUsage, &[&MAX_WAIT_SECS]),
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod test_support {
     use super::*;
@@ -2440,6 +2640,123 @@ mod tests {
             .filter(|l| !l.is_empty())
             .map(str::to_owned)
             .collect()
+    }
+
+    /// Over loopback: the command line's shorthand. `#2 ford;say hi` runs the alias twice and then
+    /// `say hi`, one command every [`QUEUE_GAP`], with the typed line in the history once; Escape's
+    /// stop says how far it got; a wrong count is refused and the line stays; private input is
+    /// sent exactly as typed.
+    #[test]
+    fn the_command_line_repeats_and_chains_commands_at_a_steady_pace() {
+        let (mut tab, mut server) = local_tab();
+        tab.set_macros(Some("w".into()), macro_library(), Instant::now());
+        pump_until(&mut tab, |t| t.is_connected() && t.macros.is_active());
+
+        let t0 = Instant::now();
+        tab.input = "#2 ford;say hi".into();
+        tab.submit_at(t0);
+        assert_eq!(read_lines(&mut server, 2), ["east", "east"], "the first goes at once");
+        assert_eq!(tab.queue_progress(), Some((1, 3)));
+        assert_eq!(tab.deadline(), Some(t0 + QUEUE_GAP), "the app wakes for the next");
+        tab.pump(t0 + QUEUE_GAP / 2);
+        assert_eq!(tab.queue_progress(), Some((1, 3)), "not before its time");
+        tab.pump(t0 + QUEUE_GAP);
+        assert_eq!(read_lines(&mut server, 2), ["east", "east"]);
+        tab.pump(t0 + QUEUE_GAP * 2);
+        assert_eq!(read_lines(&mut server, 1), ["say hi"]);
+        assert_eq!(tab.queue_progress(), None);
+        assert_eq!(tab.history(), ["#2 ford;say hi"], "the typed line, once");
+        assert!(tab.input.is_empty());
+
+        let t1 = Instant::now();
+        tab.input = "#5 look".into();
+        tab.submit_at(t1);
+        assert_eq!(read_lines(&mut server, 1), ["look"]);
+        tab.stop_queue(true);
+        assert_eq!(tab.queue_progress(), None);
+        assert!(tab.terminal.transcript().contains("[Stopped: 1 of 5 sent]"));
+        tab.pump(t1 + QUEUE_GAP * 10);
+
+        tab.input = "#0 look".into();
+        tab.submit();
+        assert_eq!(tab.input, "#0 look", "a wrong count sends nothing and keeps the line");
+        assert!(
+            tab.terminal
+                .transcript()
+                .contains("[#0: a repeat count runs from 1 to 100]")
+        );
+
+        // Private input (a password with a semicolon in it) is never taken apart.
+        tab.set_manual_private(true);
+        tab.input = "#2 a;b".into();
+        tab.submit();
+        assert_eq!(
+            read_lines(&mut server, 1),
+            ["#2 a;b"],
+            "nothing between the stop and here went out"
+        );
+        assert_eq!(tab.queue_progress(), None);
+    }
+
+    /// Over loopback: `#wait {text}` holds the rest until a line from the world contains the text
+    /// (any case, colours ignored, only lines after the wait began), so a repeat can wait for each
+    /// round; a wait that times out stops the rest and says so; `#wait 2` pauses two seconds.
+    #[test]
+    fn a_typed_line_waits_for_text_and_for_time() {
+        let (mut tab, mut server) = local_tab();
+        pump_until(&mut tab, |t| t.is_connected());
+
+        let t0 = Instant::now();
+        tab.input = "#2 {say 1;#wait {the droid is dead}};look".into();
+        tab.submit_at(t0);
+        assert_eq!(read_lines(&mut server, 1), ["say 1"]);
+        assert_eq!(
+            tab.queue_waiting(),
+            Some("the droid is dead"),
+            "waiting from the moment the command went"
+        );
+        assert_eq!(tab.deadline(), Some(t0 + wandur_core::command_line::DEFAULT_WAIT));
+        server.write_all(b"A droid sparks and whirs.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.terminal.transcript().contains("whirs"));
+        assert_eq!(tab.queue_waiting(), Some("the droid is dead"), "not that line");
+        server.write_all(b"The DROID is \x1b[31mdead\x1b[0m!\r\n").unwrap();
+        // The match lets the next round go at once, which waits again.
+        pump_until(&mut tab, |t| t.queue_progress() == Some((2, 3)));
+        assert_eq!(read_lines(&mut server, 1), ["say 1"]);
+        assert_eq!(tab.queue_waiting(), Some("the droid is dead"));
+        server.write_all(b"...the droid is dead.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.queue_progress().is_none());
+        assert_eq!(read_lines(&mut server, 1), ["look"]);
+        assert_eq!(tab.history(), ["#2 {say 1;#wait {the droid is dead}};look"]);
+
+        // A line from before the wait does not count.
+        server.write_all(b"You are ready.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.terminal.transcript().contains("You are ready."));
+        let t1 = Instant::now();
+        tab.input = "#wait 1 {ready};look".into();
+        tab.submit_at(t1);
+        assert_eq!(tab.queue_waiting(), Some("ready"));
+        // Nothing arrives: after a second it gives up and the rest is dropped.
+        tab.pump(t1 + Duration::from_millis(1100));
+        assert_eq!(tab.queue_progress(), None);
+        assert!(
+            tab.terminal
+                .transcript()
+                .contains("[Gave up waiting for “ready” after 1 s; 0 of 1 sent]")
+        );
+
+        let t2 = Instant::now();
+        tab.input = "#wait 2;north".into();
+        tab.submit_at(t2);
+        tab.pump(t2 + Duration::from_secs(1));
+        assert_eq!(tab.queue_progress(), Some((0, 1)), "still pausing");
+        tab.pump(t2 + Duration::from_secs(2));
+        assert_eq!(
+            read_lines(&mut server, 1),
+            ["north"],
+            "and nothing earlier, so the look was dropped"
+        );
+        assert_eq!(tab.queue_progress(), None);
     }
 
     /// Over loopback: a trigger answers a public server line; an alias replaces the typed

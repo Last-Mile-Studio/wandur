@@ -483,4 +483,12 @@
   <data name="OfficialMapHttpStatus" xml:space="preserve"><value>The server answered {0}.</value></data>
   <data name="OfficialMapSaveFailed" xml:space="preserve"><value>The official map was imported, but its copy could not be saved: {0}</value></data>
   <data name="OfficialMapPreferenceFailed" xml:space="preserve"><value>Could not remember this choice: {0}</value></data>
+  <data name="CommandRepeating" xml:space="preserve"><value>Sending {0} of {1} · Esc to stop</value></data>
+  <data name="CommandRepeatStopped" xml:space="preserve"><value>Stopped: {0} of {1} sent</value></data>
+  <data name="CommandRepeatCount" xml:space="preserve"><value>#{0}: a repeat count runs from 1 to {1}</value></data>
+  <data name="CommandRepeatUnclosed" xml:space="preserve"><value>A {{ after a repeat count needs its closing }}</value></data>
+  <data name="CommandTooMany" xml:space="preserve"><value>That line makes more than {0} commands</value></data>
+  <data name="CommandWaiting" xml:space="preserve"><value>Waiting for “{0}” · Esc to stop</value></data>
+  <data name="CommandWaitTimedOut" xml:space="preserve"><value>Gave up waiting for “{0}” after {1} s; {2} of {3} sent</value></data>
+  <data name="CommandWaitUsage" xml:space="preserve"><value>#wait takes seconds from 1 to {0}, or text: #wait {{the droid is dead}}</value></data>
 </root>

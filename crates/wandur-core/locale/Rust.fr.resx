@@ -483,4 +483,12 @@
   <data name="OfficialMapHttpStatus" xml:space="preserve"><value>Le serveur a répondu {0}.</value></data>
   <data name="OfficialMapSaveFailed" xml:space="preserve"><value>La carte officielle a été importée, mais sa copie n’a pas pu être enregistrée : {0}</value></data>
   <data name="OfficialMapPreferenceFailed" xml:space="preserve"><value>Impossible de mémoriser ce choix : {0}</value></data>
+  <data name="CommandRepeating" xml:space="preserve"><value>Envoi {0} sur {1} · Échap pour arrêter</value></data>
+  <data name="CommandRepeatStopped" xml:space="preserve"><value>Arrêté : {0} sur {1} envoyés</value></data>
+  <data name="CommandRepeatCount" xml:space="preserve"><value>#{0} : le nombre de répétitions va de 1 à {1}</value></data>
+  <data name="CommandRepeatUnclosed" xml:space="preserve"><value>Une {{ après un nombre de répétitions doit être fermée par }}</value></data>
+  <data name="CommandTooMany" xml:space="preserve"><value>Cette ligne produit plus de {0} commandes</value></data>
+  <data name="CommandWaiting" xml:space="preserve"><value>En attente de « {0} » · Échap pour arrêter</value></data>
+  <data name="CommandWaitTimedOut" xml:space="preserve"><value>Attente de « {0} » abandonnée après {1} s ; {2} sur {3} envoyés</value></data>
+  <data name="CommandWaitUsage" xml:space="preserve"><value>#wait prend des secondes de 1 à {0}, ou un texte : #wait {{the droid is dead}}</value></data>
 </root>

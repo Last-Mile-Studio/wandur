@@ -3022,10 +3022,26 @@ pub enum S {
     OfficialMapSaveFailed,
     /// Could not remember this choice: {0}
     OfficialMapPreferenceFailed,
+    /// Sending {0} of {1} · Esc to stop
+    CommandRepeating,
+    /// Stopped: {0} of {1} sent
+    CommandRepeatStopped,
+    /// #{0}: a repeat count runs from 1 to {1}
+    CommandRepeatCount,
+    /// A {{ after a repeat count needs its closing }}
+    CommandRepeatUnclosed,
+    /// That line makes more than {0} commands
+    CommandTooMany,
+    /// Waiting for “{0}” · Esc to stop
+    CommandWaiting,
+    /// Gave up waiting for “{0}” after {1} s; {2} of {3} sent
+    CommandWaitTimedOut,
+    /// #wait takes seconds from 1 to {0}, or text: #wait {{the droid is dead}}
+    CommandWaitUsage,
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1508;
+pub const COUNT: usize = 1516;
 
 impl S {
     /// Every key, in table order.
@@ -4538,6 +4554,14 @@ impl S {
         S::OfficialMapHttpStatus,
         S::OfficialMapSaveFailed,
         S::OfficialMapPreferenceFailed,
+        S::CommandRepeating,
+        S::CommandRepeatStopped,
+        S::CommandRepeatCount,
+        S::CommandRepeatUnclosed,
+        S::CommandTooMany,
+        S::CommandWaiting,
+        S::CommandWaitTimedOut,
+        S::CommandWaitUsage,
     ];
 }
 
@@ -6051,6 +6075,14 @@ pub static NAMES: [&str; COUNT] = [
     "OfficialMapHttpStatus",
     "OfficialMapSaveFailed",
     "OfficialMapPreferenceFailed",
+    "CommandRepeating",
+    "CommandRepeatStopped",
+    "CommandRepeatCount",
+    "CommandRepeatUnclosed",
+    "CommandTooMany",
+    "CommandWaiting",
+    "CommandWaitTimedOut",
+    "CommandWaitUsage",
 ];
 
 /// The text of every key in each language, in the order of `Language`.
@@ -7565,6 +7597,14 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "The server answered {0}.",
         "The official map was imported, but its copy could not be saved: {0}",
         "Could not remember this choice: {0}",
+        "Sending {0} of {1} · Esc to stop",
+        "Stopped: {0} of {1} sent",
+        "#{0}: a repeat count runs from 1 to {1}",
+        "A {{ after a repeat count needs its closing }}",
+        "That line makes more than {0} commands",
+        "Waiting for “{0}” · Esc to stop",
+        "Gave up waiting for “{0}” after {1} s; {2} of {3} sent",
+        "#wait takes seconds from 1 to {0}, or text: #wait {{the droid is dead}}",
     ],
     // es
     [
@@ -9076,6 +9116,14 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "El servidor respondió {0}.",
         "Se importó el mapa oficial, pero no se pudo guardar su copia: {0}",
         "No se pudo recordar esta elección: {0}",
+        "Enviando {0} de {1} · Esc para detener",
+        "Detenido: {0} de {1} enviados",
+        "#{0}: el número de repeticiones va de 1 a {1}",
+        "Una {{ tras un número de repeticiones necesita su }} de cierre",
+        "Esa línea genera más de {0} comandos",
+        "Esperando «{0}» · Esc para detener",
+        "Se dejó de esperar «{0}» tras {1} s; {2} de {3} enviados",
+        "#wait lleva segundos de 1 a {0}, o un texto: #wait {{the droid is dead}}",
     ],
     // fr
     [
@@ -10587,6 +10635,14 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Le serveur a répondu {0}.",
         "La carte officielle a été importée, mais sa copie n’a pas pu être enregistrée : {0}",
         "Impossible de mémoriser ce choix : {0}",
+        "Envoi {0} sur {1} · Échap pour arrêter",
+        "Arrêté : {0} sur {1} envoyés",
+        "#{0} : le nombre de répétitions va de 1 à {1}",
+        "Une {{ après un nombre de répétitions doit être fermée par }}",
+        "Cette ligne produit plus de {0} commandes",
+        "En attente de « {0} » · Échap pour arrêter",
+        "Attente de « {0} » abandonnée après {1} s ; {2} sur {3} envoyés",
+        "#wait prend des secondes de 1 à {0}, ou un texte : #wait {{the droid is dead}}",
     ],
     // de
     [
@@ -12098,6 +12154,14 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Der Server antwortete mit {0}.",
         "Die offizielle Karte wurde importiert, aber ihre Kopie konnte nicht gespeichert werden: {0}",
         "Diese Wahl konnte nicht gespeichert werden: {0}",
+        "Sende {0} von {1} · Esc zum Anhalten",
+        "Angehalten: {0} von {1} gesendet",
+        "#{0}: Eine Wiederholungszahl geht von 1 bis {1}",
+        "Eine {{ nach einer Wiederholungszahl braucht ihre schließende }}",
+        "Diese Zeile ergibt mehr als {0} Befehle",
+        "Warte auf „{0}“ · Esc zum Anhalten",
+        "Warten auf „{0}“ nach {1} s aufgegeben; {2} von {3} gesendet",
+        "#wait braucht Sekunden von 1 bis {0} oder Text: #wait {{the droid is dead}}",
     ],
     // pt-BR
     [
@@ -13609,5 +13673,13 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "O servidor respondeu {0}.",
         "O mapa oficial foi importado, mas sua cópia não pôde ser salva: {0}",
         "Não foi possível lembrar esta escolha: {0}",
+        "Enviando {0} de {1} · Esc para parar",
+        "Parado: {0} de {1} enviados",
+        "#{0}: o número de repetições vai de 1 a {1}",
+        "Uma {{ depois de um número de repetições precisa do }} de fechamento",
+        "Essa linha gera mais de {0} comandos",
+        "Aguardando “{0}” · Esc para parar",
+        "Desistiu de aguardar “{0}” após {1} s; {2} de {3} enviados",
+        "#wait recebe segundos de 1 a {0}, ou um texto: #wait {{the droid is dead}}",
     ],
 ];

@@ -483,4 +483,12 @@
   <data name="OfficialMapHttpStatus" xml:space="preserve"><value>O servidor respondeu {0}.</value></data>
   <data name="OfficialMapSaveFailed" xml:space="preserve"><value>O mapa oficial foi importado, mas sua cópia não pôde ser salva: {0}</value></data>
   <data name="OfficialMapPreferenceFailed" xml:space="preserve"><value>Não foi possível lembrar esta escolha: {0}</value></data>
+  <data name="CommandRepeating" xml:space="preserve"><value>Enviando {0} de {1} · Esc para parar</value></data>
+  <data name="CommandRepeatStopped" xml:space="preserve"><value>Parado: {0} de {1} enviados</value></data>
+  <data name="CommandRepeatCount" xml:space="preserve"><value>#{0}: o número de repetições vai de 1 a {1}</value></data>
+  <data name="CommandRepeatUnclosed" xml:space="preserve"><value>Uma {{ depois de um número de repetições precisa do }} de fechamento</value></data>
+  <data name="CommandTooMany" xml:space="preserve"><value>Essa linha gera mais de {0} comandos</value></data>
+  <data name="CommandWaiting" xml:space="preserve"><value>Aguardando “{0}” · Esc para parar</value></data>
+  <data name="CommandWaitTimedOut" xml:space="preserve"><value>Desistiu de aguardar “{0}” após {1} s; {2} de {3} enviados</value></data>
+  <data name="CommandWaitUsage" xml:space="preserve"><value>#wait recebe segundos de 1 a {0}, ou um texto: #wait {{the droid is dead}}</value></data>
 </root>

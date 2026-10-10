@@ -1574,8 +1574,14 @@ fn footer(
                 }
                 ui.add_space(8.0);
                 // No standing hint (C# UI review, item 6): only while input is private or a
-                // completion waits for Tab.
-                if ui.available_width() > 240.0 && (tab.private_input() || suggesting) {
+                // completion waits for Tab, or a typed line's commands are still going.
+                if let Some((sent, total)) = tab.queue_progress() {
+                    let status = match tab.queue_waiting() {
+                        Some(text) => tf(S::CommandWaiting, &[&text]),
+                        None => tf(S::CommandRepeating, &[&sent, &total]),
+                    };
+                    ui.label(RichText::new(status).size(11.0).color(theme.accent));
+                } else if ui.available_width() > 240.0 && (tab.private_input() || suggesting) {
                     let hint = footer_hint(tab.private_input(), suggesting);
                     ui.label(RichText::new(hint).size(11.0).color(theme.muted));
                 }
@@ -2087,6 +2093,12 @@ fn input_line(
     };
     let mut suggestion = ghost(ui, tab, view);
     let focused = ui.memory(|m| m.has_focus(id));
+    // Escape stops what a typed `#10 say 1` or `a;b` still has to send, before it dismisses a
+    // completion.
+    if focused && tab.queue_progress().is_some() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape))
+    {
+        tab.stop_queue(true);
+    }
     if focused && let Some(rest) = &suggestion {
         // (The caret is read before the input lock is taken: both live in the context.)
         let at_end = caret_at_end(ui, &tab.input);
