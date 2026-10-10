@@ -1,0 +1,2012 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data name="AboutWandur" xml:space="preserve">
+    <value>À propos de Wandur</value>
+  </data>
+  <data name="ADoorwayToOtherWorldsAnOpenSourceMUD" xml:space="preserve">
+    <value>Une porte vers d’autres mondes.
+Un client MUD open source.
+Version 0.1</value>
+  </data>
+  <data name="YourNextAdventure" xml:space="preserve">
+    <value>Votre prochaine aventure</value>
+  </data>
+  <data name="ChooseASavedWorldOrTryTheOfflineDemo" xml:space="preserve">
+    <value>Choisissez un monde enregistré ou essayez la démo hors ligne.</value>
+  </data>
+  <data name="ReadyToWander" xml:space="preserve">
+    <value>Prêt à explorer</value>
+  </data>
+  <data name="DisconnectFromTheCurrentWorldBeforeStartingAnotherSession" xml:space="preserve">
+    <value>Déconnectez-vous du monde actuel avant de lancer une autre session.</value>
+  </data>
+  <data name="OFFLINEDEMOASmallWorldOnYourOwnMachine" xml:space="preserve">
+    <value>DÉMO HORS LIGNE  /  Un petit monde sur votre propre ordinateur</value>
+  </data>
+  <data name="Connecting" xml:space="preserve">
+    <value>Connexion…</value>
+  </data>
+  <data name="ConnectionCanceled" xml:space="preserve">
+    <value>Connexion annulée</value>
+  </data>
+  <data name="ConnectionTimedOut" xml:space="preserve">
+    <value>Délai de connexion dépassé</value>
+  </data>
+  <data name="CouldNotConnect" xml:space="preserve">
+    <value>Connexion impossible</value>
+  </data>
+  <data name="OutputArrivedTooQuicklyOlderOutputWasDiscardedTo" xml:space="preserve">
+    <value>Le texte arrivait trop vite. Le texte le plus ancien a été supprimé pour préserver la réactivité du client.</value>
+  </data>
+  <data name="ConnectToAWorldBeforeSendingCommands" xml:space="preserve">
+    <value>Connectez-vous à un monde avant d’envoyer des commandes.</value>
+  </data>
+  <data name="CommandWasnTSent" xml:space="preserve">
+    <value>La commande n’a pas été envoyée : {0}</value>
+  </data>
+  <data name="Disconnected" xml:space="preserve">
+    <value>Déconnecté</value>
+  </data>
+  <data name="Worlds" xml:space="preserve">
+    <value>Mondes</value>
+  </data>
+  <data name="Controls" xml:space="preserve">
+    <value>Commandes</value>
+  </data>
+  <data name="Session" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="ChooseAWorld" xml:space="preserve">
+    <value>Monde ou hôte:port…</value>
+  </data>
+  <data name="ChooseASavedWorldToOpenInASession" xml:space="preserve">
+    <value>Choisissez un monde enregistré, ou saisissez hôte:port et appuyez sur Entrée pour vous connecter</value>
+  </data>
+  <data name="Connect" xml:space="preserve">
+    <value>▶  Se connecter</value>
+  </data>
+  <data name="ConnectToTheSelectedWorldInASessionTab" xml:space="preserve">
+    <value>Se connecter au monde sélectionné dans un onglet de session</value>
+  </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>■  Se déconnecter</value>
+  </data>
+  <data name="DisconnectTheActiveSession" xml:space="preserve">
+    <value>Déconnecter la session active</value>
+  </data>
+  <data name="AddWorld" xml:space="preserve">
+    <value>+  Ajouter un monde</value>
+  </data>
+  <data name="AddOrEditASavedWorld" xml:space="preserve">
+    <value>Ajouter ou modifier un monde enregistré</value>
+  </data>
+  <data name="FindAMUD" xml:space="preserve">
+    <value>Trouver un MUD</value>
+  </data>
+  <data name="SearchTheDirectoryForAMUDServer" xml:space="preserve">
+    <value>Rechercher un serveur MUD dans l’annuaire</value>
+  </data>
+  <data name="Done" xml:space="preserve">
+    <value>Terminé</value>
+  </data>
+  <data name="SessionConnected" xml:space="preserve">
+    <value>{0} session{1}  ·  {2} connectée(s)</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>×  Annuler</value>
+  </data>
+  <data name="SaveSessionTranscript" xml:space="preserve">
+    <value>Enregistrer la transcription de la session</value>
+  </data>
+  <data name="TextFile" xml:space="preserve">
+    <value>Fichier texte</value>
+  </data>
+  <data name="CouldNotSaveTranscript" xml:space="preserve">
+    <value>Impossible d’enregistrer la transcription : {0}</value>
+  </data>
+  <data name="NewSession" xml:space="preserve">
+    <value>Nouvelle session</value>
+  </data>
+  <data name="AddWorld2" xml:space="preserve">
+    <value>Ajouter un monde…</value>
+  </data>
+  <data name="NewSession2" xml:space="preserve">
+    <value>Nouvelle session</value>
+  </data>
+  <data name="OpenOfflineDemo" xml:space="preserve">
+    <value>Ouvrir la démo hors ligne</value>
+  </data>
+  <data name="SaveTranscript" xml:space="preserve">
+    <value>Enregistrer la transcription…</value>
+  </data>
+  <data name="CloseSession" xml:space="preserve">
+    <value>Fermer la session</value>
+  </data>
+  <data name="Preferences" xml:space="preserve">
+    <value>Préférences…</value>
+  </data>
+  <data name="QuitWandur" xml:space="preserve">
+    <value>Quitter Wandur</value>
+  </data>
+  <data name="Exit" xml:space="preserve">
+    <value>Quitter</value>
+  </data>
+  <data name="File" xml:space="preserve">
+    <value>Fichier</value>
+  </data>
+  <data name="BrowseWorlds" xml:space="preserve">
+    <value>Parcourir les mondes…</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="Redo" xml:space="preserve">
+    <value>Rétablir</value>
+  </data>
+  <data name="Cut" xml:space="preserve">
+    <value>Couper</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copier</value>
+  </data>
+  <data name="Paste" xml:space="preserve">
+    <value>Coller</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Tout sélectionner</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Édition</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Affichage</value>
+  </data>
+  <data name="WorldsPanel" xml:space="preserve">
+    <value>Panneau des mondes</value>
+  </data>
+  <data name="ControlsPanel" xml:space="preserve">
+    <value>Panneau des commandes</value>
+  </data>
+  <data name="RestorePanels" xml:space="preserve">
+    <value>Restaurer les panneaux</value>
+  </data>
+  <data name="ShowToolbar" xml:space="preserve">
+    <value>Afficher la barre d’outils</value>
+  </data>
+  <data name="FocusCommandInput" xml:space="preserve">
+    <value>Activer la saisie des commandes</value>
+  </data>
+  <data name="ConnectToSelectedWorld" xml:space="preserve">
+    <value>Se connecter au monde sélectionné</value>
+  </data>
+  <data name="Disconnect2" xml:space="preserve">
+    <value>Se déconnecter</value>
+  </data>
+  <data name="PrivateInput" xml:space="preserve">
+    <value>Saisie privée</value>
+  </data>
+  <data name="ClearTranscript" xml:space="preserve">
+    <value>Effacer la transcription</value>
+  </data>
+  <data name="Window" xml:space="preserve">
+    <value>Fenêtre</value>
+  </data>
+  <data name="NextSession" xml:space="preserve">
+    <value>Session suivante</value>
+  </data>
+  <data name="PreviousSession" xml:space="preserve">
+    <value>Session précédente</value>
+  </data>
+  <data name="Minimize" xml:space="preserve">
+    <value>Réduire</value>
+  </data>
+  <data name="FullScreen" xml:space="preserve">
+    <value>Plein écran</value>
+  </data>
+  <data name="Help" xml:space="preserve">
+    <value>Aide</value>
+  </data>
+  <data name="GettingStarted" xml:space="preserve">
+    <value>Premiers pas</value>
+  </data>
+  <data name="OtherMudClients" xml:space="preserve">
+    <value>Autres clients MUD</value>
+  </data>
+  <data name="EnterAPasswordToSaveForThisServerAnd" xml:space="preserve">
+    <value>Saisissez un mot de passe à enregistrer pour ce serveur et ce nom d’utilisateur.</value>
+  </data>
+  <data name="WorldWasNotSavedAnUnusedPasswordMayRemain" xml:space="preserve">
+    <value>Le monde n’a pas été enregistré ; un mot de passe inutilisé peut subsister dans le gestionnaire d’identifiants du système.</value>
+  </data>
+  <data name="WorldSettingsSavedButTheOldPasswordCouldNot" xml:space="preserve">
+    <value>Les paramètres du monde ont été enregistrés, mais l’ancien mot de passe n’a pas pu être supprimé du gestionnaire d’identifiants du système. Supprimez-y l’entrée Wandur inutilisée lorsqu’il sera disponible.</value>
+  </data>
+  <data name="SavedPasswordWasnTFoundLogInManuallyOr" xml:space="preserve">
+    <value>Le mot de passe enregistré est introuvable. Connectez-vous manuellement ou modifiez ce monde pour l’enregistrer à nouveau.</value>
+  </data>
+  <data name="CouldNotReadTheSavedPasswordUnlockYourSystem" xml:space="preserve">
+    <value>Impossible de lire le mot de passe enregistré. Déverrouillez le gestionnaire d’identifiants du système ou connectez-vous manuellement.</value>
+  </data>
+  <data name="AutoLoginStoppedBecauseAPromptPatternTookToo" xml:space="preserve">
+    <value>La connexion automatique s’est arrêtée car l’évaluation d’un motif d’invite prenait trop de temps. Connectez-vous manuellement.</value>
+  </data>
+  <data name="AutoLoginCouldNotSendCredentialsLogInManually" xml:space="preserve">
+    <value>La connexion automatique n’a pas pu envoyer les identifiants. Connectez-vous manuellement ; aucune nouvelle tentative ne sera effectuée.</value>
+  </data>
+  <data name="SendOneCommandAtATime" xml:space="preserve">
+    <value>Envoyez une seule commande à la fois.</value>
+  </data>
+  <data name="CommandIsTooLong" xml:space="preserve">
+    <value>La commande est trop longue.</value>
+  </data>
+  <data name="CreateANewSessionToReconnect" xml:space="preserve">
+    <value>Créez une nouvelle session pour vous reconnecter.</value>
+  </data>
+  <data name="ConnectedTLS" xml:space="preserve">
+    <value>Connecté · TLS</value>
+  </data>
+  <data name="ConnectedTelnet" xml:space="preserve">
+    <value>Connecté · Telnet</value>
+  </data>
+  <data name="ServerClosedTheConnection" xml:space="preserve">
+    <value>Le serveur a fermé la connexion</value>
+  </data>
+  <data name="ConnectionLost" xml:space="preserve">
+    <value>Connexion perdue : {0}</value>
+  </data>
+  <data name="ConnectToAWorldFirst" xml:space="preserve">
+    <value>Connectez-vous d’abord à un monde.</value>
+  </data>
+  <data name="CouldnTFindTheHostnameCheckTheAddressThe" xml:space="preserve">
+    <value>Impossible de trouver le nom d’hôte « {0} ». Vérifiez l’adresse ; la fiche de l’annuaire est peut-être obsolète.</value>
+  </data>
+  <data name="CouldnTLookUpRightNowCheckYourNetwork" xml:space="preserve">
+    <value>Impossible de résoudre « {0} » pour le moment. Vérifiez votre connexion réseau et réessayez.</value>
+  </data>
+  <data name="LoginPromptPatternsMustBe1512Characters" xml:space="preserve">
+    <value>Les motifs d’invite de connexion doivent comporter entre 1 et 512 caractères.</value>
+  </data>
+  <data name="LoginPromptPatternsMustNotMatchEmptyText" xml:space="preserve">
+    <value>Les motifs d’invite de connexion ne doivent pas correspondre à un texte vide.</value>
+  </data>
+  <data name="NewWorld" xml:space="preserve">
+    <value>Nouveau monde</value>
+  </data>
+  <data name="GiveThisWorldANameOf1100Characters" xml:space="preserve">
+    <value>Donnez à ce monde un nom de 1 à 100 caractères.</value>
+  </data>
+  <data name="EnterAHostnameOrIPAddressWithoutAURL" xml:space="preserve">
+    <value>Saisissez un nom d’hôte ou une adresse IP, sans schéma d’URL ni port.</value>
+  </data>
+  <data name="PortMustBeBetween1And65535" xml:space="preserve">
+    <value>Le port doit être compris entre 1 et 65535.</value>
+  </data>
+  <data name="ChooseUTF8OrLatin1Encoding" xml:space="preserve">
+    <value>Choisissez l’encodage UTF-8 ou Latin-1.</value>
+  </data>
+  <data name="UsernameMustBeASingleLineOfAtMost" xml:space="preserve">
+    <value>Le nom d’utilisateur doit tenir sur une seule ligne de 256 caractères maximum.</value>
+  </data>
+  <data name="AutoLoginNeedsAUsernameAndASavedPassword" xml:space="preserve">
+    <value>La connexion automatique nécessite un nom d’utilisateur et un mot de passe enregistré.</value>
+  </data>
+  <data name="InvalidLoginPromptPatternUseASimpleRegularExpression" xml:space="preserve">
+    <value>Motif d’invite de connexion invalide. Utilisez une expression régulière simple, sans assertions avant ou arrière ni références arrière.</value>
+  </data>
+  <data name="UnknownColorScheme" xml:space="preserve">
+    <value>Palette de couleurs inconnue.</value>
+  </data>
+  <data name="TextSizeMustBeBetween11And28" xml:space="preserve">
+    <value>La taille du texte doit être comprise entre 11 et 28.</value>
+  </data>
+  <data name="RoomClassificationThresholdRange" xml:space="preserve">
+    <value>La confiance de la classification des salles doit être comprise entre 0,5 et 0,99.</value>
+  </data>
+  <data name="CustomColorsMustUseRRGGBBOrBeLeftBlank" xml:space="preserve">
+    <value>Les couleurs personnalisées doivent utiliser #RRGGBB ou être laissées vides.</value>
+  </data>
+  <data name="AtMost200WorldProfilesAreSupported" xml:space="preserve">
+    <value>Un maximum de 200 profils de monde est pris en charge.</value>
+  </data>
+  <data name="InvalidWorldProfile" xml:space="preserve">
+    <value>Profil de monde invalide.</value>
+  </data>
+  <data name="WorldProfileIDsMustBeUnique" xml:space="preserve">
+    <value>Les identifiants des profils de monde doivent être uniques.</value>
+  </data>
+  <data name="SettingsFileIsTooLarge" xml:space="preserve">
+    <value>Le fichier de paramètres est trop volumineux.</value>
+  </data>
+  <data name="EmptySettings" xml:space="preserve">
+    <value>Paramètres vides.</value>
+  </data>
+  <data name="SettingsCouldNotBeReadDefaultsAreInUse" xml:space="preserve">
+    <value>Impossible de lire les paramètres : {0} Les valeurs par défaut sont utilisées. Une copie de sauvegarde du fichier d’origine sera créée lors de l’enregistrement.</value>
+  </data>
+  <data name="DirectoryResponseWasTooLarge" xml:space="preserve">
+    <value>La réponse de l’annuaire était trop volumineuse.</value>
+  </data>
+  <data name="DirectoryListingsCouldNotBeRead" xml:space="preserve">
+    <value>Impossible de lire les fiches de l’annuaire.</value>
+  </data>
+  <data name="TheLocalDirectoryCacheCouldNotBeRead" xml:space="preserve">
+    <value>Impossible de lire le cache local de l’annuaire.</value>
+  </data>
+  <data name="SetMUDVERSEAPIKEYInDirectoryServerEnvAnd" xml:space="preserve">
+    <value>Définissez MUDVERSE_API_KEY dans directory-server/.env et redémarrez le service.</value>
+  </data>
+  <data name="ShowingTheSavedDirectoryWhileTheServerRefreshesIt" xml:space="preserve">
+    <value>L’annuaire enregistré est affiché pendant sa mise à jour par le serveur. Actualisez à nouveau dans quelques instants.</value>
+  </data>
+  <data name="DirectoryUnavailableAtStartTheDirectoryServerSavedWorlds" xml:space="preserve">
+    <value>Annuaire indisponible à l’adresse {0}. Démarrez le serveur de l’annuaire ; les mondes enregistrés et les fiches en cache restent accessibles.</value>
+  </data>
+  <data name="BrowserBasedWorld" xml:space="preserve">
+    <value>Monde sur navigateur</value>
+  </data>
+  <data name="ConnectionNotListed" xml:space="preserve">
+    <value>Connexion non indiquée</value>
+  </data>
+  <data name="NoRatingsYet" xml:space="preserve">
+    <value>Aucune note pour le moment</value>
+  </data>
+  <data name="RatingNotSupplied" xml:space="preserve">
+    <value>Note non fournie</value>
+  </data>
+  <data name="ArchivedListing" xml:space="preserve">
+    <value>Fiche archivée</value>
+  </data>
+  <data name="LastReportedOnline" xml:space="preserve">
+    <value>Dernier signalement : en ligne</value>
+  </data>
+  <data name="NotConfirmedOnline" xml:space="preserve">
+    <value>Présence en ligne non confirmée</value>
+  </data>
+  <data name="AvailabilityUnknown" xml:space="preserve">
+    <value>Disponibilité inconnue</value>
+  </data>
+  <data name="PlayersOnAverage" xml:space="preserve">
+    <value>{0} joueurs en moyenne</value>
+  </data>
+  <data name="PlayersListedRange" xml:space="preserve">
+    <value>{0} joueurs · fourchette indiquée</value>
+  </data>
+  <data name="PlayersLastObserved" xml:space="preserve">
+    <value>{0} joueurs · dernière observation</value>
+  </data>
+  <data name="PlayerCountUnknown" xml:space="preserve">
+    <value>Nombre de joueurs inconnu</value>
+  </data>
+  <data name="ThisWorldHasNoTLSPort" xml:space="preserve">
+    <value>Ce monde n’a pas de port TLS.</value>
+  </data>
+  <data name="ThisListingHasNoSupportedMUDConnection" xml:space="preserve">
+    <value>Cette fiche ne propose aucune connexion MUD compatible.</value>
+  </data>
+  <data name="InvalidDirectoryIdentity" xml:space="preserve">
+    <value>Identité d’annuaire invalide.</value>
+  </data>
+  <data name="UnsupportedDirectorySource" xml:space="preserve">
+    <value>Source d’annuaire non prise en charge.</value>
+  </data>
+  <data name="UnsupportedDirectoryVersion" xml:space="preserve">
+    <value>Version d’annuaire non prise en charge.</value>
+  </data>
+  <data name="EmptyDirectory" xml:space="preserve">
+    <value>Annuaire vide.</value>
+  </data>
+  <data name="InvalidDirectoryEntries" xml:space="preserve">
+    <value>Entrées d’annuaire invalides.</value>
+  </data>
+  <data name="EnterACommand" xml:space="preserve">
+    <value>Saisissez une commande…</value>
+  </data>
+  <data name="CommandHistoryEnterSend" xml:space="preserve">
+    <value>↑ ↓  historique des commandes     ·     Entrée  envoyer</value>
+  </data>
+  <data name="PrivateInput2" xml:space="preserve">
+    <value>Saisie privée</value>
+  </data>
+  <data name="LatestOutput" xml:space="preserve">
+    <value>↓  Texte le plus récent</value>
+  </data>
+  <data name="Send" xml:space="preserve">
+    <value>Envoyer  ↵</value>
+  </data>
+  <data name="MasksYourInputAndKeepsItOutOfCommand" xml:space="preserve">
+    <value>Masque votre saisie et l’exclut de l’historique des commandes et de l’écho local. S’active également automatiquement pour les invites de mot de passe reconnues.</value>
+  </data>
+  <data name="ANOPENDOOR" xml:space="preserve">
+    <value>UNE PORTE OUVERTE</value>
+  </data>
+  <data name="YourNextWorldAwaits" xml:space="preserve">
+    <value>Votre prochain monde
+vous attend.</value>
+  </data>
+  <data name="ReturnToAWorldYouLoveOrFollowA" xml:space="preserve">
+    <value>Retrouvez un monde que vous aimez ou empruntez un nouveau chemin.
+Votre aventure commence par une seule commande.</value>
+  </data>
+  <data name="TakeAWalkThroughTheDemo" xml:space="preserve">
+    <value>Promenez-vous dans la démo  →</value>
+  </data>
+  <data name="PrivateHiddenFromEchoAndHistory" xml:space="preserve">
+    <value>Privé · masqué dans l’écho et l’historique</value>
+  </data>
+  <data name="DoubleClickToConnect" xml:space="preserve">
+    <value>{0}
+{1}
+Double-cliquez pour vous connecter, clic droit pour plus d’options</value>
+  </data>
+  <data name="Edit2" xml:space="preserve">
+    <value>Modifier…</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>+ Ajouter</value>
+  </data>
+  <data name="AddAWorld" xml:space="preserve">
+    <value>Ajouter un monde</value>
+  </data>
+  <data name="Find" xml:space="preserve">
+    <value>Rechercher…</value>
+  </data>
+  <data name="FindAMUDInTheDirectory" xml:space="preserve">
+    <value>Trouver un MUD dans l’annuaire</value>
+  </data>
+  <data name="KeepYourFavoriteWorldsHereAddOneToStart" xml:space="preserve">
+    <value>Gardez vos mondes favoris ici. Ajoutez-en un pour commencer à explorer.</value>
+  </data>
+  <data name="NotConnected" xml:space="preserve">
+    <value>Non connecté</value>
+  </data>
+  <data name="Label0CommandsSent" xml:space="preserve">
+    <value>0 commande envoyée</value>
+  </data>
+  <data name="Up" xml:space="preserve">
+    <value>↑  Monter</value>
+  </data>
+  <data name="Down" xml:space="preserve">
+    <value>↓  Descendre</value>
+  </data>
+  <data name="LookAround" xml:space="preserve">
+    <value>Regarder autour de soi</value>
+  </data>
+  <data name="WhoSHere" xml:space="preserve">
+    <value>Qui est là</value>
+  </data>
+  <data name="Inventory" xml:space="preserve">
+    <value>Inventaire</value>
+  </data>
+  <data name="NAVIGATION" xml:space="preserve">
+    <value>NAVIGATION</value>
+  </data>
+  <data name="QUICKCOMMANDS" xml:space="preserve">
+    <value>COMMANDES RAPIDES</value>
+  </data>
+  <data name="CommandsDependOnYourWorld" xml:space="preserve">
+    <value>Les commandes dépendent de votre monde.</value>
+  </data>
+  <data name="SessionHeading" xml:space="preserve">
+    <value>SESSION</value>
+  </data>
+  <data name="CommandsSent" xml:space="preserve">
+    <value>{0} commandes envoyées</value>
+  </data>
+  <data name="AppearanceInputWandur" xml:space="preserve">
+    <value>Apparence et saisie · Wandur</value>
+  </data>
+  <data name="UseSchemeDefault" xml:space="preserve">
+    <value>Utiliser la valeur par défaut de la palette</value>
+  </data>
+  <data name="ShowMyCommandsInTheTranscript" xml:space="preserve">
+    <value>Afficher mes commandes dans la transcription</value>
+  </data>
+  <data name="TheLanternCastsAWarmLightExitsNorthEast" xml:space="preserve">
+    <value>La lanterne diffuse une lumière chaleureuse.
+Sorties : north · east
+&gt; look</value>
+  </data>
+  <data name="SavePreferences" xml:space="preserve">
+    <value>Enregistrer les préférences</value>
+  </data>
+  <data name="MakeYourselfAtHome" xml:space="preserve">
+    <value>Faites comme chez vous</value>
+  </data>
+  <data name="AComfortablePlaceForALongAdventure" xml:space="preserve">
+    <value>Un endroit confortable pour une longue aventure.</value>
+  </data>
+  <data name="ColorScheme" xml:space="preserve">
+    <value>Palette de couleurs</value>
+  </data>
+  <data name="LiveViewWhileScrolledUp" xml:space="preserve">
+    <value>Aperçu en direct pendant le défilement</value>
+  </data>
+  <data name="ShareOfTheWindowThatKeepsScrolling" xml:space="preserve">
+    <value>Part de la fenêtre qui continue de défiler ; 0 la désactive.</value>
+  </data>
+  <data name="LiveViewShareMustBeBetween10And60" xml:space="preserve">
+    <value>La part de l'aperçu en direct doit être comprise entre 10 et 60 pour cent.</value>
+  </data>
+  <data name="SessionTextSize" xml:space="preserve">
+    <value>Taille du texte de la session</value>
+  </data>
+  <data name="TextColorOptionalRRGGBB" xml:space="preserve">
+    <value>Couleur du texte · #RRGGBB facultatif</value>
+  </data>
+  <data name="BackgroundOptionalRRGGBB" xml:space="preserve">
+    <value>Arrière-plan · #RRGGBB facultatif</value>
+  </data>
+  <data name="LocalEchoStartsOffUsePrivateInputForPasswords" xml:space="preserve">
+    <value>L’écho local est désactivé au démarrage. Utilisez la saisie privée pour les mots de passe ; les commandes privées n’apparaissent jamais dans l’écho ni dans l’historique.</value>
+  </data>
+  <data name="Cancel2" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="CloseSessionAndDisconnect" xml:space="preserve">
+    <value>Fermer la session et se déconnecter</value>
+  </data>
+  <data name="CloseSession2" xml:space="preserve">
+    <value>Fermer la session</value>
+  </data>
+  <data name="SearchWorldsThemesOrAnAddress" xml:space="preserve">
+    <value>Chercher un monde ou une adresse…</value>
+  </data>
+  <data name="AllWorlds" xml:space="preserve">
+    <value>Tous les mondes</value>
+  </data>
+  <data name="MUDConnections" xml:space="preserve">
+    <value>Connexions MUD</value>
+  </data>
+  <data name="BrowserOnlyWorlds" xml:space="preserve">
+    <value>Mondes sur navigateur uniquement</value>
+  </data>
+  <data name="ReportedOnline" xml:space="preserve">
+    <value>Signalé en ligne</value>
+  </data>
+  <data name="LoadingArtwork" xml:space="preserve">
+    <value>Chargement de l’image…</value>
+  </data>
+  <data name="FindAMUDWandur" xml:space="preserve">
+    <value>Trouver un MUD · Wandur</value>
+  </data>
+  <data name="SearchMUDServersByNameThemeLanguageOrAddress" xml:space="preserve">
+    <value>Recherchez des serveurs MUD par nom, thème, langue ou adresse.</value>
+  </data>
+  <data name="RefreshDirectory" xml:space="preserve">
+    <value>Actualiser l’annuaire</value>
+  </data>
+  <data name="BasedOnTheDirectorySLatestReportNotA" xml:space="preserve">
+    <value>D’après le dernier rapport de l’annuaire, et non un test de connexion en direct.</value>
+  </data>
+  <data name="SortWorldsByRelevanceNamePopulationRatingOrDate" xml:space="preserve">
+    <value>Triez les mondes par pertinence, nom, population, note ou date.</value>
+  </data>
+  <data name="SortWorldsBy" xml:space="preserve">
+    <value>Trier les mondes par</value>
+  </data>
+  <data name="LoadingTheDirectoryTheFirstFullDownloadMayTake" xml:space="preserve">
+    <value>Chargement de l’annuaire… Le premier téléchargement complet peut prendre quelques minutes.</value>
+  </data>
+  <data name="DirectorySavedSearchWorksOfflineRefreshedEvery24Hours" xml:space="preserve">
+    <value>Annuaire enregistré le {0:g}  ·  Recherche disponible hors ligne  ·  Actualisé toutes les 24 heures</value>
+  </data>
+  <data name="StartTheLocalDirectoryServerToDiscoverWorlds" xml:space="preserve">
+    <value>Démarrez le serveur local de l’annuaire pour découvrir des mondes.</value>
+  </data>
+  <data name="AWorldOfPossibilities" xml:space="preserve">
+    <value>Un monde de possibilités</value>
+  </data>
+  <data name="NoWorldsFound" xml:space="preserve">
+    <value>Aucun monde trouvé</value>
+  </data>
+  <data name="YourDirectoryWillAppearHereWhenItIsAvailable" xml:space="preserve">
+    <value>Votre annuaire apparaîtra ici lorsqu’il sera disponible. Vous pouvez toujours ajouter un monde à partir de son adresse.</value>
+  </data>
+  <data name="TryRemovingAFilterOrShorteningYourSearchAll" xml:space="preserve">
+    <value>Essayez de retirer un filtre ou de raccourcir votre recherche. Toutes les préférences sélectionnées doivent correspondre ; les valeurs inconnues ne correspondent pas aux filtres numériques.</value>
+  </data>
+  <data name="LoadingSuppliedArtwork" xml:space="preserve">
+    <value>Chargement de l’image fournie…</value>
+  </data>
+  <data name="LoadingIllustration" xml:space="preserve">
+    <value>Chargement de l’illustration…</value>
+  </data>
+  <data name="EXPLOREANEWWORLD" xml:space="preserve">
+    <value>EXPLOREZ UN NOUVEAU MONDE</value>
+  </data>
+  <data name="UseTLS" xml:space="preserve">
+    <value>Utiliser TLS</value>
+  </data>
+  <data name="AddToMyWorlds" xml:space="preserve">
+    <value>Ajouter à mes mondes</value>
+  </data>
+  <data name="Connect2" xml:space="preserve">
+    <value>Se connecter  →</value>
+  </data>
+  <data name="AboutThisWorld" xml:space="preserve">
+    <value>À propos de ce monde</value>
+  </data>
+  <data name="ActivityCommunity" xml:space="preserve">
+    <value>Activité et communauté</value>
+  </data>
+  <data name="GameplayConnection" xml:space="preserve">
+    <value>Mécaniques de jeu et connexion</value>
+  </data>
+  <data name="Website" xml:space="preserve">
+    <value>Site web ↗</value>
+  </data>
+  <data name="Discord" xml:space="preserve">
+    <value>Discord ↗</value>
+  </data>
+  <data name="PlayInBrowser" xml:space="preserve">
+    <value>Jouer dans le navigateur ↗</value>
+  </data>
+  <data name="Development" xml:space="preserve">
+    <value>Développement</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Thème</value>
+  </data>
+  <data name="GameType" xml:space="preserve">
+    <value>Type de jeu</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Established" xml:space="preserve">
+    <value>Date de création</value>
+  </data>
+  <data name="TLSConnection" xml:space="preserve">
+    <value>Connexion TLS</value>
+  </data>
+  <data name="Roleplaying" xml:space="preserve">
+    <value>Jeu de rôle</value>
+  </data>
+  <data name="PlayerKilling" xml:space="preserve">
+    <value>Combat entre joueurs</value>
+  </data>
+  <data name="WorldSize" xml:space="preserve">
+    <value>Taille du monde</value>
+  </data>
+  <data name="Codebase" xml:space="preserve">
+    <value>Base de code</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Localisation</value>
+  </data>
+  <data name="CouldNotOpenTheLinkInYourBrowser" xml:space="preserve">
+    <value>Impossible d’ouvrir le lien dans votre navigateur.</value>
+  </data>
+  <data name="AlreadyInYourWorlds" xml:space="preserve">
+    <value>Déjà dans vos mondes.</value>
+  </data>
+  <data name="AddedToYourWorlds" xml:space="preserve">
+    <value>{0} a été ajouté à vos mondes.</value>
+  </data>
+  <data name="NoIllustrationAvailableYet" xml:space="preserve">
+    <value>Aucune illustration disponible pour le moment</value>
+  </data>
+  <data name="YouCanStillBrowseTheDetailsAndConnect" xml:space="preserve">
+    <value>Vous pouvez toujours consulter les détails et vous connecter.</value>
+  </data>
+  <data name="AIIllustrationInspiredByThisWorldSDescription" xml:space="preserve">
+    <value>Illustration par IA inspirée de la description de ce monde</value>
+  </data>
+  <data name="ArtworkUnavailable" xml:space="preserve">
+    <value>Image indisponible</value>
+  </data>
+  <data name="WorldDetailsAreStillAvailableBelow" xml:space="preserve">
+    <value>Les détails du monde restent disponibles ci-dessous.</value>
+  </data>
+  <data name="BestMatch" xml:space="preserve">
+    <value>Pertinence</value>
+  </data>
+  <data name="NameAZ" xml:space="preserve">
+    <value>Nom A–Z</value>
+  </data>
+  <data name="LastObservedPlayers" xml:space="preserve">
+    <value>Joueurs lors de la dernière observation</value>
+  </data>
+  <data name="HighestRated" xml:space="preserve">
+    <value>Les mieux notés</value>
+  </data>
+  <data name="RecentlyUpdated" xml:space="preserve">
+    <value>Mis à jour récemment</value>
+  </data>
+  <data name="NewestWorlds" xml:space="preserve">
+    <value>Mondes les plus récents</value>
+  </data>
+  <data name="AnyRating" xml:space="preserve">
+    <value>Toutes les notes</value>
+  </data>
+  <data name="Label3Stars" xml:space="preserve">
+    <value>3+ étoiles</value>
+  </data>
+  <data name="Label4Stars" xml:space="preserve">
+    <value>4+ étoiles</value>
+  </data>
+  <data name="Label45Stars" xml:space="preserve">
+    <value>4,5+ étoiles</value>
+  </data>
+  <data name="TLSAvailable" xml:space="preserve">
+    <value>TLS disponible</value>
+  </data>
+  <data name="AdvancedSearch" xml:space="preserve">
+    <value>Recherche avancée</value>
+  </data>
+  <data name="AllPreferencesCombinePlayerCountsAreLastObservedNot" xml:space="preserve">
+    <value>Toutes les préférences se combinent. Les nombres de joueurs sont ceux de la dernière observation, pas des données en direct ; les valeurs inconnues ne correspondent pas aux filtres numériques.</value>
+  </data>
+  <data name="Any" xml:space="preserve">
+    <value>Tous</value>
+  </data>
+  <data name="DevelopmentStage" xml:space="preserve">
+    <value>Stade de développement</value>
+  </data>
+  <data name="WorldSizeRooms" xml:space="preserve">
+    <value>Taille du monde (salles)</value>
+  </data>
+  <data name="ServerLocation" xml:space="preserve">
+    <value>Localisation du serveur</value>
+  </data>
+  <data name="FeatureTag" xml:space="preserve">
+    <value>Fonctionnalité / étiquette</value>
+  </data>
+  <data name="MinObservedPlayers" xml:space="preserve">
+    <value>Joueurs observés min.</value>
+  </data>
+  <data name="MaxObservedPlayers" xml:space="preserve">
+    <value>Joueurs observés max.</value>
+  </data>
+  <data name="MinimumRating" xml:space="preserve">
+    <value>Note minimale</value>
+  </data>
+  <data name="ConnectionSecurity" xml:space="preserve">
+    <value>Sécurité de la connexion</value>
+  </data>
+  <data name="ClearSearchFilters" xml:space="preserve">
+    <value>Effacer la recherche et les filtres</value>
+  </data>
+  <data name="StartAgain" xml:space="preserve">
+    <value>Recommencer</value>
+  </data>
+  <data name="AdvancedSearchFindYourKindOfWorld" xml:space="preserve">
+    <value>Recherche avancée · trouvez votre genre de monde</value>
+  </data>
+  <data name="AdvancedSearchActive" xml:space="preserve">
+    <value>Recherche avancée · {0} {1} en cours</value>
+  </data>
+  <data name="MinimumPlayersExceedsMaximumAdjustTheRangeToFind" xml:space="preserve">
+    <value>Le minimum de joueurs dépasse le maximum. Ajustez la fourchette pour trouver des mondes.</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+  <data name="LastObservedPlayersHeading" xml:space="preserve">
+    <value>JOUEURS LORS DE LA DERNIÈRE OBSERVATION</value>
+  </data>
+  <data name="NoObservationTimeSupplied" xml:space="preserve">
+    <value>Heure d’observation non fournie</value>
+  </data>
+  <data name="COMMUNITYRATING" xml:space="preserve">
+    <value>NOTE DE LA COMMUNAUTÉ</value>
+  </data>
+  <data name="DirectoryRating" xml:space="preserve">
+    <value>Note de l’annuaire</value>
+  </data>
+  <data name="NoFurtherDescriptionProvided" xml:space="preserve">
+    <value>Aucune description supplémentaire fournie.</value>
+  </data>
+  <data name="ListedPlayerRange" xml:space="preserve">
+    <value>Fourchette de joueurs indiquée</value>
+  </data>
+  <data name="AveragePlayers" xml:space="preserve">
+    <value>Nombre moyen de joueurs</value>
+  </data>
+  <data name="PlayersObserved" xml:space="preserve">
+    <value>Joueurs observés</value>
+  </data>
+  <data name="StatusChecked" xml:space="preserve">
+    <value>État vérifié</value>
+  </data>
+  <data name="LastReached" xml:space="preserve">
+    <value>Dernier contact</value>
+  </data>
+  <data name="ArchiveReason" xml:space="preserve">
+    <value>Motif d’archivage</value>
+  </data>
+  <data name="Directory" xml:space="preserve">
+    <value>Annuaire</value>
+  </data>
+  <data name="MonthlyVotes" xml:space="preserve">
+    <value>Votes mensuels</value>
+  </data>
+  <data name="ListingUpdated" xml:space="preserve">
+    <value>Fiche mise à jour</value>
+  </data>
+  <data name="ThisWorldHasNoSavedPassword" xml:space="preserve">
+    <value>Ce monde n’a pas de mot de passe enregistré.</value>
+  </data>
+  <data name="PasswordMustBeASingleLineOf11024" xml:space="preserve">
+    <value>Le mot de passe doit tenir sur une seule ligne de 1 à 1024 caractères.</value>
+  </data>
+  <data name="SavedPasswordIsTooLarge" xml:space="preserve">
+    <value>Le mot de passe enregistré est trop long.</value>
+  </data>
+  <data name="KeychainCouldNotCompleteTheRequestCodeUnlockYour" xml:space="preserve">
+    <value>Keychain n’a pas pu traiter la demande (code {0}). Déverrouillez votre trousseau et autorisez l’accès à Wandur, puis réessayez.</value>
+  </data>
+  <data name="SavedPasswordHasAnInvalidFormat" xml:space="preserve">
+    <value>Le format du mot de passe enregistré est invalide.</value>
+  </data>
+  <data name="WindowsCredentialManagerCouldNotCompleteTheRequestCode" xml:space="preserve">
+    <value>Le Gestionnaire d’informations d’identification Windows n’a pas pu traiter la demande (code {0}).</value>
+  </data>
+  <data name="InstallSecretToolLibsecretToolsOnDebianUbuntuLibsecret" xml:space="preserve">
+    <value>Installez secret-tool (libsecret-tools sur Debian/Ubuntu, libsecret sur Fedora/Arch) et activez un trousseau Secret Service tel que GNOME Keyring ou KeePassXC.</value>
+  </data>
+  <data name="SecretServiceCouldNotCompleteTheRequestUnlockYour" xml:space="preserve">
+    <value>Secret Service n’a pas pu traiter la demande. Déverrouillez le trousseau de votre environnement de bureau et vérifiez qu’un fournisseur Secret Service est en cours d’exécution.</value>
+  </data>
+  <data name="TheKeyringRequestTimedOutUnlockYourDesktopKeyring" xml:space="preserve">
+    <value>Le délai de la demande au trousseau a été dépassé. Déverrouillez le trousseau de votre environnement de bureau et réessayez.</value>
+  </data>
+  <data name="PasswordsAreStoredInAutoLoginWaitsForEach" xml:space="preserve">
+    <value>Les mots de passe sont stockés dans {0}. La connexion automatique attend chaque invite ; saisir une commande vous redonne le contrôle. Les connexions Telnet simples ne sont pas chiffrées.</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Mot de passe</value>
+  </data>
+  <data name="PasteAnAddressToFindItsNameInThe" xml:space="preserve">
+    <value>Collez une adresse pour retrouver son nom dans l’annuaire.</value>
+  </data>
+  <data name="SavedLeaveBlankToKeep" xml:space="preserve">
+    <value>Enregistré · laissez vide pour le conserver</value>
+  </data>
+  <data name="SavedWorldEditTheAddressToLookUpIts" xml:space="preserve">
+    <value>Monde enregistré · modifiez l’adresse pour rechercher son nom.</value>
+  </data>
+  <data name="LookingUpWorldName" xml:space="preserve">
+    <value>Recherche du nom du monde…</value>
+  </data>
+  <data name="NoUniqueDirectoryMatchEnterAnyNameYouLike" xml:space="preserve">
+    <value>Aucune correspondance unique dans l’annuaire. Saisissez le nom de votre choix.</value>
+  </data>
+  <data name="DirectoryUnavailableYouCanStillNameAndSaveThis" xml:space="preserve">
+    <value>Annuaire indisponible. Vous pouvez toujours nommer et enregistrer ce monde.</value>
+  </data>
+  <data name="EnterAWholePortNumber" xml:space="preserve">
+    <value>Saisissez un nombre entier pour le port.</value>
+  </data>
+  <data name="WorldLibraryWandur" xml:space="preserve">
+    <value>Bibliothèque de mondes · Wandur</value>
+  </data>
+  <data name="WorldSettings" xml:space="preserve">
+    <value>Paramètres du monde</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>Nouveau</value>
+  </data>
+  <data name="WorldName" xml:space="preserve">
+    <value>Nom du monde</value>
+  </data>
+  <data name="AFamiliarWorld" xml:space="preserve">
+    <value>Un monde familier</value>
+  </data>
+  <data name="HostnameAcceptsHostPort" xml:space="preserve">
+    <value>Nom d’hôte · accepte host:port</value>
+  </data>
+  <data name="MudExampleOrg4000" xml:space="preserve">
+    <value>mud.example.org:4000</value>
+  </data>
+  <data name="Port" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="ConnectionOptions" xml:space="preserve">
+    <value>Options de connexion</value>
+  </data>
+  <data name="TextEncoding" xml:space="preserve">
+    <value>Encodage du texte</value>
+  </data>
+  <data name="UseTLSServerMustSupportIt" xml:space="preserve">
+    <value>Utiliser TLS (le serveur doit le prendre en charge)</value>
+  </data>
+  <data name="LOGIN" xml:space="preserve">
+    <value>CONNEXION</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Nom d’utilisateur</value>
+  </data>
+  <data name="CharacterOrAccountName" xml:space="preserve">
+    <value>Nom du personnage ou du compte</value>
+  </data>
+  <data name="SavePasswordInSystemCredentialStore" xml:space="preserve">
+    <value>Enregistrer le mot de passe dans le gestionnaire d’identifiants du système</value>
+  </data>
+  <data name="AutomaticallyLogInOnConnect" xml:space="preserve">
+    <value>S’identifier automatiquement à la connexion</value>
+  </data>
+  <data name="CustomLoginPrompts" xml:space="preserve">
+    <value>Invites de connexion personnalisées</value>
+  </data>
+  <data name="CaseInsensitiveRegularExpressionsMatchTheWholePromptLine" xml:space="preserve">
+    <value>Expressions régulières insensibles à la casse. Faites correspondre toute la ligne de l’invite. Les valeurs par défaut reconnaissent les invites courantes de nom et de mot de passe.</value>
+  </data>
+  <data name="UsernamePrompt" xml:space="preserve">
+    <value>Invite de nom d’utilisateur</value>
+  </data>
+  <data name="PasswordPrompt" xml:space="preserve">
+    <value>Invite de mot de passe</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="SaveWorld" xml:space="preserve">
+    <value>Enregistrer le monde</value>
+  </data>
+  <data name="SessionsOne" xml:space="preserve">
+    <value>{0} session · {1} connectée</value>
+  </data>
+  <data name="SessionsMany" xml:space="preserve">
+    <value>{0} sessions · {1} connectées</value>
+  </data>
+  <data name="RatingOne" xml:space="preserve">
+    <value>★ {0} / 5 · {1} note</value>
+  </data>
+  <data name="RatingMany" xml:space="preserve">
+    <value>★ {0} / 5 · {1} notes</value>
+  </data>
+  <data name="FiltersOne" xml:space="preserve">
+    <value>Recherche avancée · {0} filtre actif</value>
+  </data>
+  <data name="FiltersMany" xml:space="preserve">
+    <value>Recherche avancée · {0} filtres actifs</value>
+  </data>
+  <data name="DirectoryNamed" xml:space="preserve">
+    <value>Annuaire : {0}</value>
+  </data>
+  <data name="SuppliedArtwork" xml:space="preserve">
+    <value>Image fournie via {0}</value>
+  </data>
+  <data name="SourceListing" xml:space="preserve">
+    <value>Fiche sur {0} ↗</value>
+  </data>
+  <data name="SourceDetails" xml:space="preserve">
+    <value>Détails fournis par {0}. L'état en ligne est le dernier rapport de l'annuaire. Un nombre de joueurs n'est affiché en direct que si Wandur l'a compté dans les 2 dernières heures ; les autres nombres sont de l'historique.</value>
+  </data>
+  <data name="SourceDetailsUpdated" xml:space="preserve">
+    <value>Détails fournis par {0} · Fiche mise à jour le {1:d}. L'état en ligne est le dernier rapport de l'annuaire. Un nombre de joueurs n'est affiché en direct que si Wandur l'a compté dans les 2 dernières heures ; les autres nombres sont de l'historique.</value>
+  </data>
+  <data name="SourceReviews" xml:space="preserve">
+    <value>Avis sur {0}</value>
+  </data>
+  <data name="SourceRank" xml:space="preserve">
+    <value>Classement sur {0}</value>
+  </data>
+  <data name="SourceRating" xml:space="preserve">
+    <value>Sur {0}</value>
+  </data>
+  <data name="RoleplayingValue" xml:space="preserve">
+    <value>RP : {0}</value>
+  </data>
+  <data name="PlayerKillingValue" xml:space="preserve">
+    <value>PK : {0}</value>
+  </data>
+  <data name="InterfaceLanguage" xml:space="preserve">
+    <value>Langue de l’interface</value>
+  </data>
+  <data name="LanguageRestart" xml:space="preserve">
+    <value>Le changement de langue prendra effet à la prochaine ouverture de Wandur. Le texte du jeu reste dans sa langue d’origine.</value>
+  </data>
+  <data name="SystemLanguage" xml:space="preserve">
+    <value>Langue du système</value>
+  </data>
+  <data name="UnsupportedLanguage" xml:space="preserve">
+    <value>Choisissez une langue d’interface prise en charge.</value>
+  </data>
+  <data name="ThemeEmber" xml:space="preserve">
+    <value>Braise</value>
+  </data>
+  <data name="ThemeMoonlight" xml:space="preserve">
+    <value>Clair de lune</value>
+  </data>
+  <data name="ThemeForest" xml:space="preserve">
+    <value>Forêt</value>
+  </data>
+  <data name="ThemePaper" xml:space="preserve">
+    <value>Papier</value>
+  </data>
+  <data name="ThemeMidnight" xml:space="preserve">
+    <value>Minuit</value>
+  </data>
+  <data name="ThemeSlate" xml:space="preserve">
+    <value>Ardoise</value>
+  </data>
+  <data name="ThemeRose" xml:space="preserve">
+    <value>Rose</value>
+  </data>
+  <data name="ThemeParchment" xml:space="preserve">
+    <value>Parchemin</value>
+  </data>
+  <data name="ThemeDaylight" xml:space="preserve">
+    <value>Lumière du jour</value>
+  </data>
+  <data name="ThemeLinen" xml:space="preserve">
+    <value>Lin</value>
+  </data>
+  <data name="KeychainName" xml:space="preserve">
+    <value>Trousseau macOS</value>
+  </data>
+  <data name="WindowsVaultName" xml:space="preserve">
+    <value>Gestionnaire d’identification Windows</value>
+  </data>
+  <data name="LinuxVaultName" xml:space="preserve">
+    <value>Secret Service Linux (secret-tool)</value>
+  </data>
+  <data name="Map" xml:space="preserve"><value>Carte</value></data>
+  <data name="MapPanel" xml:space="preserve"><value>Panneau de carte</value></data>
+  <data name="MapReturnLive" xml:space="preserve"><value>Revenir à la session</value></data>
+  <data name="MapTryExercise" xml:space="preserve"><value>Tester la reconnaissance</value></data>
+  <data name="MapLocalExercise" xml:space="preserve"><value>EXERCICE LOCAL · AUCUNE COMMANDE ENVOYÉE</value></data>
+  <data name="MapLiveSession" xml:space="preserve"><value>CARTE DE LA SESSION</value></data>
+  <data name="MapCounts" xml:space="preserve"><value>{0} salles · {1} connexions</value></data>
+  <data name="MapConfirmed" xml:space="preserve"><value>Position confirmée</value></data>
+  <data name="MapInferred" xml:space="preserve"><value>Position déduite</value></data>
+  <data name="MapInferenceSection" xml:space="preserve"><value>Inférence du terrain des salles</value></data>
+  <data name="MapInferenceNotInstalled" xml:space="preserve"><value>Modèle local non installé (téléchargement de 80 Mo).</value></data>
+  <data name="MapInferenceDownloading" xml:space="preserve"><value>Téléchargement du modèle : {0}%</value></data>
+  <data name="MapInferenceReady" xml:space="preserve"><value>Modèle local {0} prêt.</value></data>
+  <data name="MapInferenceFailed" xml:space="preserve"><value>Modèle local indisponible : {0}</value></data>
+  <data name="MapInferenceDownload" xml:space="preserve"><value>Télécharger le modèle</value></data>
+  <data name="MapInferenceInstallFile" xml:space="preserve"><value>Installer depuis un fichier</value></data>
+  <data name="MapInferenceEnable" xml:space="preserve"><value>Colorer les salles avec le modèle local</value></data>
+  <data name="MapAmbiguous" xml:space="preserve"><value>{0} salles possibles</value></data>
+  <data name="MapUnknown" xml:space="preserve"><value>Position inconnue</value></data>
+  <data name="MapWaiting" xml:space="preserve"><value>En attente d’une salle</value></data>
+  <data name="MapSourceGmcp" xml:space="preserve"><value>Données de salle : GMCP</value></data>
+  <data name="MapSourceMsdp" xml:space="preserve"><value>Données de salle : MSDP</value></data>
+  <data name="MapSourceText" xml:space="preserve"><value>Données : texte · disposition déduite</value></data>
+  <data name="MapSelectRoom" xml:space="preserve"><value>Sélectionnez une salle</value></data>
+  <data name="MapExerciseProgress" xml:space="preserve"><value>Observation {0} sur {1}</value></data>
+  <data name="MapExerciseStart" xml:space="preserve"><value>Quatre couloirs semblent identiques. Votre position est incertaine. Suivez la séquence vers le nord.</value></data>
+  <data name="MapExerciseNorthOne" xml:space="preserve"><value>Nord → un autre couloir. Seuls deux trajets connus correspondent.</value></data>
+  <data name="MapExerciseNorthTwo" xml:space="preserve"><value>Nord → un autre couloir. La séquence de déplacements identifie une salle.</value></data>
+  <data name="MapExerciseLandmark" xml:space="preserve"><value>Nord → le phare. Un lieu distinctif étaye la position déduite. La carte de votre session est intacte.</value></data>
+  <data name="MapExerciseCorridor" xml:space="preserve"><value>Couloir de pierre</value></data>
+  <data name="MapExerciseCorridorDescription" xml:space="preserve"><value>Des murs de pierre nue bordent un couloir étroit.</value></data>
+  <data name="MapExerciseBeacon" xml:space="preserve"><value>Le phare ambré</value></data>
+  <data name="MapExerciseBeaconDescription" xml:space="preserve"><value>Une grande lanterne ambrée surplombe une mosaïque d’étoiles.</value></data>
+  <data name="MapExerciseStairs" xml:space="preserve"><value>Galerie surélevée</value></data>
+  <data name="MapExerciseStairsDescription" xml:space="preserve"><value>Des marches montent vers une galerie au-dessus du couloir.</value></data>
+  <data name="MapEmpty" xml:space="preserve"><value>Explorez un monde pour créer sa carte. Les salles apparaissent lorsque le serveur fournit leurs détails.</value></data>
+  <data name="MapAutoCenter" xml:space="preserve"><value>Garder la salle actuelle centrée</value></data>
+  <data name="MapNextObservation" xml:space="preserve"><value>Suivant : nord</value></data>
+  <data name="MapLegend" xml:space="preserve"><value>Menthe : actuelle · Ambre ? : possible · Bord blanc : sélectionnée</value></data>
+  <data name="MapGestures" xml:space="preserve"><value>Glisser pour déplacer · Défiler ou pincer pour zoomer · Double-cliquer sur une salle pour y aller · ↑/↓ pour changer d’étage</value></data>
+  <data name="MapCacheFailed" xml:space="preserve"><value>La carte n’a pas pu être enregistrée. La carte de cette session reste disponible.</value></data>
+  <data name="MapRecheckPosition" xml:space="preserve"><value>Revérifier la position</value></data>
+  <data name="MapRecheckHint" xml:space="preserve"><value>Conservez la carte et utilisez les prochaines observations pour retrouver votre position.</value></data>
+  <data name="MapNorth" xml:space="preserve"><value>Nord</value></data>
+  <data name="MapLinksLegend" xml:space="preserve"><value>Flèches : passages · Tirets : déduits · Pointillés : inexplorés</value></data>
+  <data name="ScriptsMenu" xml:space="preserve">
+    <value>Scripts…</value>
+  </data>
+  <data name="ScriptRunning" xml:space="preserve">
+    <value>En cours</value>
+  </data>
+  <data name="ScriptStopped" xml:space="preserve">
+    <value>Arrêté</value>
+  </data>
+  <data name="ScriptBusy" xml:space="preserve">
+    <value>Démarrage…</value>
+  </data>
+  <data name="ScriptSaved" xml:space="preserve">
+    <value>Script enregistré.</value>
+  </data>
+  <data name="ScriptSaveFailed" xml:space="preserve">
+    <value>Impossible d’enregistrer le script : {0}</value>
+  </data>
+  <data name="ScriptLoadFailed" xml:space="preserve">
+    <value>Impossible de charger le script : {0}</value>
+  </data>
+  <data name="ScriptFailed" xml:space="preserve">
+    <value>Script arrêté : {0}</value>
+  </data>
+  <data name="ScriptNeedConnection" xml:space="preserve">
+    <value>Connectez-vous à un monde avant d’exécuter un script.</value>
+  </data>
+  <data name="ScriptPrivatePause" xml:space="preserve">
+    <value>Les scripts sont suspendus pendant la saisie privée et la connexion automatique.</value>
+  </data>
+  <data name="ScriptOutputPrefix" xml:space="preserve">
+    <value>[script] </value>
+  </data>
+  <data name="ScriptQueueOverflow" xml:space="preserve">
+    <value>Le script s’est arrêté car trop d’événements étaient en attente.</value>
+  </data>
+  <data name="ScriptRateExceeded" xml:space="preserve">
+    <value>Le script s’est arrêté car il envoyait des commandes trop rapidement.</value>
+  </data>
+  <data name="ScriptSourceTooLarge" xml:space="preserve">
+    <value>Les scripts ne doivent pas dépasser 256 Ko.</value>
+  </data>
+  <data name="ScriptWorkerFailed" xml:space="preserve">
+    <value>Le processus du script s’est arrêté ou n’a pas répondu.</value>
+  </data>
+  <data name="ScriptWorkerRestartLimit" xml:space="preserve">
+    <value>Le processus de scripts s’est arrêté trois fois en cinq minutes et n’a pas été relancé.</value>
+  </data>
+  <data name="ScriptTrustHint" xml:space="preserve">
+    <value>Exécutez des scripts de confiance. Ils peuvent envoyer des commandes au jeu et ne démarrent que lorsque vous appuyez sur Exécuter.</value>
+  </data>
+  <data name="ScriptEditorTitle" xml:space="preserve">
+    <value>Scripts — {0}</value>
+  </data>
+  <data name="ScriptRun" xml:space="preserve">
+    <value>Exécuter</value>
+  </data>
+  <data name="ScriptStop" xml:space="preserve">
+    <value>Arrêter</value>
+  </data>
+  <data name="ScriptSave" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="ScriptSourceLabel" xml:space="preserve">
+    <value>Code JavaScript</value>
+  </data>
+  <data name="ScriptOutputLabel" xml:space="preserve">
+    <value>Sortie du script</value>
+  </data>
+  <data name="ScriptHelpTitle" xml:space="preserve">
+    <value>API JavaScript et exemples</value>
+  </data>
+  <data name="ScriptApiHelp" xml:space="preserve">
+    <value>Les fonctions reçoivent un tableau de correspondances ; match[1] est le premier groupe capturé. Les alias interceptent les commandes saisies correspondantes ; les déclencheurs traitent les lignes complètes du serveur. Les minuteries utilisent des secondes (minimum 1). Seules les fonctions synchrones sont prises en charge ; les API Node.js, du navigateur et de npm sont indisponibles.</value>
+  </data>
+  <data name="ScriptEditsHint" xml:space="preserve">
+    <value>Les modifications s’appliquent au prochain clic sur Exécuter. Enregistrer conserve ce code pour ce monde.</value>
+  </data>
+  <data name="ScriptApiExamples" xml:space="preserve">
+    <value>// Chaque ligne complète du serveur
+mud.on(Events.Line, event =&gt; {
+    if (event.text.startsWith("Obvious exits:")) {
+        mud.echo(event.text);
+    }
+});
+
+// Données structurées du serveur (si disponibles)
+mud.on(Events.Gmcp, event =&gt; {
+    if (event.package === "Char.Vitals" &amp;&amp; event.data) {
+        mud.echo(JSON.stringify(event.data));
+    }
+});
+
+mud.alias(/^lh$/, () =&gt; mud.send("look"));
+mud.trigger(/^Exits: (.+)$/, match =&gt; mud.echo(match[1]));
+// mud.every(60, () =&gt; mud.echo("60s"));</value>
+  </data>
+  <data name="ScriptStarterExample" xml:space="preserve">
+    <value>// Détecter les sorties
+mud.on(Events.Line, event =&gt; {
+    if (event.text.startsWith("Exits:") || event.text.startsWith("Obvious exits:")) {
+        mud.echo(event.text);
+    }
+});
+
+mud.alias(/^lh$/, () =&gt; mud.send("look"));</value>
+  </data>
+  <data name="ScriptPaused" xml:space="preserve">
+    <value>En pause pour saisie privée</value>
+  </data>
+  <data name="ScriptDefaultName" xml:space="preserve"><value>Nouveau script</value></data>
+  <data name="ScriptLibraryTooLarge" xml:space="preserve"><value>La bibliothèque de scripts dépasse la taille maximale.</value></data>
+  <data name="ScriptInvalidName" xml:space="preserve"><value>Saisissez un nom de script de 1 à 120 caractères.</value></data>
+  <data name="ScriptLibraryInvalid" xml:space="preserve"><value>Le fichier de bibliothèque de scripts est invalide.</value></data>
+  <data name="WorldScripts" xml:space="preserve"><value>Scripts</value></data>
+  <data name="ScriptNew" xml:space="preserve"><value>Nouveau</value></data>
+  <data name="ScriptDelete" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="ScriptName" xml:space="preserve"><value>Nom du script</value></data>
+  <data name="ScriptEnabled" xml:space="preserve"><value>Activé</value></data>
+  <data name="ScriptDisabled" xml:space="preserve"><value>Désactivé</value></data>
+  <data name="ScriptWaiting" xml:space="preserve"><value>En attente de connexion</value></data>
+  <data name="ScriptLibraryHint" xml:space="preserve"><value>Les scripts activés démarrent avec ce MUD et réagissent à ses événements.</value></data>
+  <data name="ScriptLibrarySaveHint" xml:space="preserve"><value>Enregistrer applique les modifications et recharge ce script s’il est activé.</value></data>
+  <data name="ScriptLibraryEmpty" xml:space="preserve"><value>Créez un script pour réagir à ce monde.</value></data>
+  <data name="ScriptEditLibrary" xml:space="preserve"><value>Modifier les scripts…</value></data>
+  <data name="ScriptEnableHint" xml:space="preserve"><value>Mémorisé pour ce MUD. Démarre à la connexion ; pause pendant la saisie privée.</value></data>
+  <data name="ScriptDeletePrompt" xml:space="preserve"><value>Supprimer ce script ? Son code et son état d’activation seront supprimés.</value></data>
+  <data name="ScriptUnsaved" xml:space="preserve"><value>Modifications non enregistrées</value></data>
+  <data name="ScriptCompletionHint" xml:space="preserve"><value>Tapez mud. ou Events. pour les suggestions · Ctrl+Espace pour compléter</value></data>
+  <data name="ScriptCompleteMud" xml:space="preserve"><value>Commandes, événements, déclencheurs et minuteurs de ce MUD.</value></data>
+  <data name="ScriptCompleteEvents" xml:space="preserve"><value>Constantes d’événements en lecture seule pour mud.on.</value></data>
+  <data name="ScriptCompleteOn" xml:space="preserve"><value>Abonnez-vous à Events.Line ou Events.Gmcp. Le rappel synchrone reçoit l’objet événement.</value></data>
+  <data name="ScriptCompleteSend" xml:space="preserve"><value>Envoyez une commande à ce MUD. Les commandes du script ignorent les alias.</value></data>
+  <data name="ScriptCompleteEcho" xml:space="preserve"><value>Affichez du texte local. Il n’est pas envoyé au serveur ni aux événements.</value></data>
+  <data name="ScriptCompleteAlias" xml:space="preserve"><value>Comparez les commandes saisies. Le rappel reçoit les correspondances ; le premier alias intercepte la commande.</value></data>
+  <data name="ScriptCompleteTrigger" xml:space="preserve"><value>Comparez les lignes complètes du serveur. Le rappel reçoit les correspondances de l’expression régulière.</value></data>
+  <data name="ScriptCompleteEvery" xml:space="preserve"><value>Répétez un rappel synchrone. Intervalle en secondes, minimum 1.</value></data>
+  <data name="ScriptCompleteLine" xml:space="preserve"><value>Une ligne complète sans style ANSI. Données : text: string. La saisie privée est exclue.</value></data>
+  <data name="ScriptCompleteGmcp" xml:space="preserve"><value>Données structurées. Charge : package: string; data: JSON | null. Nécessite un serveur compatible.</value></data>
+  <data name="ScriptCompleteText" xml:space="preserve"><value>La ligne complète du serveur, sans style ANSI.</value></data>
+  <data name="ScriptCompletePackage" xml:space="preserve"><value>Le nom du paquet GMCP, par exemple Char.Vitals.</value></data>
+  <data name="ScriptCompleteData" xml:space="preserve"><value>JSON du serveur, ou null. Les champs disponibles dépendent du MUD.</value></data>
+  <data name="MapFloor" xml:space="preserve"><value>Étage {0}</value></data>
+  <data name="MapFloorUp" xml:space="preserve"><value>Afficher l’étage supérieur suivant</value></data>
+  <data name="MapFloorDown" xml:space="preserve"><value>Afficher l’étage inférieur suivant</value></data>
+  <data name="MapFitFloor" xml:space="preserve"><value>Voir tout l’étage</value></data>
+  <data name="MapArea" xml:space="preserve"><value>Zone</value></data>
+  <data name="MapUnassignedArea" xml:space="preserve"><value>Zone non définie</value></data>
+  <data name="MapGridMode" xml:space="preserve"><value>Grille continue</value></data>
+  <data name="MapSearchRooms" xml:space="preserve"><value>Rechercher salles, identifiants, descriptions ou notes</value></data>
+  <data name="MapSearchAndEdit" xml:space="preserve"><value>Rechercher et modifier</value></data>
+  <data name="MapNoSearchResults" xml:space="preserve"><value>Aucune salle correspondante.</value></data>
+  <data name="MapRoomSearchToggle" xml:space="preserve"><value>Rechercher des salles par nom ou description</value></data>
+  <data name="MapRoomSearchPlaceholder" xml:space="preserve"><value>Rechercher des salles…</value></data>
+  <data name="MapRoomSearchCount" xml:space="preserve"><value>{0} salles</value></data>
+  <data name="MapRoomSearchNext" xml:space="preserve"><value>Résultat suivant</value></data>
+  <data name="MapRoomSearchOtherFloors" xml:space="preserve"><value>Sur d’autres étages</value></data>
+  <data name="MapEditMode" xml:space="preserve"><value>Modifier la carte</value></data>
+  <data name="MapEditHint" xml:space="preserve"><value>Faites glisser les salles pour les déplacer. Les modifications sont enregistrées pour ce monde et peuvent être annulées.</value></data>
+  <data name="MapAddRoom" xml:space="preserve"><value>Ajouter une salle</value></data>
+  <data name="MapRoomEditor" xml:space="preserve"><value>Détails de la salle</value></data>
+  <data name="MapRoomName" xml:space="preserve"><value>Nom</value></data>
+  <data name="MapRoomDescription" xml:space="preserve"><value>Description</value></data>
+  <data name="MapRoomEnvironment" xml:space="preserve"><value>Environnement</value></data>
+  <data name="MapRoomColor" xml:space="preserve"><value>Couleur personnalisée (#RRGGBB, facultatif)</value></data>
+  <data name="MapRoomSymbol" xml:space="preserve"><value>Symbole</value></data>
+  <data name="MapRoomNotes" xml:space="preserve"><value>Notes</value></data>
+  <data name="MapRoomWeight" xml:space="preserve"><value>Coût de traversée de la salle</value></data>
+  <data name="MapRoomLocked" xml:space="preserve"><value>Exclure la salle des itinéraires</value></data>
+  <data name="MapSaveRoom" xml:space="preserve"><value>Enregistrer la salle</value></data>
+  <data name="MapDeleteRoom" xml:space="preserve"><value>Supprimer la salle</value></data>
+  <data name="MapMergeRoom" xml:space="preserve"><value>Fusionner vers la destination sélectionnée</value></data>
+  <data name="MapMergeTarget" xml:space="preserve"><value>Doublon de destination</value></data>
+  <data name="MapSetCurrentRoom" xml:space="preserve"><value>Définir la position actuelle ici</value></data>
+  <data name="MapEditExits" xml:space="preserve"><value>Sorties dirigées</value></data>
+  <data name="MapNewExit" xml:space="preserve"><value>Nouvelle sortie</value></data>
+  <data name="MapExitDirection" xml:space="preserve"><value>Direction ou nom de sortie</value></data>
+  <data name="MapExitDestination" xml:space="preserve"><value>Salle de destination</value></data>
+  <data name="MapExitCommand" xml:space="preserve"><value>Commande (vide : direction)</value></data>
+  <data name="MapExitWeight" xml:space="preserve"><value>Coût de sortie (0 : coût de destination)</value></data>
+  <data name="MapExitLocked" xml:space="preserve"><value>Exclure la sortie des itinéraires</value></data>
+  <data name="MapExitDoor" xml:space="preserve"><value>État de la porte</value></data>
+  <data name="MapDoorNone" xml:space="preserve"><value>Sans porte</value></data>
+  <data name="MapDoorOpen" xml:space="preserve"><value>Ouverte</value></data>
+  <data name="MapDoorClosed" xml:space="preserve"><value>Fermée</value></data>
+  <data name="MapDoorLocked" xml:space="preserve"><value>Verrouillée</value></data>
+  <data name="MapCreateReturnExit" xml:space="preserve"><value>Créer aussi une sortie de retour</value></data>
+  <data name="MapReturnDirection" xml:space="preserve"><value>Direction de retour</value></data>
+  <data name="MapSaveExit" xml:space="preserve"><value>Enregistrer la sortie</value></data>
+  <data name="MapDeleteExit" xml:space="preserve"><value>Supprimer la sortie</value></data>
+  <data name="MapRouteTools" xml:space="preserve"><value>Planification d’itinéraire</value></data>
+  <data name="MapPlanRoute" xml:space="preserve"><value>Tracer vers la sélection</value></data>
+  <data name="MapClearRoute" xml:space="preserve"><value>Effacer l’itinéraire</value></data>
+  <data name="MapAllowInferred" xml:space="preserve"><value>Inclure salles et sorties déduites</value></data>
+  <data name="MapRouteReady" xml:space="preserve"><value>{0} étapes · coût {1}</value></data>
+  <data name="MapRouteUnavailable" xml:space="preserve"><value>Aucun itinéraire autorisé depuis la salle actuelle.</value></data>
+  <data name="MapRouteSelectRoom" xml:space="preserve"><value>Sélectionnez une destination pour tracer un itinéraire.</value></data>
+  <data name="MapRoomInvalid" xml:space="preserve"><value>Saisissez un nom, des coordonnées finies et un coût positif. Les couleurs utilisent #RRGGBB.</value></data>
+  <data name="MapExitInvalid" xml:space="preserve"><value>Choisissez une destination, une direction et un coût positif ou nul. Les commandes doivent tenir sur une ligne.</value></data>
+  <data name="MapEditRejected" xml:space="preserve"><value>Impossible d’appliquer la modification. Vérifiez la salle sélectionnée et les valeurs.</value></data>
+  <data name="MapRoomSaved" xml:space="preserve"><value>Salle enregistrée.</value></data>
+  <data name="MapExitSaved" xml:space="preserve"><value>Sortie enregistrée.</value></data>
+  <data name="MapCoordinateX" xml:space="preserve"><value>X (est)</value></data>
+  <data name="MapCoordinateY" xml:space="preserve"><value>Y (nord)</value></data>
+  <data name="MapCoordinateZ" xml:space="preserve"><value>Z (étage)</value></data>
+  <data name="MapTerrainUnknown" xml:space="preserve"><value>Inconnu</value></data>
+  <data name="MapTerrainIndoor" xml:space="preserve"><value>Intérieur</value></data>
+  <data name="MapTerrainCity" xml:space="preserve"><value>Agglomération</value></data>
+  <data name="MapTerrainRoad" xml:space="preserve"><value>Route</value></data>
+  <data name="MapTerrainGrassland" xml:space="preserve"><value>Prairie</value></data>
+  <data name="MapTerrainForest" xml:space="preserve"><value>Forêt</value></data>
+  <data name="MapTerrainDesert" xml:space="preserve"><value>Désert / sable</value></data>
+  <data name="MapTerrainMountain" xml:space="preserve"><value>Montagne / collines</value></data>
+  <data name="MapTerrainCave" xml:space="preserve"><value>Grotte</value></data>
+  <data name="MapTerrainWater" xml:space="preserve"><value>Eau</value></data>
+  <data name="MapTerrainUnderwater" xml:space="preserve"><value>Sous l’eau</value></data>
+  <data name="MapTerrainSwamp" xml:space="preserve"><value>Marais</value></data>
+  <data name="MapTerrainSnow" xml:space="preserve"><value>Neige / glace</value></data>
+  <data name="MapTerrainSpacecraft" xml:space="preserve"><value>Vaisseau spatial</value></data>
+  <data name="MapTerrainInferred" xml:space="preserve"><value>{0} · déduit {1}%</value></data>
+  <data name="MapWalkReady" xml:space="preserve"><value>Prêt à suivre un itinéraire vérifié.</value></data>
+  <data name="MapWalkProgress" xml:space="preserve"><value>En chemin : étape {0} sur {1}. En attente de la salle prévue.</value></data>
+  <data name="MapWalkComplete" xml:space="preserve"><value>Itinéraire terminé.</value></data>
+  <data name="MapWalkStopped" xml:space="preserve"><value>Déplacement arrêté.</value></data>
+  <data name="MapWalkUnavailable" xml:space="preserve"><value>Nécessite une connexion, une salle confirmée et aucune saisie privée ni connexion automatique.</value></data>
+  <data name="MapWalkInvalidRoute" xml:space="preserve"><value>Itinéraire invalide. Recalculez-le depuis votre salle confirmée actuelle.</value></data>
+  <data name="MapWalkCustomCommand" xml:space="preserve"><value>Le déplacement automatique ne gère que les directions. Utilisez les sorties spéciales manuellement.</value></data>
+  <data name="MapWalkWrongRoom" xml:space="preserve"><value>Arrêt : le serveur a indiqué une salle inattendue.</value></data>
+  <data name="MapWalkBlocked" xml:space="preserve"><value>Arrêt : déplacement bloqué.</value></data>
+  <data name="MapWalkTimeout" xml:space="preserve"><value>Arrêt : la salle prévue n’est pas arrivée à temps.</value></data>
+  <data name="MapWalkPrivate" xml:space="preserve"><value>Arrêt pour saisie privée ou connexion automatique.</value></data>
+  <data name="MapWalkDisconnected" xml:space="preserve"><value>Arrêt : session déconnectée ou modifiée.</value></data>
+  <data name="MapWalkManualCommand" xml:space="preserve"><value>Arrêt car une autre commande a été envoyée.</value></data>
+  <data name="MapWalkGraphChanged" xml:space="preserve"><value>Arrêt : la carte a changé. Recalculez l’itinéraire.</value></data>
+  <data name="MapWalkSendFailed" xml:space="preserve"><value>Arrêt : impossible d’envoyer le déplacement.</value></data>
+  <data name="MapWalkOutputLost" xml:space="preserve"><value>Arrêt car des données entrantes ont été ignorées.</value></data>
+  <data name="MapWalk" xml:space="preserve"><value>Suivre l’itinéraire</value></data>
+  <data name="MapStopWalk" xml:space="preserve"><value>Arrêter</value></data>
+  <data name="MapImport" xml:space="preserve"><value>Importer une carte…</value></data>
+  <data name="MapExport" xml:space="preserve"><value>Exporter la carte…</value></data>
+  <data name="MapFileType" xml:space="preserve"><value>Carte Wandur (JSON)</value></data>
+  <data name="MapImportFailed" xml:space="preserve"><value>Impossible d’importer la carte : {0}</value></data>
+  <data name="MapExportFailed" xml:space="preserve"><value>Impossible d’exporter la carte : {0}</value></data>
+  <data name="MapImportComplete" xml:space="preserve"><value>Carte importée. Vérifiez votre position avant de vous déplacer.</value></data>
+  <data name="MapExportComplete" xml:space="preserve"><value>Carte exportée.</value></data>
+  <data name="MapProtocolUnknown" xml:space="preserve"><value>Non négocié</value></data>
+  <data name="MapProtocolEnabled" xml:space="preserve"><value>Pris en charge</value></data>
+  <data name="MapProtocolDisabled" xml:space="preserve"><value>Refusé</value></data>
+  <data name="MapProtocolSummary" xml:space="preserve"><value>GMCP : {0} · MSDP : {1}</value></data>
+  <data name="MapRoomFieldsNone" xml:space="preserve"><value>Aucune donnée de salle structurée reçue.</value></data>
+  <data name="MapRoomFields" xml:space="preserve"><value>Données de salle reçues : {0}</value></data>
+  <data name="MapFieldId" xml:space="preserve"><value>ID</value></data>
+  <data name="MapFieldName" xml:space="preserve"><value>nom</value></data>
+  <data name="MapFieldDescription" xml:space="preserve"><value>description</value></data>
+  <data name="MapFieldExits" xml:space="preserve"><value>sorties</value></data>
+  <data name="MapFieldArea" xml:space="preserve"><value>zone</value></data>
+  <data name="MapFieldEnvironment" xml:space="preserve"><value>terrain</value></data>
+  <data name="MapFieldCoordinates" xml:space="preserve"><value>coordonnées</value></data>
+  <data name="MapFieldSymbol" xml:space="preserve"><value>symbole</value></data>
+  <data name="MapGridLegend" xml:space="preserve"><value>Les cases indiquent le terrain ; leur contact ne garantit pas une sortie.</value></data>
+  <data name="MapNodeLegend" xml:space="preserve"><value>Couleurs du terrain · point : votre position · bord blanc : sélection · pointillés : incertain</value></data>
+  <data name="MapEditGestures" xml:space="preserve"><value>En mode édition, faites glisser les salles pour les déplacer. Sinon, glissez pour déplacer la vue ; molette pour zoomer.</value></data>
+  <data name="DatabaseOpenFailed" xml:space="preserve"><value>Impossible d’ouvrir la base de données du client.</value></data>
+  <data name="DatabaseReadFailed" xml:space="preserve"><value>Impossible de lire la base de données du client.</value></data>
+  <data name="DatabaseWriteFailed" xml:space="preserve"><value>Impossible de mettre à jour la base de données du client.</value></data>
+  <data name="DatabaseWorldConflict" xml:space="preserve"><value>Cette adresse appartient déjà à un autre monde.</value></data>
+  <data name="DatabaseVersionUnsupported" xml:space="preserve"><value>Cette base de données nécessite une version plus récente de Wandur.</value></data>
+  <data name="MapStorageFailed" xml:space="preserve"><value>Impossible de lire ou d’enregistrer la carte. Les données existantes ont été conservées.</value></data>
+  <data name="MapToolsToggle" xml:space="preserve"><value>Outils de carte</value></data>
+  <data name="MapOpenEditor" xml:space="preserve"><value>Ouvrir l’éditeur de carte…</value></data>
+  <data name="MapEditorTitle" xml:space="preserve"><value>Éditeur de carte — {0}</value></data>
+  <data name="WorldThemeCouldNotBeSaved" xml:space="preserve">
+    <value>Le thème du monde est disponible pour cette session, mais n’a pas pu être enregistré pour une utilisation hors ligne.</value>
+  </data>
+  <data name="DeleteSavedWorld" xml:space="preserve">
+    <value>Supprimer le monde enregistré</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Réglages</value></data>
+  <data name="SettingsGeneral" xml:space="preserve"><value>Général</value></data>
+  <data name="SettingsAppearance" xml:space="preserve"><value>Apparence</value></data>
+  <data name="SettingsTerminal" xml:space="preserve"><value>Terminal</value></data>
+  <data name="SettingsInput" xml:space="preserve"><value>Saisie</value></data>
+  <data name="DuplicateTheme" xml:space="preserve"><value>Créer une copie</value></data>
+  <data name="DeleteTheme" xml:space="preserve"><value>Supprimer le thème</value></data>
+  <data name="ThemeNameLabel" xml:space="preserve"><value>Nom du thème</value></data>
+  <data name="ThemeLightMode" xml:space="preserve"><value>Apparence claire</value></data>
+  <data name="UseWorldThemes" xml:space="preserve"><value>Autoriser les mondes à appliquer leurs thèmes</value></data>
+  <data name="WorldThemePriority" xml:space="preserve"><value>Les thèmes des mondes sont prioritaires. Désactivez cette option pour voir et utiliser votre palette partout.</value></data>
+  <data name="PresetThemeHint" xml:space="preserve"><value>Créez une copie pour personnaliser ces couleurs. Les modifications sont prévisualisées jusqu’à l’enregistrement ou l’annulation.</value></data>
+  <data name="ThemeCopyName" xml:space="preserve"><value>{0} copie {1}</value></data>
+  <data name="InvalidCustomTheme" xml:space="preserve"><value>Saisissez un nom et des couleurs #RRGGBB valides. Jusqu’à 100 thèmes personnalisés sont pris en charge.</value></data>
+  <data name="ThemeNameUnique" xml:space="preserve"><value>Choisissez un nom de thème unique.</value></data>
+  <data name="PaletteShell" xml:space="preserve"><value>Espace de travail</value></data>
+  <data name="PalettePanel" xml:space="preserve"><value>Panneaux</value></data>
+  <data name="PaletteTerminal" xml:space="preserve"><value>Fond de transcription</value></data>
+  <data name="PaletteText" xml:space="preserve"><value>Texte de l’interface</value></data>
+  <data name="PaletteMuted" xml:space="preserve"><value>Texte secondaire</value></data>
+  <data name="PaletteAccent" xml:space="preserve"><value>Accentuation</value></data>
+  <data name="PaletteAccentSecondary" xml:space="preserve"><value>Boutons principaux</value></data>
+  <data name="PaletteBorder" xml:space="preserve"><value>Bordures</value></data>
+  <data name="PaletteTerminalText" xml:space="preserve"><value>Texte de transcription</value></data>
+  <data name="PaletteChrome" xml:space="preserve"><value>Barres de titre et d’outils</value></data>
+  <data name="PaletteSelection" xml:space="preserve"><value>Éléments sélectionnés</value></data>
+  <data name="PaletteButton" xml:space="preserve"><value>Surface des boutons</value></data>
+  <data name="PaletteButtonText" xml:space="preserve"><value>Texte des boutons</value></data>
+  <data name="PalettePrimaryText" xml:space="preserve"><value>Texte des boutons principaux</value></data>
+  <data name="PaletteMapBackground" xml:space="preserve"><value>Fond de carte</value></data>
+  <data name="PaletteMapGrid" xml:space="preserve"><value>Grille de carte</value></data>
+  <data name="PaletteEditorBackground" xml:space="preserve"><value>Fond de l’éditeur de scripts</value></data>
+  <data name="PaletteEditorText" xml:space="preserve"><value>Texte de l’éditeur de scripts</value></data>
+  <data name="AnsiPaletteTitle" xml:space="preserve"><value>Couleurs du texte MUD (ANSI)</value></data>
+  <data name="AnsiPaletteHint" xml:space="preserve"><value>Ces 16 couleurs appartiennent au thème sélectionné, même si les thèmes des mondes sont activés. Les couleurs RVB explicites du serveur restent inchangées.</value></data>
+  <data name="ResetAnsiColor" xml:space="preserve"><value>Rétablir</value></data>
+  <data name="LanguageLiveHint" xml:space="preserve"><value>La langue change immédiatement. Enregistrez pour la conserver ou annulez pour rétablir la langue précédente. Le contenu des jeux et de l’annuaire n’est pas traduit.</value></data>
+  <data name="AnsiBlack" xml:space="preserve"><value>Noir</value></data>
+  <data name="AnsiBrightBlack" xml:space="preserve"><value>Noir intense</value></data>
+  <data name="AnsiRed" xml:space="preserve"><value>Rouge</value></data>
+  <data name="AnsiBrightRed" xml:space="preserve"><value>Rouge intense</value></data>
+  <data name="AnsiGreen" xml:space="preserve"><value>Vert</value></data>
+  <data name="AnsiBrightGreen" xml:space="preserve"><value>Vert intense</value></data>
+  <data name="AnsiYellow" xml:space="preserve"><value>Jaune</value></data>
+  <data name="AnsiBrightYellow" xml:space="preserve"><value>Jaune intense</value></data>
+  <data name="AnsiBlue" xml:space="preserve"><value>Bleu</value></data>
+  <data name="AnsiBrightBlue" xml:space="preserve"><value>Bleu intense</value></data>
+  <data name="AnsiMagenta" xml:space="preserve"><value>Magenta</value></data>
+  <data name="AnsiBrightMagenta" xml:space="preserve"><value>Magenta intense</value></data>
+  <data name="AnsiCyan" xml:space="preserve"><value>Cyan</value></data>
+  <data name="AnsiBrightCyan" xml:space="preserve"><value>Cyan intense</value></data>
+  <data name="AnsiWhite" xml:space="preserve"><value>Blanc</value></data>
+  <data name="AnsiBrightWhite" xml:space="preserve"><value>Blanc intense</value></data>
+  <data name="SettingsMudColors" xml:space="preserve"><value>Couleurs MUD</value></data>
+  <data name="AllowBlinkingMudText" xml:space="preserve"><value>Autoriser le clignotement du texte du MUD</value></data>
+  <data name="DiagnosticsTerminalTab" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="DiagnosticsTab" xml:space="preserve">
+    <value>Diagnostic</value>
+  </data>
+  <data name="DiagnosticsClear" xml:space="preserve">
+    <value>Effacer l’historique de diagnostic</value>
+  </data>
+  <data name="DiagnosticsFollow" xml:space="preserve">
+    <value>Suivre les derniers</value>
+  </data>
+  <data name="DiagnosticsCount" xml:space="preserve">
+    <value>{0} messages · les {1} derniers conservés</value>
+  </data>
+  <data name="DiagnosticsSelectMessage" xml:space="preserve">
+    <value>Sélectionnez un message pour examiner ses données.</value>
+  </data>
+  <data name="DiagnosticsPrivate" xml:space="preserve">
+    <value>Contenu masqué pendant la saisie privée ou la connexion.</value>
+  </data>
+  <data name="DiagnosticsMalformed" xml:space="preserve">
+    <value>Impossible de décoder ce contenu. Les données brutes suivent.</value>
+  </data>
+  <data name="DiagnosticsTruncated" xml:space="preserve">
+    <value>Ce message volumineux a été tronqué pour l’affichage.</value>
+  </data>
+  <data name="DiagnosticsEmpty" xml:space="preserve">
+    <value>Aucun message GMCP ou MSDP reçu. Connectez-vous à un MUD compatible, puis identifiez-vous ou regardez autour de vous.</value>
+  </data>
+  <data name="MapZoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="Workspace" xml:space="preserve"><value>Espace de travail</value></data>
+  <data name="SavedWorlds" xml:space="preserve"><value>Mondes enregistrés</value></data>
+  <data name="NextWorkspaceItem" xml:space="preserve"><value>Élément suivant</value></data>
+  <data name="PreviousWorkspaceItem" xml:space="preserve"><value>Élément précédent</value></data>
+  <data name="CloseWorkspaceItem" xml:space="preserve"><value>Fermer</value></data>
+  <data name="OpenWorkspaceItem" xml:space="preserve"><value>Ouvrir</value></data>
+  <data name="FloatWorkspaceItem" xml:space="preserve"><value>Ouvrir dans une fenêtre séparée</value></data>
+  <data name="NewActivity" xml:space="preserve"><value>Nouvelle activité</value></data>
+  <data name="MapEditor" xml:space="preserve"><value>Éditeur de carte</value></data>
+  <data name="SessionPlay" xml:space="preserve"><value>Jouer</value></data>
+  <data name="OpenSessions" xml:space="preserve"><value>Sessions ouvertes</value></data>
+  <data name="RenameSession" xml:space="preserve"><value>Renommer la session</value></data>
+  <data name="SessionName" xml:space="preserve"><value>Nom de session</value></data>
+  <data name="MacrosTab" xml:space="preserve"><value>Macros</value></data>
+  <data name="MacroNewName" xml:space="preserve"><value>Nouvelle macro</value></data>
+  <data name="MacroNew" xml:space="preserve"><value>Ajouter une macro</value></data>
+  <data name="MacroEmpty" xml:space="preserve"><value>Créez une macro pour automatiser une commande sans écrire de code.</value></data>
+  <data name="MacroHelp" xml:space="preserve"><value>Enregistré pour ce monde. Enregistrez avant d’activer. Les règles restent actives en changeant d’onglet ; la saisie privée les suspend.</value></data>
+  <data name="MacroType" xml:space="preserve"><value>Quand exécuter</value></data>
+  <data name="MacroTrigger" xml:space="preserve"><value>Texte reçu</value></data>
+  <data name="MacroAlias" xml:space="preserve"><value>Alias de commande</value></data>
+  <data name="MacroTimer" xml:space="preserve"><value>Minuteur périodique</value></data>
+  <data name="MacroShortcut" xml:space="preserve"><value>Raccourci clavier</value></data>
+  <data name="MacroPattern" xml:space="preserve"><value>Texte à reconnaître</value></data>
+  <data name="MacroMatchLabel" xml:space="preserve"><value>Correspondance</value></data>
+  <data name="MacroContains" xml:space="preserve"><value>Contient</value></data>
+  <data name="MacroStartsWith" xml:space="preserve"><value>Commence par</value></data>
+  <data name="MacroExact" xml:space="preserve"><value>Est égal à</value></data>
+  <data name="MacroIgnoreCase" xml:space="preserve"><value>Ignorer la casse</value></data>
+  <data name="MacroAliasHelp" xml:space="preserve"><value>Remplace la commande exacte saisie. Le texte est littéral, sans expression régulière.</value></data>
+  <data name="MacroInterval" xml:space="preserve"><value>Répéter toutes les (secondes)</value></data>
+  <data name="MacroKey" xml:space="preserve"><value>Touche de fonction</value></data>
+  <data name="MacroKeyHelp" xml:space="preserve"><value>Fonctionne lorsque la saisie de commande du jeu est active. Votre clavier peut nécessiter Fn.</value></data>
+  <data name="MacroCommands" xml:space="preserve"><value>Envoyer les commandes</value></data>
+  <data name="MacroCommandsHelp" xml:space="preserve"><value>Une commande par ligne, jusqu’à 20. Elles sont envoyées dans l’ordre.</value></data>
+  <data name="MacroDeletePrompt" xml:space="preserve"><value>Supprimer cette macro de la bibliothèque enregistrée du monde ?</value></data>
+  <data name="MacroInvalid" xml:space="preserve"><value>Cette définition de macro est invalide.</value></data>
+  <data name="MacroInvalidPattern" xml:space="preserve"><value>Saisissez un texte sur une ligne, de 1 024 caractères maximum.</value></data>
+  <data name="MacroInvalidCommands" xml:space="preserve"><value>Saisissez 1 à 20 lignes non vides (1 024 caractères chacune, 8 192 au total), sans caractères de contrôle.</value></data>
+  <data name="MacroInvalidInterval" xml:space="preserve"><value>Choisissez un intervalle de 1 à 86 400 secondes.</value></data>
+  <data name="MacroInvalidShortcut" xml:space="preserve"><value>Choisissez une touche de fonction de F1 à F12.</value></data>
+  <data name="ProfileConnectionSection" xml:space="preserve"><value>Connexion</value></data>
+  <data name="ProfileLoginSection" xml:space="preserve"><value>Connexion au compte</value></data>
+  <data name="ProfileToggleSections" xml:space="preserve"><value>Afficher ou masquer les sections</value></data>
+  <data name="ProfileApply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="ProfileSaveFirst" xml:space="preserve"><value>Enregistrez d’abord la connexion</value></data>
+  <data name="ProfileSaveFirstHelp" xml:space="preserve"><value>Saisissez un nom et une adresse dans Connexion, puis cliquez sur Appliquer. Vous pourrez ensuite modifier les scripts et macros de ce monde ici.</value></data>
+  <data name="ProfileAutomationSaveHint" xml:space="preserve"><value>Enregistrez les règles avec la barre de l’éditeur. Dans une connexion ouverte : Automatisation → Recharger les règles enregistrées.</value></data>
+  <data name="AutomationMenu" xml:space="preserve"><value>Automatisation</value></data>
+  <data name="AutomationEdit" xml:space="preserve"><value>Modifier la configuration…</value></data>
+  <data name="AutomationReload" xml:space="preserve"><value>Recharger les règles enregistrées</value></data>
+  <data name="AutomationStopAll" xml:space="preserve"><value>Tout désactiver pour cette connexion</value></data>
+  <data name="AutomationLiveHint" xml:space="preserve"><value>Ces contrôles concernent cette connexion. Modifiez les définitions dans la configuration du monde.</value></data>
+  <data name="AutomationEmpty" xml:space="preserve"><value>Aucune règle chargée. Ajoutez des scripts ou macros dans la configuration, puis rechargez.</value></data>
+  <data name="ProfileClose" xml:space="preserve"><value>Fermer</value></data>
+  <data name="AgentSettings" xml:space="preserve">
+    <value>Paramètres de l’agent</value>
+  </data>
+  <data name="AgentSaveSettings" xml:space="preserve">
+    <value>Enregistrer les paramètres de l’agent</value>
+  </data>
+  <data name="AgentIntegration" xml:space="preserve">
+    <value>Type d’intégration</value>
+  </data>
+  <data name="AgentOpenAiCompatible" xml:space="preserve"><value>Compatible OpenAI</value></data>
+  <data name="AgentEndpoint" xml:space="preserve">
+    <value>URL de base de l’API</value>
+  </data>
+  <data name="AgentModelId" xml:space="preserve">
+    <value>Identifiant du modèle (modifiable)</value>
+  </data>
+  <data name="AgentDiscoveredModels" xml:space="preserve">
+    <value>Modèles disponibles</value>
+  </data>
+  <data name="AgentChooseModel" xml:space="preserve">
+    <value>Choisir un modèle trouvé</value>
+  </data>
+  <data name="AgentDiscoverModels" xml:space="preserve">
+    <value>Rechercher les modèles</value>
+  </data>
+  <data name="AgentCredentials" xml:space="preserve">
+    <value>Clé API facultative</value>
+  </data>
+  <data name="AgentApiKey" xml:space="preserve">
+    <value>Clé API</value>
+  </data>
+  <data name="AgentKeyHelp" xml:space="preserve">
+    <value>Laissez vide pour conserver la clé enregistrée. Les nouvelles clés sont stockées dans le coffre d’identifiants du système.</value>
+  </data>
+  <data name="AgentForgetKey" xml:space="preserve">
+    <value>Supprimer la clé existante à l’enregistrement</value>
+  </data>
+  <data name="AgentSystemPrompt" xml:space="preserve">
+    <value>Instructions</value>
+  </data>
+  <data name="AgentSystemPromptHelp" xml:space="preserve">
+    <value>Décrivez le comportement attendu de l’agent dans ce monde.</value>
+  </data>
+  <data name="AgentDefaultGoal" xml:space="preserve">
+    <value>Objectif par défaut</value>
+  </data>
+  <data name="AgentDefaultGoalHelp" xml:space="preserve">
+    <value>Objectif initial des nouvelles connexions. Vous pouvez le modifier dans Automatisation.</value>
+  </data>
+  <data name="AgentCommands" xml:space="preserve">
+    <value>Commandes autorisées</value>
+  </data>
+  <data name="AgentCommandsHelp" xml:space="preserve">
+    <value>Une par ligne : id | commande | description. Utilisez des commandes fixes ; wait et done sont des actions réservées.</value>
+  </data>
+  <data name="AgentLimits" xml:space="preserve">
+    <value>Limites d’exécution et format de réponse</value>
+  </data>
+  <data name="AgentMaxDecisions" xml:space="preserve">
+    <value>Décisions maximales</value>
+  </data>
+  <data name="AgentMaxRunSeconds" xml:space="preserve">
+    <value>Durée maximale (secondes)</value>
+  </data>
+  <data name="AgentActionInterval" xml:space="preserve">
+    <value>Intervalle des actions (secondes)</value>
+  </data>
+  <data name="AgentResponseTimeout" xml:space="preserve">
+    <value>Délai de réponse (secondes)</value>
+  </data>
+  <data name="AgentMaxInputCharacters" xml:space="preserve">
+    <value>Caractères d’entrée maximaux</value>
+  </data>
+  <data name="AgentMaxOutputTokens" xml:space="preserve">
+    <value>Tokens de sortie maximaux</value>
+  </data>
+  <data name="AgentJsonMode" xml:space="preserve">
+    <value>Demander le mode JSON (prise en charge serveur requise)</value>
+  </data>
+  <data name="AgentInvalidSettings" xml:space="preserve">
+    <value>Vérifiez l’URL, l’identifiant du modèle, les commandes et les limites. Les paramètres n’ont pas été enregistrés.</value>
+  </data>
+  <data name="AgentSettingsSaved" xml:space="preserve">
+    <value>Paramètres de l’agent enregistrés</value>
+  </data>
+  <data name="AgentSaveFailed" xml:space="preserve">
+    <value>Impossible d’enregistrer les paramètres ou les identifiants de l’agent. Réessayez.</value>
+  </data>
+  <data name="AgentDiscovering" xml:space="preserve">
+    <value>Recherche de modèles…</value>
+  </data>
+  <data name="AgentNoModels" xml:space="preserve">
+    <value>Aucun modèle trouvé. Chargez un modèle sur le serveur ou saisissez son identifiant.</value>
+  </data>
+  <data name="AgentModelsLoaded" xml:space="preserve">
+    <value>Modèles chargés. Choisissez-en un ou saisissez un identifiant.</value>
+  </data>
+  <data name="AgentDiscoveryFailed" xml:space="preserve">
+    <value>Impossible de rechercher les modèles. Vérifiez l’URL de l’API, le serveur et la clé facultative.</value>
+  </data>
+  <data name="AgentPreview" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="AgentStep" xml:space="preserve">
+    <value>Étape</value>
+  </data>
+  <data name="AgentRun" xml:space="preserve">
+    <value>Exécuter</value>
+  </data>
+  <data name="AgentStop" xml:space="preserve">
+    <value>Arrêter</value>
+  </data>
+  <data name="AgentResetMemory" xml:space="preserve">
+    <value>Effacer la mémoire</value>
+  </data>
+  <data name="AgentConfigure" xml:space="preserve">
+    <value>Configurer l’agent…</value>
+  </data>
+  <data name="AgentStopped" xml:space="preserve">
+    <value>Arrêté</value>
+  </data>
+  <data name="AgentThinking" xml:space="preserve">
+    <value>Réflexion…</value>
+  </data>
+  <data name="AgentWaiting" xml:space="preserve">
+    <value>En attente de la réponse du monde…</value>
+  </data>
+  <data name="AgentPaused" xml:space="preserve">
+    <value>En pause</value>
+  </data>
+  <data name="AgentCompleted" xml:space="preserve">
+    <value>Objectif atteint</value>
+  </data>
+  <data name="AgentFailed" xml:space="preserve">
+    <value>Agent arrêté après une erreur</value>
+  </data>
+  <data name="AgentNoOutput" xml:space="preserve">
+    <value>Aucune nouvelle réponse du monde ; en pause</value>
+  </data>
+  <data name="AgentStale" xml:space="preserve">
+    <value>Le monde a changé ; décision ignorée</value>
+  </data>
+  <data name="AgentManual" xml:space="preserve">
+    <value>En pause pour contrôle manuel</value>
+  </data>
+  <data name="AgentPreviewReady" xml:space="preserve">
+    <value>Aperçu prêt</value>
+  </data>
+  <data name="AgentRunLimit" xml:space="preserve">
+    <value>Limite d’exécution atteinte</value>
+  </data>
+  <data name="AgentUnavailable" xml:space="preserve">
+    <value>Connectez-vous et terminez l’identification avant de démarrer l’agent</value>
+  </data>
+  <data name="AgentActivity" xml:space="preserve">
+    <value>Décisions récentes</value>
+  </data>
+  <data name="AgentLiveGoal" xml:space="preserve">
+    <value>Objectif de cette connexion</value>
+  </data>
+  <data name="AgentInvalidResponse" xml:space="preserve">
+    <value>Le modèle a renvoyé une décision invalide. Essayez le mode JSON ou adaptez les instructions.</value>
+  </data>
+  <data name="AgentRequestTimedOut" xml:space="preserve">
+    <value>La requête au modèle a expiré. Augmentez le délai de réponse dans les paramètres de l’agent.</value>
+  </data>
+  <data name="AgentConnectionFailed" xml:space="preserve">
+    <value>Impossible de joindre le modèle. Vérifiez l’URL, le serveur du modèle et la clé API.</value>
+  </data>
+  <data name="AgentScriptsPaused" xml:space="preserve">
+    <value>Étape et Exécuter suspendent les scripts. Rechargez-les ou désactivez-les puis réactivez-les pour les reprendre ensuite.</value>
+  </data>
+  <data name="AgentConfigurationRequired" xml:space="preserve">
+    <value>Configurez un modèle, un objectif et des commandes valides avant de démarrer.</value>
+  </data>
+  <data name="AgentLmStudioNative" xml:space="preserve"><value>LM Studio (API native)</value></data>
+  <data name="AgentNativeEndpointHelp" xml:space="preserve"><value>LM Studio ajoute /api/v1 automatiquement.</value></data>
+  <data name="AgentCompatibleEndpointHelp" xml:space="preserve"><value>Le format compatible OpenAI ajoute /v1 automatiquement.</value></data>
+  <data name="AgentServerAddress" xml:space="preserve"><value>Adresse du serveur</value></data>
+  <data name="AgentHostingProvider" xml:space="preserve"><value>Fournisseur / format d’API</value></data>
+  <data name="AgentServerAddressHelp" xml:space="preserve"><value>Saisissez le nom d’hôte ou l’IP et le port, par exemple 192.168.1.20:1234. Les modèles sont chargés automatiquement.</value></data>
+  <data name="AgentDiscoveryUnauthorized" xml:space="preserve"><value>Le serveur a refusé l’authentification. Vérifiez la clé API et ses autorisations.</value></data>
+  <data name="AgentDiscoveryUnreachable" xml:space="preserve"><value>Connexion au serveur impossible. Vérifiez qu’il est démarré et que l’hôte, le port et HTTP/HTTPS sont corrects.</value></data>
+  <data name="AgentDiscoveryWrongApi" xml:space="preserve"><value>Le serveur n’a pas renvoyé de liste de modèles compatible. Vérifiez le fournisseur/format d’API et l’adresse.</value></data>
+  <data name="AgentDiscoveryTimedOut" xml:space="preserve"><value>Le serveur met trop de temps à répondre. Il est peut-être occupé ; vérifiez-le et réessayez.</value></data>
+  <data name="AgentServerAddressInvalid" xml:space="preserve"><value>Saisissez une adresse valide, avec le port si nécessaire. Utilisez http:// ou https:// ; le chemin API est ajouté automatiquement.</value></data>
+  <data name="AgentDiscoveryServerError" xml:space="preserve"><value>Le serveur a renvoyé HTTP {0}. Consultez ses journaux et réessayez.</value></data>
+  <data name="ScriptsButton" xml:space="preserve"><value>Scripts</value></data>
+  <data name="MacrosLiveHelp" xml:space="preserve"><value>Activer ou désactiver les macros enregistrées et activées de cette session.</value></data>
+  <data name="AgentMenu" xml:space="preserve"><value>Agent ▾</value></data>
+  <data name="AgentGoals" xml:space="preserve"><value>Objectifs</value></data>
+  <data name="AgentGoalsEmpty" xml:space="preserve"><value>Ajoutez des objectifs dans les paramètres de l’agent de ce monde.</value></data>
+  <data name="AgentGoalsLiveHelp" xml:space="preserve"><value>Choisissez un objectif, puis Démarrer. Changer d’objectif arrête l’exécution et efface la mémoire de travail.</value></data>
+  <data name="AgentPlay" xml:space="preserve"><value>Démarrer</value></data>
+  <data name="AgentAdvanced" xml:space="preserve"><value>Autres commandes</value></data>
+  <data name="AgentAddGoal" xml:space="preserve"><value>Ajouter un objectif</value></data>
+  <data name="AgentDeleteGoal" xml:space="preserve"><value>Supprimer l’objectif</value></data>
+  <data name="AgentGoalDefaultEnabled" xml:space="preserve"><value>Sélectionné par défaut pour les nouvelles sessions</value></data>
+  <data name="AgentGoalsEditHelp" xml:space="preserve"><value>Créez des objectifs locaux ou ajoutez un modèle. Modifiez la description et les règles en Markdown. Un seul objectif par connexion.</value></data>
+  <data name="AgentGoalName" xml:space="preserve"><value>Nom de l’objectif</value></data>
+  <data name="AgentGoalDescription" xml:space="preserve"><value>Description (Markdown)</value></data>
+  <data name="AgentGoalRules" xml:space="preserve"><value>Règles (Markdown)</value></data>
+  <data name="AgentGoalRulesHelp" xml:space="preserve"><value>Les règles Markdown guident le modèle. Le client impose les commandes autorisées et les limites.</value></data>
+  <data name="AgentAddTemplate" xml:space="preserve"><value>Ajouter un modèle…</value></data>
+  <data name="AgentTemplateObserve" xml:space="preserve"><value>Observer les environs</value></data>
+  <data name="AgentTemplateExplore" xml:space="preserve"><value>Explorer prudemment</value></data>
+  <data name="AgentTemplateInventory" xml:space="preserve"><value>Examiner l’inventaire</value></data>
+  <data name="AgentTemplateObserveDescription" xml:space="preserve"><value>## Objectif
+Examinez la pièce actuelle et identifiez les sorties, objets visibles et personnages.
+
+## Fin
+Arrêtez après une description utile de la pièce.</value></data>
+  <data name="AgentTemplateObserveRules" xml:space="preserve"><value>- Utilisez uniquement une commande d’observation disponible.
+- **Ne vous déplacez pas**, n’attaquez pas, ne parlez pas et ne manipulez aucun objet.
+- Sans commande adaptée, arrêtez.</value></data>
+  <data name="AgentTemplateExploreDescription" xml:space="preserve"><value>## Objectif
+Explorez jusqu’à cinq pièces inconnues depuis votre position. Notez brièvement le trajet et les sorties observées.
+
+## Fin
+Arrêtez après cinq nouvelles pièces ou sans sortie inexplorée clairement praticable.</value></data>
+  <data name="AgentTemplateExploreRules" xml:space="preserve"><value>- Utilisez uniquement les commandes d’observation et de déplacement disponibles.
+- N’attaquez pas, ne dépensez rien, ne ramassez rien et ne forcez pas de sortie fermée.
+- Arrêtez en cas de combat, de dégâts ou de sortie dangereuse.
+- Si le déplacement n’est pas confirmé, arrêtez au lieu de le répéter.</value></data>
+  <data name="AgentTemplateInventoryDescription" xml:space="preserve"><value>## Objectif
+Examinez les objets transportés sans les modifier.
+
+## Fin
+Arrêtez après réception d’une liste d’inventaire.</value></data>
+  <data name="AgentTemplateInventoryRules" xml:space="preserve"><value>- Utilisez une commande d’inventaire disponible ; sinon, arrêtez.
+- N’équipez, ne consommez, ne jetez, n’achetez, ne vendez et ne donnez aucun objet.
+- Ne vous déplacez pas et n’engagez aucun combat.</value></data>
+  <data name="ProfileDraftHelp" xml:space="preserve"><value>Enregistrer applique les modifications de toutes les sections. Annuler abandonne les modifications en attente.</value></data>
+  <data name="ProfileRemovalPending" xml:space="preserve"><value>Cette connexion sera supprimée à l’enregistrement. Sélectionnez à nouveau Supprimer pour annuler.</value></data>
+  <data name="ProfileDiscardTitle" xml:space="preserve"><value>Abandonner les modifications ?</value></data>
+  <data name="ProfileDiscardMessage" xml:space="preserve"><value>Cette connexion contient des modifications non enregistrées. Les abandonner et continuer ?</value></data>
+  <data name="ProfileKeepEditing" xml:space="preserve"><value>Continuer la modification</value></data>
+  <data name="ProfileDiscard" xml:space="preserve"><value>Abandonner les modifications</value></data>
+  <data name="DiagnosticsMessages" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="DiagnosticsObservedFields" xml:space="preserve">
+    <value>Champs observés</value>
+  </data>
+  <data name="DiagnosticsSchemaHelp" xml:space="preserve">
+    <value>Noms et types des champs observés pendant cette connexion, sans les valeurs. L’empreinte change avec les nouveaux champs ou types. Cet inventaire est partiel. Effacer le réinitialise.</value>
+  </data>
+  <data name="GmcpLoginRejected" xml:space="preserve">
+    <value>La connexion automatique a été refusée. Connectez-vous manuellement ou vérifiez les identifiants enregistrés.</value>
+  </data>
+  <data name="GmcpLoginTimedOut" xml:space="preserve">
+    <value>Le serveur n’a pas confirmé la connexion automatique. Connectez-vous manuellement si nécessaire.</value>
+  </data>
+  <data name="DiagnosticsRedacted" xml:space="preserve">
+    <value>Les valeurs sensibles ont été masquées. Les autres champs reçus sont affichés ci-dessous.</value>
+  </data>
+  <data name="VitalsOpponent" xml:space="preserve"><value>Adversaire</value></data>
+  <data name="VitalsVehicle" xml:space="preserve"><value>Véhicule</value></data>
+  <data name="VitalsWorld" xml:space="preserve"><value>Monde</value></data>
+  <data name="VitalsHealth" xml:space="preserve"><value>Santé</value></data>
+  <data name="VitalsMana" xml:space="preserve"><value>Mana</value></data>
+  <data name="VitalsMovement" xml:space="preserve"><value>Mouvement</value></data>
+  <data name="VitalsEnergy" xml:space="preserve"><value>Énergie</value></data>
+  <data name="VitalsAmmunition" xml:space="preserve"><value>Munitions</value></data>
+  <data name="VitalsShield" xml:space="preserve"><value>Bouclier</value></data>
+  <data name="VitalsHull" xml:space="preserve"><value>Coque</value></data>
+  <data name="VitalsFuel" xml:space="preserve"><value>Carburant</value></data>
+  <data name="VitalsExperience" xml:space="preserve"><value>Expérience</value></data>
+  <data name="Channels" xml:space="preserve"><value>Canaux</value></data>
+  <data name="ChannelsPanel" xml:space="preserve"><value>Panneau des canaux</value></data>
+  <data name="ChannelsAll" xml:space="preserve"><value>Tous</value></data>
+  <data name="ChannelsMirrorNote" xml:space="preserve"><value>Les messages de canal apparaissent ici et restent dans la transcription.</value></data>
+  <data name="ChannelsSend" xml:space="preserve"><value>Envoyer</value></data>
+  <data name="ChannelsReplyPlaceholder" xml:space="preserve"><value>Dites quelque chose sur {0}</value></data>
+  <data name="ChannelsReplyAllHint" xml:space="preserve"><value>Choisissez un canal pour répondre.</value></data>
+  <data name="ChannelsReplyUnknown" xml:space="preserve"><value>Wandur ne connaît pas encore la commande de ce canal.</value></data>
+  <data name="ShowChannelsPanel" xml:space="preserve"><value>Afficher le panneau des canaux</value></data>
+  <data name="ShowChannelsPanelHint" xml:space="preserve"><value>Les lignes de canal reconnues sont reflétées à côté de la transcription et y restent.</value></data>
+  <data name="ChannelRulesInvalid" xml:space="preserve"><value>Les règles de canal ont besoin d'un nom et d'un motif que Wandur peut lire.</value></data>
+  <data name="ScriptPackInvalid" xml:space="preserve"><value>Ce script fourni n'est pas valide et a été ignoré.</value></data>
+  <data name="ScriptPackMarker" xml:space="preserve"><value>Pack</value></data>
+  <data name="ScriptPackGenerated" xml:space="preserve"><value>Généré</value></data>
+  <data name="ScriptPackReviewed" xml:space="preserve"><value>Relu</value></data>
+  <data name="ScriptPackReadOnly" xml:space="preserve"><value>Fourni par l'annuaire des mondes. Dupliquez-le pour créer votre propre version.</value></data>
+  <data name="ScriptPackAllowSend" xml:space="preserve"><value>Autoriser ce script à envoyer des commandes</value></data>
+  <data name="ScriptPackSendRefused" xml:space="preserve"><value>Ce script fourni ne peut envoyer des commandes que depuis un alias ou un bouton de panneau. Activez « Autoriser ce script à envoyer des commandes » pour lever cette limite.</value></data>
+  <data name="ScriptDuplicate" xml:space="preserve"><value>Dupliquer</value></data>
+  <data name="ScriptDuplicateName" xml:space="preserve"><value>{0} (copie)</value></data>
+  <data name="ScriptPanelRejected" xml:space="preserve"><value>Une instruction de panneau a été rejetée : {0}</value></data>
+  <data name="ScriptPanelEmpty" xml:space="preserve"><value>Ce panneau ne contient encore aucun élément.</value></data>
+  <data name="ScriptPanelRailCollapse" xml:space="preserve"><value>Replier les panneaux</value></data>
+  <data name="ScriptPanelRailExpand" xml:space="preserve"><value>Afficher les panneaux</value></data>
+  <data name="ScriptCompleteMsdp" xml:space="preserve"><value>Mises à jour des variables MSDP. Charge : variable: string; value: JSON. Nécessite un serveur compatible.</value></data>
+  <data name="ScriptCompleteState" xml:space="preserve"><value>Les dernières valeurs reçues. state.get(path) lit gmcp.Char.Vitals.hp ou msdp.SHIPHULL.</value></data>
+  <data name="ScriptCompletePanel" xml:space="preserve"><value>Crée ou réutilise un panneau ancré construit à partir de déclarations d'éléments.</value></data>
+  <data name="ScriptCompleteVariable" xml:space="preserve"><value>Le nom de la variable MSDP, par exemple SHIPHULL.</value></data>
+  <data name="ScriptCompleteValue" xml:space="preserve"><value>La valeur MSDP décodée : une chaîne, une liste ou une table.</value></data>
+  <data name="ScriptCompleteFormat" xml:space="preserve"><value>Texte d'affichage pour toute valeur : null donne une chaîne vide, les tableaux sont joints par des virgules et les objets deviennent des paires clé : valeur.</value></data>
+  <data name="ComposerSuggestions" xml:space="preserve"><value>Suggérer des complétions pendant la saisie</value></data>
+  <data name="ComposerSuggestionsHint" xml:space="preserve"><value>Le texte grisé après ce que vous tapez vient de l'historique des commandes et des mots vus dans ce monde. Tab ou flèche droite l'accepte, Échap le masque.</value></data>
+  <data name="CommandHintTabComplete" xml:space="preserve"><value>↑ ↓ historique · Tab compléter · Entrée envoi</value></data>
+  <data name="ConsoleTab" xml:space="preserve"><value>Console</value></data>
+  <data name="ConsolePause" xml:space="preserve"><value>Pause</value></data>
+  <data name="ConsoleClear" xml:space="preserve"><value>Effacer</value></data>
+  <data name="ConsoleCopy" xml:space="preserve"><value>Copier</value></data>
+  <data name="ConsoleWrap" xml:space="preserve"><value>Renvoyer à la ligne</value></data>
+  <data name="ConsoleCount" xml:space="preserve"><value>{0} entrées · les {1} dernières sont conservées</value></data>
+  <data name="ConsolePrivate" xml:space="preserve"><value>[private] marque le texte masqué pendant la saisie privée.</value></data>
+  <data name="DiagnosticsFilterPlaceholder" xml:space="preserve"><value>Filtrer les messages</value></data>
+  <data name="DiagnosticsAllKinds" xml:space="preserve"><value>Tous</value></data>
+  <data name="DiagnosticsMoreKinds" xml:space="preserve"><value>{0} de plus</value></data>
+  <data name="DiagnosticsShownOfTotal" xml:space="preserve"><value>{0} sur {1}</value></data>
+  <data name="TranscriptCopy" xml:space="preserve"><value>Copier</value></data>
+  <data name="MarkAsChannel" xml:space="preserve"><value>Marquer comme canal...</value></data>
+  <data name="TeachChannelTitle" xml:space="preserve"><value>Marquer comme canal</value></data>
+  <data name="TeachChannelHelp" xml:space="preserve"><value>Wandur a deviné la forme de cette ligne. Ajustez les morceaux ou la règle, choisissez le canal et vérifiez l'aperçu avant d'enregistrer.</value></data>
+  <data name="TeachChannelExample" xml:space="preserve"><value>Ligne d'exemple</value></data>
+  <data name="TeachChannelHead" xml:space="preserve"><value>En-tête (avant le locuteur)</value></data>
+  <data name="TeachChannelSpeaker" xml:space="preserve"><value>Motif du locuteur</value></data>
+  <data name="TeachChannelSeparator" xml:space="preserve"><value>Séparateur (entre le locuteur et le texte)</value></data>
+  <data name="TeachChannelPattern" xml:space="preserve"><value>Règle (expression régulière)</value></data>
+  <data name="TeachChannelChannel" xml:space="preserve"><value>Canal</value></data>
+  <data name="TeachChannelNewChannel" xml:space="preserve"><value>Nouveau canal...</value></data>
+  <data name="TeachChannelNewChannelName" xml:space="preserve"><value>Nom du nouveau canal</value></data>
+  <data name="TeachChannelReply" xml:space="preserve"><value>Commande de réponse</value></data>
+  <data name="TeachChannelPrivate" xml:space="preserve"><value>Privé (répond à une personne)</value></data>
+  <data name="TeachChannelPreview" xml:space="preserve"><value>Aperçu sur les {0} dernières lignes de la transcription</value></data>
+  <data name="TeachChannelPreviewCount" xml:space="preserve"><value>{0} lignes sur {1} correspondent</value></data>
+  <data name="TeachChannelPreviewNone" xml:space="preserve"><value>Rien dans la transcription ne correspond à cette règle. Vérifiez l'en-tête et le séparateur.</value></data>
+  <data name="TeachChannelInvalidPattern" xml:space="preserve"><value>La règle n'est pas une expression régulière valide.</value></data>
+  <data name="TeachChannelNeedsName" xml:space="preserve"><value>Donnez un nom au nouveau canal.</value></data>
+  <data name="TeachChannelNoProfile" xml:space="preserve"><value>Ouvrez un monde enregistré avant de lui apprendre des canaux.</value></data>
+  <data name="TeachChannelSave" xml:space="preserve"><value>Enregistrer la règle</value></data>
+  <data name="TeachChannelNotAChannel" xml:space="preserve"><value>Pas un canal</value></data>
+  <data name="TeachChannelNotAChannelHelp" xml:space="preserve"><value>Cette ligne est actuellement affichée comme {0}. L'exclure empêche les lignes de cette forme d'être traitées comme un canal.</value></data>
+  <data name="TeachChannelSaved" xml:space="preserve"><value>Règle de canal enregistrée pour {0}.</value></data>
+  <data name="ProfileChannelsSection" xml:space="preserve"><value>Canaux</value></data>
+  <data name="ProfileChannelsHelp" xml:space="preserve"><value>Règles apprises depuis la transcription. Les règles propres à un monde passent avant les valeurs par défaut de sa base de code, et une exclusion empêche une ligne d'être un canal.</value></data>
+  <data name="ProfileChannelsEmpty" xml:space="preserve"><value>Aucune règle pour l'instant. Faites un clic droit sur une ligne de canal dans la transcription et choisissez Marquer comme canal.</value></data>
+  <data name="ProfileChannelEnabled" xml:space="preserve"><value>Activée</value></data>
+  <data name="ProfileChannelExclude" xml:space="preserve"><value>Exclusion</value></data>
+  <data name="ProfileChannelDelete" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="ChannelRuleChannel" xml:space="preserve"><value>Canal</value></data>
+  <data name="ChannelRulePattern" xml:space="preserve"><value>Motif</value></data>
+  <data name="ChannelRuleReply" xml:space="preserve"><value>Commande de réponse</value></data>
+  <data name="DeleteSavedWorldPrompt" xml:space="preserve">
+    <value>Supprimer ce monde enregistré ? Ses identifiants, son mappage de protocole et ses scripts disparaîtront aussi.</value>
+  </data>
+  <data name="ThemeHull" xml:space="preserve">
+    <value>Coque</value>
+  </data>
+  <data name="FollowMudTheme" xml:space="preserve"><value>Utiliser le thème du MUD</value></data>
+  <data name="ExitFullScreen" xml:space="preserve"><value>Quitter le plein écran</value></data>
+  <data name="SessionHistory" xml:space="preserve"><value>Historique des sessions</value></data>
+  <data name="HistoryEnabled" xml:space="preserve"><value>Enregistrer l’historique des sessions sur cet appareil</value></data>
+  <data name="HistoryPrivacyHint" xml:space="preserve"><value>L’historique reste sur cet appareil. Les saisies privées reconnues sont exclues, mais le texte du serveur peut contenir des informations sensibles.</value></data>
+  <data name="HistoryRetention" xml:space="preserve"><value>Conserver l’historique</value></data>
+  <data name="HistoryDays30" xml:space="preserve"><value>30 jours</value></data>
+  <data name="HistoryDays90" xml:space="preserve"><value>90 jours</value></data>
+  <data name="HistoryDays365" xml:space="preserve"><value>1 an</value></data>
+  <data name="HistoryForever" xml:space="preserve"><value>Indéfiniment</value></data>
+  <data name="HistoryRetentionInvalid" xml:space="preserve"><value>Choisissez 30 jours, 90 jours, 1 an ou indéfiniment.</value></data>
+  <data name="HistoryRecordingFailed" xml:space="preserve"><value>L’historique n’a pas pu être enregistré. L’enregistrement est suspendu pour cette connexion.</value></data>
+  <data name="HistoryRecordingNotice" xml:space="preserve"><value>L’historique est enregistré sur cet appareil. Modifiez l’enregistrement et la conservation dans les paramètres.</value></data>
+  <data name="HistoryLocalNotice" xml:space="preserve"><value>L’historique local est conservé 30 jours par défaut. Modifiez l’enregistrement et la conservation dans les paramètres. Le filtrage de confidentialité n’est pas infaillible. Aucune donnée d’historique ou de protocole n’est envoyée.</value></data>
+  <data name="HistoryQuery" xml:space="preserve"><value>Mots ou « expression entre guillemets »</value></data>
+  <data name="HistorySearch" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="HistoryWorld" xml:space="preserve"><value>Nom du monde ou adresse</value></data>
+  <data name="HistoryCharacter" xml:space="preserve"><value>Personnage</value></data>
+  <data name="HistoryFrom" xml:space="preserve"><value>À partir du</value></data>
+  <data name="HistoryUntil" xml:space="preserve"><value>Avant le</value></data>
+  <data name="HistorySessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="HistoryResults" xml:space="preserve"><value>Résultats de recherche</value></data>
+  <data name="HistoryPrevious" xml:space="preserve"><value>Précédent</value></data>
+  <data name="HistoryNext" xml:space="preserve"><value>Suivant</value></data>
+  <data name="HistoryPage" xml:space="preserve"><value>Page {0} · {1} affichés</value></data>
+  <data name="HistorySelect" xml:space="preserve"><value>Sélectionnez une session ou un résultat pour lire son contexte.</value></data>
+  <data name="HistoryEmptySessions" xml:space="preserve"><value>Aucune session enregistrée ne correspond à ces filtres.</value></data>
+  <data name="HistoryEmptyResults" xml:space="preserve"><value>Saisissez des mots et recherchez, ou choisissez une session. Aucun résultat sur cette page.</value></data>
+  <data name="HistoryLoading" xml:space="preserve"><value>Chargement de l’historique...</value></data>
+  <data name="HistoryInvalidDates" xml:space="preserve"><value>La date de début doit précéder la date de fin.</value></data>
+  <data name="HistoryLoadFailed" xml:space="preserve"><value>Impossible de charger l’historique. Essayez d’actualiser.</value></data>
+  <data name="HistoryDelete" xml:space="preserve"><value>Supprimer la session</value></data>
+  <data name="HistoryDeletePrompt" xml:space="preserve"><value>Supprimer tout l’historique local de {0} ? Cette action est irréversible.</value></data>
+  <data name="HistoryDeleteFailed" xml:space="preserve"><value>Impossible de supprimer la session. Réessayez.</value></data>
+  <data name="HistoryReceived" xml:space="preserve"><value>Reçu</value></data>
+  <data name="HistorySent" xml:space="preserve"><value>Envoyé</value></data>
+  <data name="HistoryScript" xml:space="preserve"><value>Script</value></data>
+  <data name="HistoryPrivate" xml:space="preserve"><value>Privé</value></data>
+  <data name="Skin" xml:space="preserve"><value>Habillage</value></data>
+  <data name="SkinFleet" xml:space="preserve"><value>Flotte</value></data>
+  <data name="SkinArmored" xml:space="preserve"><value>Blindé</value></data>
+  <data name="SkinSystem" xml:space="preserve"><value>Système</value></data>
+  <data name="SkinHelp" xml:space="preserve"><value>Choisissez la forme de la fenêtre indépendamment des couleurs. Les thèmes du MUD ne changent pas votre habillage.</value></data>
+  <data name="DontShowAgain" xml:space="preserve"><value>Ne plus afficher</value></data>
+  <data name="HistoryNoticePreferenceFailed" xml:space="preserve"><value>Cette préférence n’a pas pu être enregistrée. Le rappel de l’historique s’affichera à nouveau.</value></data>
+  <data name="ExploreWorld" xml:space="preserve"><value>Explorer le monde →</value></data>
+  <data name="WorldSaved" xml:space="preserve"><value>Enregistré ✓</value></data>
+  <data name="AllGenres" xml:space="preserve"><value>Tous les genres</value></data>
+  <data name="BackToWorlds" xml:space="preserve"><value>← Tous les mondes</value></data>
+  <data name="DirectoryFilters" xml:space="preserve"><value>Filtres</value></data>
+  <data name="WorldsToExplore" xml:space="preserve"><value>{0} mondes à explorer</value></data>
+  <data name="WorldsToExploreFiltered" xml:space="preserve"><value>{0} sur {1} mondes à explorer</value></data>
+  <data name="OnlineCount" xml:space="preserve"><value>{0} en ligne</value></data>
+  <data name="PlayersOnlineCount" xml:space="preserve"><value>{0} joueurs en ligne</value></data>
+  <data name="StatusOnline" xml:space="preserve"><value>En ligne</value></data>
+  <data name="StatusOffline" xml:space="preserve"><value>Semble hors ligne</value></data>
+  <data name="OnlineNow" xml:space="preserve"><value>En ligne maintenant</value></data>
+  <data name="BeginnerFriendly" xml:space="preserve"><value>Accessible aux débutants</value></data>
+  <data name="BeginnerFriendlyHint" xml:space="preserve"><value>L'annuaire indique que ce monde accueille les nouveaux joueurs.</value></data>
+  <data name="AboutWorld" xml:space="preserve"><value>À propos de {0}</value></data>
+  <data name="FindYourPlace" xml:space="preserve"><value>Style de jeu</value></data>
+  <data name="WorldDetails" xml:space="preserve"><value>Détails du monde</value></data>
+  <data name="WorldStatus" xml:space="preserve"><value>Statut</value></data>
+  <data name="PlayStyle" xml:space="preserve"><value>Style de jeu</value></data>
+  <data name="RoleplayStyle" xml:space="preserve"><value>Jeu de rôle : {0}</value></data>
+  <data name="ConnectWithAnyClient" xml:space="preserve"><value>Connexion avec n'importe quel client</value></data>
+  <data name="CopyAddress" xml:space="preserve"><value>Copier l'adresse</value></data>
+  <data name="AGlimpseInside" xml:space="preserve"><value>Illustration</value></data>
+  <data name="AroundTheWorld" xml:space="preserve"><value>Autour du monde</value></data>
+  <data name="DirectoryLede" xml:space="preserve"><value>Recherchez par genre, langue, base de code ou étiquette. Le statut en ligne et le nombre de joueurs viennent des vérifications horaires de wandur.net.</value></data>
+  <data name="SortLabel" xml:space="preserve"><value>Trier :</value></data>
+  <data name="PlayersObservedAgo" xml:space="preserve"><value>{0} joueurs, {1}</value></data>
+  <data name="CountedAgo" xml:space="preserve"><value>{0} en a compté {1}, {2}</value></data>
+  <data name="Counted" xml:space="preserve"><value>{0} en a compté {1}</value></data>
+  <data name="JustNow" xml:space="preserve"><value>à l'instant</value></data>
+  <data name="MinutesAgo" xml:space="preserve"><value>il y a {0} min</value></data>
+  <data name="HoursAgo" xml:space="preserve"><value>il y a {0} h</value></data>
+  <data name="DaysAgo" xml:space="preserve"><value>il y a {0} jours</value></data>
+  <data name="ShowAdultWorlds" xml:space="preserve"><value>Afficher les mondes pour adultes</value></data>
+  <data name="AdultChip" xml:space="preserve"><value>Adultes</value></data>
+  <data name="AdultWorldsHint" xml:space="preserve"><value>Les mondes que l'annuaire signale comme contenu pour adultes restent masqués sauf si vous activez ceci. Vos mondes enregistrés ne sont jamais masqués.</value></data>
+  <data name="PlayersOnlineCountOne" xml:space="preserve"><value>{0} joueur en ligne</value></data>
+  <data name="DaysAgoOne" xml:space="preserve"><value>il y a {0} jour</value></data>
+  <data name="WorldsToExploreOne" xml:space="preserve"><value>{0} monde à explorer</value></data>
+  <data name="AdultWorlds" xml:space="preserve"><value>Mondes pour adultes</value></data>
+  <data name="ScriptCompletePrompt" xml:space="preserve"><value>Une invite que le serveur a marquée comme terminée (telnet GA ou EOR), sans style ANSI. Données : text: string. Les saisies privées sont exclues.</value></data>
+  <data name="ScriptCompletePromptText" xml:space="preserve"><value>Le texte de l'invite depuis le dernier saut de ligne, sans style ANSI.</value></data>
+  <data name="DiagnosticsServerDetails" xml:space="preserve"><value>Détails du serveur</value></data>
+  <data name="DiagnosticsServerDetailsHelp" xml:space="preserve"><value>Ce que ce monde dit de lui-même via MSSP : nom, base de code, joueurs, temps de fonctionnement et protocoles annoncés. En lecture seule, conservé pour cette session uniquement. Si le profil du monde n'indique pas de base de code, celle annoncée choisit les règles de canaux.</value></data>
+  <data name="DiagnosticsServerDetailsNone" xml:space="preserve"><value>Ce monde ne s'est pas décrit via MSSP.</value></data>
+  <data name="LinkOpenQuestion" xml:space="preserve"><value>Ouvrir ce lien ?</value></data>
+  <data name="LinkOpen" xml:space="preserve"><value>Ouvrir</value></data>
+  <data name="LinkRefused" xml:space="preserve"><value>Ce lien n'a pas été ouvert. Wandur n'ouvre que les liens web (http ou https) sans nom d'utilisateur ni mot de passe dans l'adresse.</value></data>
+  <data name="LinkNotOpened" xml:space="preserve"><value>Le lien n'a pas pu être ouvert dans votre navigateur.</value></data>
+  <data name="LinkRefusedLocal" xml:space="preserve"><value>Ce lien n'a pas été ouvert : il pointe vers cet ordinateur ou un réseau privé, et un monde n'a aucune raison de vous y envoyer.</value></data>
+  <data name="LinkClickHint" xml:space="preserve"><value>Ctrl+clic pour ouvrir ce lien.</value></data>
+  <data name="LinkClickHintMac" xml:space="preserve"><value>Cmd+clic ou Control+clic pour ouvrir ce lien.</value></data>
+  <data name="CheckForUpdatesMenu" xml:space="preserve"><value>Rechercher des mises à jour…</value></data>
+  <data name="CheckForUpdatesTitle" xml:space="preserve"><value>Rechercher des mises à jour</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>Wandur Mud Client {0} est disponible.</value></data>
+  <data name="UpdateDownload" xml:space="preserve"><value>Télécharger</value></data>
+  <data name="UpdateReleaseNotes" xml:space="preserve"><value>Notes de version</value></data>
+  <data name="UpdateSkipVersion" xml:space="preserve"><value>Ignorer cette version</value></data>
+  <data name="UpdateUpToDate" xml:space="preserve"><value>Vous avez la dernière version, {0}.</value></data>
+  <data name="UpdateUnreachable" xml:space="preserve"><value>Impossible de joindre wandur.net.</value></data>
+  <data name="UpdateUnreachableHint" xml:space="preserve"><value>Vérifiez votre connexion internet et réessayez plus tard.</value></data>
+  <data name="UpdateChecksOffInSourceBuild" xml:space="preserve"><value>Ceci est une version compilée depuis les sources ({0}) : elle ne recherche pas de mises à jour.</value></data>
+  <data name="CheckForUpdatesAutomatically" xml:space="preserve"><value>Rechercher automatiquement les mises à jour</value></data>
+  <data name="CheckForUpdatesAutomaticallyHint" xml:space="preserve"><value>Une fois par jour, le client demande à wandur.net si une version plus récente est sortie et, le cas échéant, affiche un avis. Il ne télécharge et n'installe jamais rien de lui-même.</value></data>
+  <data name="SendInstallId" xml:space="preserve"><value>Envoyer un identifiant d'installation anonyme pour que wandur.net puisse compter les installations</value></data>
+  <data name="SendInstallIdHint" xml:space="preserve"><value>Un nombre aléatoire créé une seule fois pour cette installation, envoyé avec les requêtes du client à wandur.net (l'annuaire, les illustrations et la recherche de mises à jour) et nulle part ailleurs. Il ne dit rien de vous ni de cet ordinateur. Désactivé, le client n'envoie aucun identifiant.</value></data>
+  <data name="DockGripTip" xml:space="preserve">
+    <value>Faites glisser pour déplacer ou détacher ce panneau</value>
+  </data>
+  <data name="DockCloseTip" xml:space="preserve">
+    <value>Fermer le panneau · rouvrez-le depuis le menu Affichage</value>
+  </data>
+  <data name="DockClosePanel" xml:space="preserve">
+    <value>Fermer le panneau</value>
+  </data>
+  <data name="HistoryAnyDate" xml:space="preserve">
+    <value>N'importe quelle date</value>
+  </data>
+  <data name="QuickCommandSendTip" xml:space="preserve">
+    <value>Envoyer : {0}</value>
+  </data>
+  <data name="SavedWorldsFind" xml:space="preserve">
+    <value>Rechercher un monde enregistré</value>
+  </data>
+  <data name="SavedWorldsFilterPlaceholder" xml:space="preserve">
+    <value>Nom ou adresse</value>
+  </data>
+  <data name="SavedWorldsNoMatch" xml:space="preserve">
+    <value>Aucun monde enregistré ne correspond.</value>
+  </data>
+  <data name="ConnectSavedWorld" xml:space="preserve">
+    <value>Se connecter</value>
+  </data>
+  <data name="ConnectInNewTab" xml:space="preserve">
+    <value>Se connecter dans un nouvel onglet</value>
+  </data>
+  <data name="ExploreInDirectory" xml:space="preserve">
+    <value>Explorer dans l’annuaire</value>
+  </data>
+</root>

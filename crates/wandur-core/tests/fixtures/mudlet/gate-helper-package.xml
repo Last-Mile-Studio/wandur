@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<!-- Hand-written fictional package for WMC tests. -->
+<MudletPackage version="1.001">
+    <TriggerPackage>
+        <TriggerGroup isActive="yes" isFolder="yes">
+            <name>Gate helper</name>
+            <script></script>
+            <mCommand></mCommand>
+            <regexCodeList />
+            <regexCodePropertyList />
+            <Trigger isActive="yes" isFolder="no">
+                <name>Knock</name>
+                <script>send("knock")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>The gate is shut</string></regexCodeList>
+                <regexCodePropertyList><integer>0</integer></regexCodePropertyList>
+            </Trigger>
+        </TriggerGroup>
+    </TriggerPackage>
+    <AliasPackage>
+        <Alias isActive="yes" isFolder="no">
+            <name>open gate</name>
+            <script>sendAll("unlock gate", "open gate", false)</script>
+            <command></command>
+            <regex>^og$</regex>
+        </Alias>
+    </AliasPackage>
+</MudletPackage>

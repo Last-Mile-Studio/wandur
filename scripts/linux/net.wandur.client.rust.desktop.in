@@ -1,0 +1,14 @@
+[Desktop Entry]
+# Template, not the installed entry. install-desktop-entry.sh copies it to
+# ~/.local/share/applications/net.wandur.client.rust.desktop and rewrites the Exec line with the
+# absolute, quoted path of the wandur in this folder, because a .desktop file cannot refer to
+# a path relative to itself.
+Type=Application
+Name=Wandur Rust
+GenericName=MUD Client
+Comment=Play text MUDs and MUSHes
+Exec=wandur
+Icon=net.wandur.client.rust
+Terminal=false
+Categories=Game;Network;
+StartupWMClass=wandur

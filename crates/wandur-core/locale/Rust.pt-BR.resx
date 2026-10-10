@@ -1,0 +1,465 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <data name="A11yLatestOutput" xml:space="preserve"><value>Saída mais recente</value></data>
+  <data name="A11yTranscript" xml:space="preserve"><value>Transcrição</value></data>
+  <data name="A11yCloseTab" xml:space="preserve"><value>Fechar {0}</value></data>
+  <data name="A11yResizePanels" xml:space="preserve"><value>Redimensionar painéis</value></data>
+  <data name="A11yTitleBar" xml:space="preserve"><value>Barra de título</value></data>
+  <data name="A11yTabStrip" xml:space="preserve"><value>Abas</value></data>
+  <data name="AddShort" xml:space="preserve"><value>Adicionar</value></data>
+  <data name="AddressBadHost" xml:space="preserve"><value>"{0}" não é um nome de host</value></data>
+  <data name="AddressBadPort" xml:space="preserve"><value>"{0}" não é uma porta entre 1 e 65535</value></data>
+  <data name="AddressEmpty" xml:space="preserve"><value>Digite um endereço como example.org:4000</value></data>
+  <data name="AddressMissingPort" xml:space="preserve"><value>Adicione uma porta, por exemplo example.org:4000</value></data>
+  <data name="AutoHide" xml:space="preserve"><value>Ocultar automaticamente</value></data>
+  <data name="AutoHideHint" xml:space="preserve"><value>Desafixar: fica na faixa da borda e desliza quando for preciso</value></data>
+  <data name="ClickToDismiss" xml:space="preserve"><value>Clique para dispensar</value></data>
+  <data name="ConnectShort" xml:space="preserve"><value>Conectar</value></data>
+  <data name="ConnectToAnAddress" xml:space="preserve"><value>Conectar a um endereço</value></data>
+  <data name="CouldNotConnectTo" xml:space="preserve"><value>Não foi possível conectar a {0}: {1}</value></data>
+  <data name="CouldNotFindHost" xml:space="preserve"><value>Não foi possível encontrar {0}: {1}</value></data>
+  <data name="CouldNotReadFile" xml:space="preserve"><value>Não foi possível ler {0}: {1}</value></data>
+  <data name="CouldNotStartTheConnectionThread" xml:space="preserve"><value>Não foi possível iniciar a thread de conexão: {0}</value></data>
+  <data name="CouldNotUseTheConnection" xml:space="preserve"><value>Não foi possível usar a conexão: {0}</value></data>
+  <data name="DatabaseNotInUse" xml:space="preserve"><value>O banco de dados do cliente não está em uso desta vez: {0}</value></data>
+  <data name="DatabaseNotWritable" xml:space="preserve"><value>Não é possível gravar no banco de dados do cliente: {0}</value></data>
+  <data name="DatabaseUnreadable" xml:space="preserve"><value>O banco de dados do cliente estava ilegível ({0}); um novo foi criado e o arquivo antigo está em {1}</value></data>
+  <data name="DatabaseWritesLost" xml:space="preserve"><value>{0} gravações perdidas: {1}</value></data>
+  <data name="DetailsFrom" xml:space="preserve"><value>Detalhes de {0}</value></data>
+  <data name="DetailsFromUpdated" xml:space="preserve"><value>Detalhes de {0}, atualizados em {1}</value></data>
+  <data name="DirectoryAddress" xml:space="preserve"><value>Endereço do diretório</value></data>
+  <data name="DirectoryFormatUnsupported" xml:space="preserve"><value>O diretório usa um formato que este cliente não lê</value></data>
+  <data name="DirectoryInUse" xml:space="preserve"><value>Em uso: {0}. Deixe vazio para usar o diretório público do wandur.net.</value></data>
+  <data name="DirectoryInUseOverridden" xml:space="preserve"><value>Em uso: {0} (WANDUR_DIRECTORY_URL={1} substitui a configuração)</value></data>
+  <data name="DirectoryNotUtf8" xml:space="preserve"><value>A resposta não era texto UTF-8</value></data>
+  <data name="DirectorySavedFrom" xml:space="preserve"><value>Diretório salvo {0}  ·  A busca funciona offline  ·  De {1}</value></data>
+  <data name="DirectoryUnavailableAtReason" xml:space="preserve"><value>Diretório indisponível em {0} ({1}). Mundos salvos e listagens em cache continuam funcionando.</value></data>
+  <data name="DirectoryUnreadableReason" xml:space="preserve"><value>Não foi possível ler o diretório: {0}</value></data>
+  <data name="EscapeHidesIt" xml:space="preserve"><value>Esc também o oculta</value></data>
+  <data name="FourAndAHalfStarsAndUp" xml:space="preserve"><value>4,5 estrelas ou mais</value></data>
+  <data name="FourStarsAndUp" xml:space="preserve"><value>4 estrelas ou mais</value></data>
+  <data name="GaveUpReconnecting" xml:space="preserve"><value>Reconexão abandonada após {0} tentativas</value></data>
+  <data name="Genre" xml:space="preserve"><value>Gênero</value></data>
+  <data name="GiveTheWorldAName" xml:space="preserve"><value>Dê um nome ao mundo</value></data>
+  <data name="GridSizeAndHistory" xml:space="preserve"><value>{0} x {1}, {2} de {3} linhas de histórico</value></data>
+  <data name="HideButton" xml:space="preserve"><value>Ocultar</value></data>
+  <data name="HideParenthesized" xml:space="preserve"><value>(ocultar)</value></data>
+  <data name="Host" xml:space="preserve"><value>Host</value></data>
+  <data name="InitialMap" xml:space="preserve"><value>MAPA INICIAL</value></data>
+  <data name="InitialMapHint" xml:space="preserve"><value>Apenas salas e saídas de GMCP Room.Info; o mapeador completo ainda não foi portado</value></data>
+  <data name="LayoutNoKnownPanels" xml:space="preserve"><value>nenhum painel conhecido</value></data>
+  <data name="LayoutNotUsable" xml:space="preserve"><value>O layout salvo não era utilizável ({0}); o layout padrão está em uso</value></data>
+  <data name="LayoutSavedHint" xml:space="preserve"><value>O layout é salvo quando muda e restaurado ao iniciar.</value></data>
+  <data name="LayoutUnreadable" xml:space="preserve"><value>Não foi possível ler o layout salvo: {0}</value></data>
+  <data name="LayoutVersionUnsupported" xml:space="preserve"><value>a versão de layout {0} não é compatível</value></data>
+  <data name="ListingHasNoMudConnection" xml:space="preserve"><value>Esta listagem não tem uma conexão MUD compatível.</value></data>
+  <data name="MapCentre" xml:space="preserve"><value>Centralizar</value></data>
+  <data name="MapOneRoom" xml:space="preserve"><value>1 sala</value></data>
+  <data name="MapRoomExits" xml:space="preserve"><value>Saídas: {0}</value></data>
+  <data name="NoAddressFoundFor" xml:space="preserve"><value>Nenhum endereço encontrado para {0}</value></data>
+  <data name="NoDataDirectory" xml:space="preserve"><value>Nenhuma pasta de dados encontrada; as configurações não serão salvas</value></data>
+  <data name="NoOpenSessions" xml:space="preserve"><value>Nenhuma sessão aberta</value></data>
+  <data name="OutputFramesASecond" xml:space="preserve"><value>Quadros de saída por segundo</value></data>
+  <data name="OutputFramesASecondHint" xml:space="preserve"><value>Com que frequência o novo texto do servidor é desenhado; 0 desenha cada quadro enquanto chega texto.</value></data>
+  <data name="PinButton" xml:space="preserve"><value>Fixar</value></data>
+  <data name="PinHint" xml:space="preserve"><value>Devolvê-lo ao espaço de trabalho onde estava</value></data>
+  <data name="PromptAfterAQuietLine" xml:space="preserve"><value>Tratar uma linha incompleta parada como prompt após</value></data>
+  <data name="Reconnect" xml:space="preserve"><value>Reconectar</value></data>
+  <data name="ReconnectAutomatically" xml:space="preserve"><value>Reconectar automaticamente</value></data>
+  <data name="ReconnectAutomaticallyGlobalHint" xml:space="preserve"><value>Para sessões com endereços digitados; mundos salvos têm sua própria configuração.</value></data>
+  <data name="ReconnectAutomaticallyHint" xml:space="preserve"><value>Reconectar automaticamente quando a conexão cair</value></data>
+  <data name="ReconnectingInSeconds" xml:space="preserve"><value>Reconectando em {0} s (tentativa {1})</value></data>
+  <data name="ReconnectingTo" xml:space="preserve"><value>Reconectando a {0}</value></data>
+  <data name="ReconnectingToAttempt" xml:space="preserve"><value>Reconectando a {0} (tentativa {1})</value></data>
+  <data name="Refresh" xml:space="preserve"><value>Atualizar</value></data>
+  <data name="Rename" xml:space="preserve"><value>Renomear</value></data>
+  <data name="RoomNumber" xml:space="preserve"><value>Sala {0}</value></data>
+  <data name="ScrollbackRows" xml:space="preserve"><value>Linhas de histórico</value></data>
+  <data name="ScrollbackRowsHint" xml:space="preserve"><value>O histórico é contado em linhas de tela; o máximo absoluto é {0} linhas.</value></data>
+  <data name="Security" xml:space="preserve"><value>Segurança</value></data>
+  <data name="SessionClosedTab" xml:space="preserve"><value>Fechada</value></data>
+  <data name="SettingsConnections" xml:space="preserve"><value>Conexões</value></data>
+  <data name="SettingsUnreadable" xml:space="preserve"><value>As configurações estavam ilegíveis ({0}); os padrões estão em uso e o arquivo antigo está em {1}</value></data>
+  <data name="ShowParenthesized" xml:space="preserve"><value>(mostrar)</value></data>
+  <data name="StartTheDirectoryServer" xml:space="preserve"><value>Inicie o servidor de diretório para descobrir mundos ({0})</value></data>
+  <data name="StatusClosed" xml:space="preserve"><value>Fechada</value></data>
+  <data name="StatusWaiting" xml:space="preserve"><value>Aguardando</value></data>
+  <data name="ThemePresetNote" xml:space="preserve"><value>Paletas predefinidas do cliente C#. Aparências de janela e temas personalizados chegam depois.</value></data>
+  <data name="ThisSessionIsClosed" xml:space="preserve"><value>Esta sessão está fechada.</value></data>
+  <data name="ThreeStarsAndUp" xml:space="preserve"><value>3 estrelas ou mais</value></data>
+  <data name="TlsBadServerName" xml:space="preserve"><value>“{0}” não é um nome de servidor TLS válido</value></data>
+  <data name="TlsHandshakeFailed" xml:space="preserve"><value>Falha no handshake TLS com {0}: {1}</value></data>
+  <data name="TlsSetupFailed" xml:space="preserve"><value>Falha ao preparar o TLS: {0}</value></data>
+  <data name="UnnamedRoom" xml:space="preserve"><value>Sala sem nome</value></data>
+  <data name="UnpinnedHint" xml:space="preserve"><value>{0} (desafixado): clique para mantê-lo aberto</value></data>
+  <data name="WorldHasNoTlsPort" xml:space="preserve"><value>Este mundo não tem porta TLS.</value></data>
+  <data name="WorldNameTooLong" xml:space="preserve"><value>O nome deve ter no máximo 100 caracteres, sem caracteres de controle</value></data>
+  <data name="WorldNoLongerInDirectory" xml:space="preserve"><value>Esse mundo não está mais no diretório.</value></data>
+  <data name="VaultFailed" xml:space="preserve"><value>{0} não conseguiu concluir a solicitação ({1}). Desbloqueie-o, permita o acesso do Wandur e tente novamente.</value></data>
+  <data name="VaultUnavailable" xml:space="preserve"><value>Nenhum armazenamento de credenciais do sistema está disponível aqui, então senhas não podem ser salvas nem lidas.</value></data>
+  <data name="VaultUnavailableName" xml:space="preserve"><value>nenhum armazenamento de credenciais do sistema (indisponível)</value></data>
+  <data name="ScriptImportInvalid" xml:space="preserve"><value>O registro do script importado não é válido.</value></data>
+  <data name="MudletImportMenu" xml:space="preserve"><value>Importar do Mudlet…</value></data>
+  <data name="MudletImportTitle" xml:space="preserve"><value>Importar do Mudlet</value></data>
+  <data name="MudletImportIntro" xml:space="preserve"><value>Escolha uma pasta de perfil do Mudlet, um perfil salvo (.xml) ou um pacote (.xml ou .mpackage). Gatilhos, aliases, temporizadores e teclas que só enviam comandos funcionam na hora. Todo o resto chega desligado, com o Lua intacto e marcado como precisando de conversão. Uma senha salva nunca é importada.</value></data>
+  <data name="MudletImportChooseFolder" xml:space="preserve"><value>Escolher uma pasta de perfil…</value></data>
+  <data name="MudletImportChooseFile" xml:space="preserve"><value>Escolher um arquivo de perfil ou pacote…</value></data>
+  <data name="MudletImportPackageTarget" xml:space="preserve"><value>Um pacote não indica nenhum mundo, então vai para o mundo selecionado: {0}.</value></data>
+  <data name="MudletImportPackageNoTarget" xml:space="preserve"><value>Para importar um pacote, selecione um mundo primeiro; um pacote não indica nenhum mundo próprio.</value></data>
+  <data name="MudletImportFileType" xml:space="preserve"><value>Perfis e pacotes do Mudlet</value></data>
+  <data name="MudletImportFinished" xml:space="preserve"><value>Importação concluída</value></data>
+  <data name="MudletImportFailed" xml:space="preserve"><value>A importação do Mudlet não foi concluída: {0}</value></data>
+  <data name="MudletImportNotMudletXml" xml:space="preserve"><value>Isto não é um perfil nem um pacote do Mudlet ({0}).</value></data>
+  <data name="MudletImportTooDeep" xml:space="preserve"><value>O arquivo aninha pastas profundamente demais para importar.</value></data>
+  <data name="MudletImportTooManyItems" xml:space="preserve"><value>O arquivo contém mais itens do que uma importação aceita.</value></data>
+  <data name="MudletImportTooLarge" xml:space="preserve"><value>O arquivo é grande demais para importar.</value></data>
+  <data name="MudletImportNothingFound" xml:space="preserve"><value>Nenhum perfil ou pacote do Mudlet foi encontrado ali.</value></data>
+  <data name="MudletImportUnknownFile" xml:space="preserve"><value>Escolha uma pasta de perfil, um arquivo .xml ou um arquivo .mpackage.</value></data>
+  <data name="MudletImportNoProfileSave" xml:space="preserve"><value>Essa pasta não tem perfil salvo: o Mudlet os guarda na pasta current.</value></data>
+  <data name="MudletImportReadFailed" xml:space="preserve"><value>Não foi possível ler o arquivo: {0}</value></data>
+  <data name="MudletImportBadArchive" xml:space="preserve"><value>O pacote não é um arquivo compactado válido.</value></data>
+  <data name="MudletImportUnsafeArchive" xml:space="preserve"><value>O pacote foi recusado: contém um caminho de arquivo que aponta para fora do pacote.</value></data>
+  <data name="MudletImportUnnamed" xml:space="preserve"><value>Importação do Mudlet</value></data>
+  <data name="MudletImportNoHost" xml:space="preserve"><value>Este pacote não indica nenhum mundo. Selecione um mundo e importe de novo.</value></data>
+  <data name="MudletImportInvalidHost" xml:space="preserve"><value>O endereço do servidor do perfil ({0}) não é um ao qual o Wandur consiga se conectar.</value></data>
+  <data name="MudletHeaderConverted" xml:space="preserve"><value>Importado do Mudlet ({0}), grupo {1}.</value></data>
+  <data name="MudletHeaderOff" xml:space="preserve"><value>Importado do Mudlet ({0}), grupo {1}. Estes itens estavam desligados no Mudlet, então este script começa desligado.</value></data>
+  <data name="MudletHeaderConvertedDetail" xml:space="preserve"><value>Estes itens só enviavam comandos e foram convertidos. Importar o mesmo perfil de novo substitui este script, a menos que você o tenha editado.</value></data>
+  <data name="MudletHeaderLua" xml:space="preserve"><value>Importado do Mudlet ({0}), grupo {1}. Precisa de conversão.</value></data>
+  <data name="MudletHeaderLuaDetail" xml:space="preserve"><value>Estes itens não puderam ser convertidos automaticamente; o motivo está anotado acima de cada um. O Lua deles está mantido abaixo exatamente como era, e este script fica desligado até ser reescrito como script do Wandur.</value></data>
+  <data name="MudletItemHeader" xml:space="preserve"><value>{0}: {1} (precisa de conversão: {2})</value></data>
+  <data name="MudletItemHeaderConverted" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="MudletKeyScriptName" xml:space="preserve"><value>{0}: {1} (Mudlet)</value></data>
+  <data name="MudletKindTriggers" xml:space="preserve"><value>Gatilhos</value></data>
+  <data name="MudletKindAliases" xml:space="preserve"><value>Aliases</value></data>
+  <data name="MudletKindTimers" xml:space="preserve"><value>Temporizadores</value></data>
+  <data name="MudletKindKeys" xml:space="preserve"><value>Teclas</value></data>
+  <data name="MudletKindScripts" xml:space="preserve"><value>Scripts</value></data>
+  <data name="MudletKindButtons" xml:space="preserve"><value>Botões</value></data>
+  <data name="MudletLooseItems" xml:space="preserve"><value>Sem grupo</value></data>
+  <data name="MudletOtherGroups" xml:space="preserve"><value>Outros grupos</value></data>
+  <data name="MudletScriptName" xml:space="preserve"><value>{0} (Mudlet)</value></data>
+  <data name="MudletScriptNameOff" xml:space="preserve"><value>{0} (Mudlet, estava desligado)</value></data>
+  <data name="MudletScriptNameLua" xml:space="preserve"><value>{0} (Mudlet, precisa de conversão)</value></data>
+  <data name="MudletReasonLua" xml:space="preserve"><value>executa Lua que faz mais do que enviar comandos</value></data>
+  <data name="MudletReasonGeyser" xml:space="preserve"><value>cria janelas do Geyser, que o Wandur não tem</value></data>
+  <data name="MudletReasonMapper" xml:space="preserve"><value>controla o mapeador do Mudlet</value></data>
+  <data name="MudletReasonChain" xml:space="preserve"><value>faz parte de uma cadeia de gatilhos ou de uma pasta filtro</value></data>
+  <data name="MudletReasonMultiline" xml:space="preserve"><value>um gatilho de várias linhas (E)</value></data>
+  <data name="MudletReasonPatternType" xml:space="preserve"><value>usa um tipo de padrão que o Wandur ainda não consegue comparar (função Lua, espaçador de linhas ou cor)</value></data>
+  <data name="MudletReasonRegex" xml:space="preserve"><value>usa recursos de expressões regulares que o JavaScript não tem</value></data>
+  <data name="MudletReasonEffects" xml:space="preserve"><value>destaca, filtra, toca um som ou compara cores</value></data>
+  <data name="MudletReasonKey" xml:space="preserve"><value>uma tecla que o Wandur não consegue associar (o Wandur associa F1 a F12 sem modificadores)</value></data>
+  <data name="MudletReasonTimer" xml:space="preserve"><value>um temporizador de menos de um segundo, um temporizador de deslocamento ou um tempo ilegível</value></data>
+  <data name="MudletReasonScript" xml:space="preserve"><value>um script do Mudlet</value></data>
+  <data name="MudletReasonButton" xml:space="preserve"><value>um botão ou barra de ferramentas</value></data>
+  <data name="MudletReasonAliasChain" xml:space="preserve"><value>expande um alias que acaba em outro script</value></data>
+  <data name="MudletReasonUnsendable" xml:space="preserve"><value>envia uma linha vazia ou caracteres de controle</value></data>
+  <data name="MudletReasonEmpty" xml:space="preserve"><value>não faz nada</value></data>
+  <data name="MudletReasonNoPattern" xml:space="preserve"><value>não tem padrão</value></data>
+  <data name="MudletReasonTemporary" xml:space="preserve"><value>um item temporário</value></data>
+  <data name="MudletReasonVariables" xml:space="preserve"><value>variáveis salvas; os scripts do Wandur ainda não salvam variáveis</value></data>
+  <data name="MudletReasonModules" xml:space="preserve"><value>um módulo guardado em arquivo próprio; importe esse arquivo como pacote</value></data>
+  <data name="MudletReasonNoRoom" xml:space="preserve"><value>sem espaço na biblioteca de scripts deste mundo</value></data>
+  <data name="MudletReasonEdited" xml:space="preserve"><value>você editou este script depois da última importação, então sua cópia foi mantida</value></data>
+  <data name="MudletSummaryWorldCreated" xml:space="preserve"><value>O mundo {0} foi adicionado.</value></data>
+  <data name="MudletSummaryWorldUpdated" xml:space="preserve"><value>Importado para o mundo {0}.</value></data>
+  <data name="MudletSummaryCount" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="MudletSummaryWorking" xml:space="preserve"><value>Funcionando agora: {0}.</value></data>
+  <data name="MudletSummaryNothingWorking" xml:space="preserve"><value>Nada pôde ser convertido para funcionar na hora.</value></data>
+  <data name="MudletSummaryOffInMudlet" xml:space="preserve"><value>Convertidos, mas desligados, porque estavam desligados no Mudlet: {0}.</value></data>
+  <data name="MudletSummaryNeedsConversion" xml:space="preserve"><value>Trazidos desligados, com o Lua intacto e marcados como precisando de conversão: {0}</value></data>
+  <data name="MudletSummaryLeftOut" xml:space="preserve"><value>Deixados de fora: {0}</value></data>
+  <data name="MudletSummaryReason" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="MudletSummaryMore" xml:space="preserve"><value>{0} e mais {1}</value></data>
+  <data name="MudletSummaryPassword" xml:space="preserve"><value>A senha salva não foi importada. Digite-a nas configurações do mundo se quiser que o Wandur entre por você.</value></data>
+  <data name="MudletNeedsConversionCannotRun" xml:space="preserve"><value>Este script contém Lua do Mudlet que precisa de conversão, então ainda não pode rodar. Reescreva-o como script do Wandur, salve e depois ligue-o.</value></data>
+  <data name="MudletImportMarker" xml:space="preserve"><value>Importado do Mudlet</value></data>
+  <data name="MudletImportMarkerLua" xml:space="preserve"><value>Mudlet · precisa de conversão</value></data>
+  <data name="ScriptCompleteAfter" xml:space="preserve"><value>Execute uma função síncrona uma vez após um atraso em segundos (0 é o próximo tique). Retorna um id de gancho.</value></data>
+  <data name="ScriptCompleteRemove" xml:space="preserve"><value>Remova um alias, gatilho, ouvinte ou temporizador pelo id que o registro retornou.</value></data>
+  <data name="LuaScriptsTurnedOff" xml:space="preserve"><value>Os scripts Lua estão desligados. Ligue Permitir scripts Lua nas Preferências para executar este.</value></data>
+  <data name="MudletLuaHeader" xml:space="preserve"><value>Importado do Mudlet ({0}), grupo {1}, rodando como Lua com a camada de compatibilidade do Mudlet.</value></data>
+  <data name="MudletLuaHeaderDetail" xml:space="preserve"><value>O Lua original de cada item é o corpo abaixo. Funções que o Wandur ainda não tem avisam quando executadas.</value></data>
+  <data name="MudletLuaNotRun" xml:space="preserve"><value>{0}: {1} não roda aqui ({2}); o Lua original fica no registro da importação.</value></data>
+  <data name="ScriptLanguageLabel" xml:space="preserve"><value>Linguagem</value></data>
+  <data name="ScriptLanguageJavaScript" xml:space="preserve"><value>JavaScript</value></data>
+  <data name="ScriptLanguageLua" xml:space="preserve"><value>Lua (protótipo)</value></data>
+  <data name="ScriptMudletCompatibility" xml:space="preserve"><value>Nomes do Mudlet</value></data>
+  <data name="ScriptMudletCompatibilityHint" xml:space="preserve"><value>Dá a este script Lua as funções do Mudlet (send, tempTrigger, gmcp e mais) além da API mud do Wandur.</value></data>
+  <data name="PreferencesEnableLua" xml:space="preserve"><value>Permitir scripts Lua (protótipo)</value></data>
+  <data name="PreferencesEnableLuaHint" xml:space="preserve"><value>Permite rodar scripts escritos em Lua, inclusive scripts do Mudlet importados. Eles usam a mesma API mud e os mesmos limites do JavaScript. É um protótipo e vem desligado.</value></data>
+  <data name="MudletRunAsLua" xml:space="preserve"><value>Rodar como Lua</value></data>
+  <data name="MudletRunAsLuaHint" xml:space="preserve"><value>Transforma este script em um script Lua que roda seus itens do Mudlet pela camada de compatibilidade do Mudlet. Ele fica desligado até você ligá-lo; o Lua original é mantido.</value></data>
+  <data name="MapInferenceThreshold" xml:space="preserve"><value>Confiança mínima: {0}%</value></data>
+  <data name="MapInferenceThresholdInvalid" xml:space="preserve"><value>A confiança mínima deve estar entre 50% e 99%.</value></data>
+  <data name="MapInferenceInstalling" xml:space="preserve"><value>Instalando o modelo local…</value></data>
+  <data name="MapInferenceInstallFolder" xml:space="preserve"><value>Instalar de uma pasta</value></data>
+  <data name="MapInferenceLocalOnly" xml:space="preserve"><value>Instale o pacote do classificador de salas a partir de um arquivo que você já tem; este cliente não o baixa.</value></data>
+  <data name="WindowMaximize" xml:space="preserve"><value>Maximizar</value></data>
+  <data name="WindowRestoreDown" xml:space="preserve"><value>Restaurar</value></data>
+  <data name="WindowClose" xml:space="preserve"><value>Fechar janela</value></data>
+  <data name="CsImportMenu" xml:space="preserve"><value>Importar do Wandur (C#)…</value></data>
+  <data name="CsImportTitle" xml:space="preserve"><value>Importar do Wandur (C#)</value></data>
+  <data name="CsImportIntro" xml:space="preserve"><value>Traz seus mundos salvos, preferências, scripts e macros, regras de canais, configurações do agente, mapas e histórico de sessões do cliente Wandur em C#. Os dados do C# são apenas lidos, nunca alterados. Feche antes o cliente em C# para que o banco de dados esteja completo. O que este cliente já tem é mantido, e importar de novo não adiciona nada duas vezes.</value></data>
+  <data name="CsImportFolder" xml:space="preserve"><value>Pasta de dados do C#</value></data>
+  <data name="CsImportChoose" xml:space="preserve"><value>Escolher…</value></data>
+  <data name="CsImportLook" xml:space="preserve"><value>Examinar esta pasta</value></data>
+  <data name="CsImportFound" xml:space="preserve"><value>Encontrado nos dados do C#:</value></data>
+  <data name="CsImportFoundLine" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="CsImportPasswords" xml:space="preserve"><value>Copiar também as senhas salvas e as chaves de API do agente (o sistema pode pedir permissão para cada uma)</value></data>
+  <data name="CsImportStart" xml:space="preserve"><value>Importar</value></data>
+  <data name="CsImportReading" xml:space="preserve"><value>Lendo os dados do C#…</value></data>
+  <data name="CsImportWorking" xml:space="preserve"><value>Importando {0}…</value></data>
+  <data name="CsImportDone" xml:space="preserve"><value>Importação concluída</value></data>
+  <data name="CsImportFailed" xml:space="preserve"><value>A importação não terminou: {0}</value></data>
+  <data name="CsImportSessionsNote" xml:space="preserve"><value>As sessões abertas agora recebem os scripts e mapas importados quando se conectarem de novo.</value></data>
+  <data name="CsImportLine" xml:space="preserve"><value>{0}: {1} encontrados, {2} importados, {3} já existiam</value></data>
+  <data name="CsImportSkipLine" xml:space="preserve"><value>{0} ignorados: {1}</value></data>
+  <data name="CsImportDryRun" xml:space="preserve"><value>Teste: nada foi gravado.</value></data>
+  <data name="CsImportSchema" xml:space="preserve"><value>Esquema do banco de dados do C#: {0}.</value></data>
+  <data name="CsImportNotFound" xml:space="preserve"><value>Nenhum banco de dados do Wandur em C# (wandur.db) foi encontrado ali.</value></data>
+  <data name="CsImportNotWandur" xml:space="preserve"><value>Esse arquivo não é um banco de dados do cliente Wandur em C#.</value></data>
+  <data name="CsImportTooNew" xml:space="preserve"><value>O banco de dados do C# usa o esquema {0}, mais novo do que este importador conhece ({1}). Atualize o cliente em Rust antes de importar.</value></data>
+  <data name="CsImportUnreadable" xml:space="preserve"><value>Não foi possível ler o banco de dados do C#: {0}</value></data>
+  <data name="CsImportTargetFailed" xml:space="preserve"><value>Não foi possível gravar os dados deste cliente, então nada foi alterado: {0}</value></data>
+  <data name="CsImportKindWorlds" xml:space="preserve"><value>Mundos salvos</value></data>
+  <data name="CsImportKindAddresses" xml:space="preserve"><value>Endereços dos mundos</value></data>
+  <data name="CsImportKindUsage" xml:space="preserve"><value>Conexões registradas</value></data>
+  <data name="CsImportKindPreferences" xml:space="preserve"><value>Preferências</value></data>
+  <data name="CsImportKindColorSchemes" xml:space="preserve"><value>Esquemas de cores</value></data>
+  <data name="CsImportKindOtherSettings" xml:space="preserve"><value>Outras configurações</value></data>
+  <data name="CsImportKindScripts" xml:space="preserve"><value>Scripts</value></data>
+  <data name="CsImportKindMacros" xml:space="preserve"><value>Macros</value></data>
+  <data name="CsImportKindChannelRules" xml:space="preserve"><value>Regras de canais</value></data>
+  <data name="CsImportKindAgentProfiles" xml:space="preserve"><value>Configurações do agente</value></data>
+  <data name="CsImportKindMaps" xml:space="preserve"><value>Mapas</value></data>
+  <data name="CsImportKindRooms" xml:space="preserve"><value>Salas do mapa</value></data>
+  <data name="CsImportKindExits" xml:space="preserve"><value>Saídas do mapa</value></data>
+  <data name="CsImportKindHistorySessions" xml:space="preserve"><value>Sessões do histórico</value></data>
+  <data name="CsImportKindHistoryEntries" xml:space="preserve"><value>Linhas do histórico</value></data>
+  <data name="CsImportKindPasswords" xml:space="preserve"><value>Senhas salvas</value></data>
+  <data name="CsImportKindApiKeys" xml:space="preserve"><value>Chaves de API do agente</value></data>
+  <data name="CsImportKindOther" xml:space="preserve"><value>Outros registros</value></data>
+  <data name="CsImportSkipKeptRust" xml:space="preserve"><value>este cliente já tem a própria versão, que foi mantida</value></data>
+  <data name="CsImportSkipInvalid" xml:space="preserve"><value>não passa nas verificações deste cliente</value></data>
+  <data name="CsImportSkipPatternSyntax" xml:space="preserve"><value>o padrão usa uma sintaxe que este cliente não consegue executar (lookaround ou referências inversas)</value></data>
+  <data name="CsImportSkipAddressTaken" xml:space="preserve"><value>o endereço já pertence a outro mundo neste cliente</value></data>
+  <data name="CsImportSkipDeleted" xml:space="preserve"><value>excluído neste cliente</value></data>
+  <data name="CsImportSkipLibraryFull" xml:space="preserve"><value>a biblioteca de scripts do mundo neste cliente está cheia</value></data>
+  <data name="CsImportSkipNotInVault" xml:space="preserve"><value>não há nada salvo para isso no armazenamento de credenciais do cliente em C#</value></data>
+  <data name="CsImportSkipVaultFailed" xml:space="preserve"><value>não foi possível ler ou gravar o armazenamento de credenciais</value></data>
+  <data name="CsImportSkipPasswordsNotRequested" xml:space="preserve"><value>senhas e chaves só são copiadas quando pedido (no aplicativo ou com --include-passwords)</value></data>
+  <data name="CsImportSkipInstallId" xml:space="preserve"><value>cada cliente mantém o próprio identificador de instalação</value></data>
+  <data name="CsImportSkipCsharpReleases" xml:space="preserve"><value>refere-se às versões do cliente em C#</value></data>
+  <data name="CsImportSkipNoCounterpart" xml:space="preserve"><value>este cliente não tem equivalente (conhecimento de protocolos, o cache do diretório, marcas de scripts excluídos)</value></data>
+  <data name="DockPanelMenu" xml:space="preserve"><value>Opções do painel</value></data>
+  <data name="DockFloat" xml:space="preserve"><value>Flutuar</value></data>
+  <data name="MenuButton" xml:space="preserve"><value>Menu</value></data>
+  <data name="ScriptPackReadOnlyNotice" xml:space="preserve"><value>Este script vem do pacote de scripts do mundo e é somente leitura. Duplique-o para ter uma cópia editável.</value></data>
+  <data name="ScriptPackEditPrompt" xml:space="preserve"><value>Este é um script de pacote. Criar uma cópia editável?</value></data>
+  <data name="ScriptPackMakeCopy" xml:space="preserve"><value>Criar cópia</value></data>
+  <data name="DialogOpenElsewhere" xml:space="preserve"><value>“{0}” está aberto em sua própria janela.</value></data>
+  <data name="DialogShow" xml:space="preserve"><value>Mostrar</value></data>
+  <data name="PasswordLoginChangedHint" xml:space="preserve"><value>Digite a senha novamente: o servidor ou o usuário mudou</value></data>
+  <data name="PasswordLoginChanged" xml:space="preserve"><value>O servidor ou o usuário mudou, então a senha salva não pode ser mantida. Digite a senha novamente ou desmarque Salvar senha.</value></data>
+  <data name="SavedPasswordMissing" xml:space="preserve"><value>Nenhuma senha salva encontrada para este mundo. Digite-a para salvá-la.</value></data>
+  <data name="MapOpenFull" xml:space="preserve"><value>Abrir o mapa completo</value></data>
+  <data name="SessionSplitView" xml:space="preserve"><value>Mostrar jogo e mapa lado a lado</value></data>
+  <data name="MenuShowSessionMap" xml:space="preserve"><value>Mostrar mapa</value></data>
+  <data name="MenuSplitPlayMap" xml:space="preserve"><value>Jogar e mapa lado a lado</value></data>
+  <data name="OutputStripHint" xml:space="preserve"><value>Saída mais recente. Clique para voltar a Jogar.</value></data>
+  <data name="OutputStripResize" xml:space="preserve"><value>Redimensionar a saída mais recente</value></data>
+  <data name="SplitResize" xml:space="preserve"><value>Redimensionar jogo e mapa</value></data>
+  <data name="MapToolSelect" xml:space="preserve"><value>Selecionar</value></data>
+  <data name="MapToolConnect" xml:space="preserve"><value>Conectar salas</value></data>
+  <data name="MapToolDelete" xml:space="preserve"><value>Excluir</value></data>
+  <data name="MapToolSnap" xml:space="preserve"><value>Alinhar à grade</value></data>
+  <data name="MapFloorPicker" xml:space="preserve"><value>Andar</value></data>
+  <data name="MapHintSelect" xml:space="preserve"><value>Clique para selecionar e arraste para mover. Arraste num espaço vazio para selecionar uma área; Shift adiciona. Espaço e arrastar move a vista.</value></data>
+  <data name="MapHintAdd" xml:space="preserve"><value>Clique numa célula vazia para adicionar uma sala.</value></data>
+  <data name="MapHintConnect" xml:space="preserve"><value>Arraste de uma sala para outra para conectá-las. Segure {0} para uma saída de mão única.</value></data>
+  <data name="MapHintMerge" xml:space="preserve"><value>Clique na sala com a qual mesclar {0}. Esc cancela.</value></data>
+  <data name="MapConnectOneWay" xml:space="preserve"><value>{0}, mão única</value></data>
+  <data name="MapInspectorTitle" xml:space="preserve"><value>Propriedades</value></data>
+  <data name="MapInspectorNothing" xml:space="preserve"><value>Selecione uma sala ou saída para ver suas propriedades.</value></data>
+  <data name="MapSelectionCount" xml:space="preserve"><value>{0} salas selecionadas</value></data>
+  <data name="MapSelectionShared" xml:space="preserve"><value>As alterações valem para todas as salas selecionadas.</value></data>
+  <data name="MapExitFromRoom" xml:space="preserve"><value>Saída de {0}</value></data>
+  <data name="MapSectionRoom" xml:space="preserve"><value>Sala</value></data>
+  <data name="MapSectionPosition" xml:space="preserve"><value>Posição</value></data>
+  <data name="MapSectionExits" xml:space="preserve"><value>Saídas</value></data>
+  <data name="MapSectionNotes" xml:space="preserve"><value>Notas e descrição</value></data>
+  <data name="MapSectionExit" xml:space="preserve"><value>Saída</value></data>
+  <data name="MapSectionMap" xml:space="preserve"><value>Mapa</value></data>
+  <data name="MapSectionShortcuts" xml:space="preserve"><value>Atalhos</value></data>
+  <data name="MapFieldTerrain" xml:space="preserve"><value>Terreno</value></data>
+  <data name="MapFieldColor" xml:space="preserve"><value>Cor</value></data>
+  <data name="MapFieldCost" xml:space="preserve"><value>Custo</value></data>
+  <data name="MapFieldFloor" xml:space="preserve"><value>Andar (Z)</value></data>
+  <data name="MapFieldLocked" xml:space="preserve"><value>Bloqueada</value></data>
+  <data name="MapLockedHint" xml:space="preserve"><value>Fica no lugar e fora das rotas.</value></data>
+  <data name="MapRoomIsLocked" xml:space="preserve"><value>Salas bloqueadas ficam no lugar. Desbloqueie para movê-las.</value></data>
+  <data name="MapMixed" xml:space="preserve"><value>Misto</value></data>
+  <data name="MapMoveBy" xml:space="preserve"><value>Mover</value></data>
+  <data name="MapNewArea" xml:space="preserve"><value>Nova área…</value></data>
+  <data name="MapNewRoomName" xml:space="preserve"><value>Nova sala</value></data>
+  <data name="MapTerrainNone" xml:space="preserve"><value>Nenhum</value></data>
+  <data name="MapTerrainOwn" xml:space="preserve"><value>Do mundo: {0}</value></data>
+  <data name="MapTerrainOther" xml:space="preserve"><value>Outra palavra…</value></data>
+  <data name="MapColorNone" xml:space="preserve"><value>Sem cor</value></data>
+  <data name="MapStepDown" xml:space="preserve"><value>Diminuir</value></data>
+  <data name="MapStepUp" xml:space="preserve"><value>Aumentar</value></data>
+  <data name="MapExitDirectionShort" xml:space="preserve"><value>Direção</value></data>
+  <data name="MapExitTo" xml:space="preserve"><value>Para</value></data>
+  <data name="MapExitFrom" xml:space="preserve"><value>De</value></data>
+  <data name="MapExitDoorShort" xml:space="preserve"><value>Porta</value></data>
+  <data name="MapExitOneWay" xml:space="preserve"><value>Mão única</value></data>
+  <data name="MapExitExcluded" xml:space="preserve"><value>Excluída</value></data>
+  <data name="MapExitCommandShort" xml:space="preserve"><value>Comando</value></data>
+  <data name="MapExitCommandHint" xml:space="preserve"><value>Em branco usa a direção.</value></data>
+  <data name="MapExitAdd" xml:space="preserve"><value>Adicionar saída</value></data>
+  <data name="MapExitNone" xml:space="preserve"><value>Ainda não há saídas. Use Conectar ou Adicionar saída.</value></data>
+  <data name="MapPickRoom" xml:space="preserve"><value>Escolha uma sala</value></data>
+  <data name="MapPickSearch" xml:space="preserve"><value>Buscar salas</value></data>
+  <data name="MapDirectionTaken" xml:space="preserve"><value>Outra saída já sai nessa direção.</value></data>
+  <data name="MapInvalidName" xml:space="preserve"><value>Uma sala precisa de um nome.</value></data>
+  <data name="MapInvalidNumber" xml:space="preserve"><value>Digite um número.</value></data>
+  <data name="MapInvalidRoomCost" xml:space="preserve"><value>Digite um custo maior que 0.</value></data>
+  <data name="MapInvalidExitCost" xml:space="preserve"><value>Digite 0 ou mais (0 usa o custo da sala).</value></data>
+  <data name="MapInvalidColor" xml:space="preserve"><value>Use #RRGGBB ou deixe em branco.</value></data>
+  <data name="MapInvalidSymbol" xml:space="preserve"><value>Use até quatro caracteres.</value></data>
+  <data name="MapInvalidArea" xml:space="preserve"><value>Digite o nome da área.</value></data>
+  <data name="MapInvalidTerrain" xml:space="preserve"><value>Digite uma palavra de terreno.</value></data>
+  <data name="MapInvalidDirection" xml:space="preserve"><value>Digite uma direção.</value></data>
+  <data name="MapInvalidCommand" xml:space="preserve"><value>Use uma linha de até 512 caracteres.</value></data>
+  <data name="MapInvalidLong" xml:space="preserve"><value>Este texto é longo demais.</value></data>
+  <data name="MapMenuRename" xml:space="preserve"><value>Renomear</value></data>
+  <data name="MapMenuConnectFrom" xml:space="preserve"><value>Conectar daqui</value></data>
+  <data name="MapMenuLock" xml:space="preserve"><value>Bloquear</value></data>
+  <data name="MapMenuUnlock" xml:space="preserve"><value>Desbloquear</value></data>
+  <data name="MapMenuMerge" xml:space="preserve"><value>Mesclar com…</value></data>
+  <data name="MapMenuDeleteRooms" xml:space="preserve"><value>Excluir {0} salas</value></data>
+  <data name="MapMenuOneWay" xml:space="preserve"><value>Tornar mão única</value></data>
+  <data name="MapMenuTwoWay" xml:space="preserve"><value>Tornar mão dupla</value></data>
+  <data name="MapMenuGoToDestination" xml:space="preserve"><value>Selecionar o destino</value></data>
+  <data name="MapMenuAddHere" xml:space="preserve"><value>Adicionar sala aqui</value></data>
+  <data name="MapConfirmDelete" xml:space="preserve"><value>Excluir {0} salas e suas saídas?</value></data>
+  <data name="MapConfirmDeleteHint" xml:space="preserve"><value>Você pode desfazer isso.</value></data>
+  <data name="MapKeysNudge" xml:space="preserve"><value>mover a seleção uma célula</value></data>
+  <data name="MapKeysAdd" xml:space="preserve"><value>adicionar ou tirar da seleção</value></data>
+  <data name="MapKeysOneWay" xml:space="preserve"><value>conectar em mão única</value></data>
+  <data name="MapKeysPan" xml:space="preserve"><value>segure e arraste para mover a vista</value></data>
+  <data name="MapKeysEscape" xml:space="preserve"><value>voltar a Selecionar e depois limpar a seleção</value></data>
+  <data name="MapKeyShift" xml:space="preserve"><value>Shift</value></data>
+  <data name="MapKeySpace" xml:space="preserve"><value>Espaço</value></data>
+  <data name="MapKeyEscape" xml:space="preserve"><value>Esc</value></data>
+  <data name="WrapWords" xml:space="preserve"><value>Quebrar nos limites das palavras</value></data>
+  <data name="WrapIndent" xml:space="preserve"><value>Recuar as linhas quebradas</value></data>
+  <data name="WrapWordsHint" xml:space="preserve"><value>Linhas longas quebram entre palavras em vez de na última coluna. Ao copiar, cada linha continua como o MUD a enviou.</value></data>
+  <data name="PickerConnectTo" xml:space="preserve"><value>Conectar a {0} em uma nova sessão</value></data>
+  <data name="PickerHint" xml:space="preserve"><value>Conectar a... Escolha um mundo e pressione Conectar para abri-lo em uma nova sessão.</value></data>
+  <data name="PickerActiveHint" xml:space="preserve"><value>O mundo da sessão ativa. Conectar a... Escolha outro mundo e pressione Conectar para abri-lo em uma nova sessão.</value></data>
+  <data name="ChannelsReplyAllShort" xml:space="preserve"><value>Escolha um canal</value></data>
+  <data name="ChannelsReplyUnknownShort" xml:space="preserve"><value>Ainda sem comando</value></data>
+  <data name="ChannelsReplyPlaceholderShort" xml:space="preserve"><value>Dizer em {0}</value></data>
+  <data name="LayoutMenu" xml:space="preserve"><value>Disposição</value></data>
+  <data name="LayoutPanelsLeft" xml:space="preserve"><value>Painéis à esquerda</value></data>
+  <data name="LayoutPanelsRight" xml:space="preserve"><value>Painéis à direita</value></data>
+  <data name="LayoutBothSides" xml:space="preserve"><value>Ambos os lados</value></data>
+  <data name="LayoutFocus" xml:space="preserve"><value>Foco</value></data>
+  <data name="LimitTextWidth" xml:space="preserve"><value>Limitar a largura do texto</value></data>
+  <data name="LimitTextWidthColumns" xml:space="preserve"><value>Colunas no máximo</value></data>
+  <data name="LimitTextWidthHint" xml:space="preserve"><value>Mantém a transcrição com no máximo esta quantidade de colunas, centralizada em uma janela larga. O MUD recebe a largura menor.</value></data>
+  <data name="SessionTabStrip" xml:space="preserve"><value>Abas de sessão</value></data>
+  <data name="SessionTabsAll" xml:space="preserve"><value>Todas as abas</value></data>
+  <data name="SessionTabsScrollLeft" xml:space="preserve"><value>Rolar as abas para a esquerda</value></data>
+  <data name="SessionTabsScrollRight" xml:space="preserve"><value>Rolar as abas para a direita</value></data>
+  <data name="SessionTabDuplicate" xml:space="preserve"><value>Duplicar sessão</value></data>
+  <data name="SessionTabCloseOthers" xml:space="preserve"><value>Fechar as outras abas</value></data>
+  <data name="ToastDeletedRoomsOne" xml:space="preserve"><value>{0} sala excluída</value></data>
+  <data name="ToastDeletedRoomsMany" xml:space="preserve"><value>{0} salas excluídas</value></data>
+  <data name="ToastDeletedExitsOne" xml:space="preserve"><value>{0} saída excluída</value></data>
+  <data name="ToastDeletedExitsMany" xml:space="preserve"><value>{0} saídas excluídas</value></data>
+  <data name="ToastDeletedWorld" xml:space="preserve"><value>{0} excluído</value></data>
+  <data name="ToastDeletedScript" xml:space="preserve"><value>Script {0} excluído</value></data>
+  <data name="ToastDeletedMacro" xml:space="preserve"><value>Macro {0} excluída</value></data>
+  <data name="MapImageUnreadable" xml:space="preserve"><value>Não foi possível ler esta imagem. Use um arquivo PNG ou JPEG.</value></data>
+  <data name="MapImageTooLarge" xml:space="preserve"><value>Esta imagem é grande demais, mesmo reduzida. Um mapa aceita imagens de até 2 MB cada e 20 MB no total.</value></data>
+  <data name="MapImportTooBig" xml:space="preserve"><value>Este mapa tem {0} salas e {2} saídas, mas um mapa aceita no máximo {1} salas e {3} saídas. Nada foi importado.</value></data>
+  <data name="MapImportMudletDat" xml:space="preserve"><value>Este é um mapa binário do Mudlet (.dat), que o Wandur não consegue ler. O Wandur lê a exportação do mapa do Mudlet em JSON. Para criá-la no Mudlet, abra as configurações do mapa e exporte o mapa como JSON, ou digite lua saveJsonMap(getMudletHomeDir() .. "/map.json") na linha de comando do Mudlet. Depois importe aqui esse arquivo .json.</value></data>
+  <data name="MapImportUnknownFile" xml:space="preserve"><value>Este não é um arquivo de mapa que o Wandur leia. Escolha um arquivo de mapa do Wandur ou a exportação do mapa do Mudlet em JSON.</value></data>
+  <data name="MapImportFileTooLarge" xml:space="preserve"><value>O arquivo tem mais de 64 MB.</value></data>
+  <data name="MapImportRoomName" xml:space="preserve"><value>Sala {0}</value></data>
+  <data name="MapImportCountAreas" xml:space="preserve"><value>Áreas: {0}</value></data>
+  <data name="MapImportCountRooms" xml:space="preserve"><value>Salas: {0}</value></data>
+  <data name="MapImportCountExits" xml:space="preserve"><value>Saídas: {0}</value></data>
+  <data name="MapImportCountSpecialExits" xml:space="preserve"><value>Saídas especiais (com um comando): {0}</value></data>
+  <data name="MapImportCountDoors" xml:space="preserve"><value>Saídas com porta: {0}</value></data>
+  <data name="MapImportCountLockedExits" xml:space="preserve"><value>Saídas bloqueadas (fora das rotas): {0}</value></data>
+  <data name="MapImportCountNotes" xml:space="preserve"><value>Salas com notas a partir de dados de usuário: {0}</value></data>
+  <data name="MapImportCountSymbols" xml:space="preserve"><value>Salas com símbolo: {0}</value></data>
+  <data name="MapImportCountTextLabels" xml:space="preserve"><value>Rótulos de texto: {0}</value></data>
+  <data name="MapImportCountPictureLabels" xml:space="preserve"><value>Rótulos com imagem: {0}</value></data>
+  <data name="MapImportSkipScriptExit" xml:space="preserve"><value>Saídas especiais que executam scripts Lua, deixadas de fora: {0}</value></data>
+  <data name="MapImportSkipMissingRoom" xml:space="preserve"><value>Saídas para salas que não estão no arquivo, deixadas de fora: {0}</value></data>
+  <data name="MapImportSkipDuplicateExit" xml:space="preserve"><value>Segundas saídas de uma sala na mesma direção, deixadas de fora: {0}</value></data>
+  <data name="MapImportSkipBadRoom" xml:space="preserve"><value>Salas sem id ou posição utilizável, deixadas de fora: {0}</value></data>
+  <data name="MapImportSkipCustomLine" xml:space="preserve"><value>Linhas de saída personalizadas, desenhadas retas: {0}</value></data>
+  <data name="MapImportSkipSymbolColor" xml:space="preserve"><value>Cores de símbolo, mostradas na cor do mapa: {0}</value></data>
+  <data name="MapImportSkipFixedLabel" xml:space="preserve"><value>Rótulos que mantêm o tamanho ao aplicar zoom, redimensionados com o mapa: {0}</value></data>
+  <data name="MapImportSkipEmptyLabel" xml:space="preserve"><value>Rótulos sem texto, imagem, posição ou tamanho, deixados de fora: {0}</value></data>
+  <data name="MapImportSkipPicture" xml:space="preserve"><value>Imagens de rótulos que não puderam ser lidas, deixadas de fora: {0}</value></data>
+  <data name="MapImportSkipPictureLimit" xml:space="preserve"><value>Imagens de rótulos além dos 20 MB de imagens do mapa, deixadas de fora: {0}</value></data>
+  <data name="MapImportSkipLabelLimit" xml:space="preserve"><value>Rótulos além do limite de 5.000 do mapa, deixados de fora: {0}</value></data>
+  <data name="MapImportSkipAreaData" xml:space="preserve"><value>Áreas com dados de usuário, que não são mantidos: {0}</value></data>
+  <data name="MapImportSkipMapData" xml:space="preserve"><value>Dados de usuário do próprio mapa, que não são mantidos: {0}</value></data>
+  <data name="MapToolLabel" xml:space="preserve"><value>Adicionar rótulo</value></data>
+  <data name="MapHintLabel" xml:space="preserve"><value>Clique onde ficará o canto superior esquerdo do rótulo. Escolha uma imagem para ele no inspetor.</value></data>
+  <data name="MapNewLabelText" xml:space="preserve"><value>Rótulo</value></data>
+  <data name="MapChoosePicture" xml:space="preserve"><value>Escolher imagem…</value></data>
+  <data name="MapPictureFileType" xml:space="preserve"><value>Imagens (PNG, JPEG)</value></data>
+  <data name="MapLabelPicture" xml:space="preserve"><value>Imagem</value></data>
+  <data name="MapSectionLabel" xml:space="preserve"><value>Rótulo</value></data>
+  <data name="MapLabelPictureInfo" xml:space="preserve"><value>{0}, {1} × {2} pixels, {3} KB</value></data>
+  <data name="MapLabelText" xml:space="preserve"><value>Texto</value></data>
+  <data name="MapInvalidLabelText" xml:space="preserve"><value>Digite algum texto (no máximo 4.000 caracteres).</value></data>
+  <data name="MapLabelFontSize" xml:space="preserve"><value>Tamanho do texto</value></data>
+  <data name="MapInvalidFontSize" xml:space="preserve"><value>Use um tamanho de 4 a 400.</value></data>
+  <data name="MapLabelTextColor" xml:space="preserve"><value>Cor do texto</value></data>
+  <data name="MapLabelBackground" xml:space="preserve"><value>Fundo</value></data>
+  <data name="MapLabelOpacity" xml:space="preserve"><value>Opacidade</value></data>
+  <data name="MapInvalidOpacity" xml:space="preserve"><value>Use um valor de 0,05 a 1.</value></data>
+  <data name="MapLabelAboveRooms" xml:space="preserve"><value>Mostrar acima das salas</value></data>
+  <data name="MapLabelWidth" xml:space="preserve"><value>Largura</value></data>
+  <data name="MapLabelHeight" xml:space="preserve"><value>Altura</value></data>
+  <data name="MapInvalidLabelSize" xml:space="preserve"><value>Use um tamanho acima de 0 e no máximo 10.000.</value></data>
+  <data name="MapLabelUseText" xml:space="preserve"><value>Usar texto no lugar</value></data>
+  <data name="MapDeleteLabel" xml:space="preserve"><value>Excluir rótulo</value></data>
+  <data name="MapLabelCount" xml:space="preserve"><value>{0} rótulos</value></data>
+  <data name="MapLabelSendBelow" xml:space="preserve"><value>Mostrar abaixo das salas</value></data>
+  <data name="MapLabelBringAbove" xml:space="preserve"><value>Mostrar acima das salas</value></data>
+  <data name="MapMenuAddLabelHere" xml:space="preserve"><value>Adicionar rótulo aqui</value></data>
+  <data name="MapMenuAddPictureHere" xml:space="preserve"><value>Adicionar rótulo com imagem aqui…</value></data>
+  <data name="ToastDeletedLabel" xml:space="preserve"><value>Rótulo excluído</value></data>
+  <data name="ToastImportedMap" xml:space="preserve"><value>Mapa importado em {0}</value></data>
+  <data name="MapImportTitle" xml:space="preserve"><value>Importar mapa</value></data>
+  <data name="MapImportIntro" xml:space="preserve"><value>Traga um arquivo de mapa do Wandur ou a exportação do mapa do Mudlet em JSON. Um arquivo do Wandur substitui o mapa do mundo; um mapa do Mudlet é adicionado a ele. Nada muda até você pressionar Importar, e Desfazer reverte.</value></data>
+  <data name="MapImportNoWorld" xml:space="preserve"><value>Primeiro abra uma sessão ou salve um mundo: um mapa pertence a um mundo.</value></data>
+  <data name="MapImportWorld" xml:space="preserve"><value>Importar em</value></data>
+  <data name="MapImportChooseFile" xml:space="preserve"><value>Escolher arquivo…</value></data>
+  <data name="MapImportApplying" xml:space="preserve"><value>Importando…</value></data>
+  <data name="MapImportStart" xml:space="preserve"><value>Importar</value></data>
+  <data name="MapImportRoomsProgress" xml:space="preserve"><value>Lendo salas: {0} de {1}</value></data>
+  <data name="MapImportLabelsProgress" xml:space="preserve"><value>Lendo rótulos: {0} de {1}</value></data>
+  <data name="MapImportReading" xml:space="preserve"><value>Lendo o mapa…</value></data>
+  <data name="MapImportKindWandur" xml:space="preserve"><value>Um arquivo de mapa do Wandur:</value></data>
+  <data name="MapImportKindMudlet" xml:space="preserve"><value>Um mapa do Mudlet (exportação JSON):</value></data>
+  <data name="MapImportFlipped" xml:space="preserve"><value>O arquivo tinha o norte embaixo; ele foi virado para o norte ficar em cima.</value></data>
+  <data name="MapImportLeftOut" xml:space="preserve"><value>Deixado de fora ou alterado:</value></data>
+  <data name="MapImportReplaceNote" xml:space="preserve"><value>Importar substitui todo o mapa do mundo.</value></data>
+  <data name="MapImportMergeNote" xml:space="preserve"><value>Salas, saídas e rótulos são adicionados ao mapa do mundo; os importados antes são atualizados. Importar o mesmo arquivo de novo não muda nada.</value></data>
+  <data name="MapImportFileTypes" xml:space="preserve"><value>Arquivos de mapa (JSON, .dat do Mudlet)</value></data>
+  <data name="MapImportOpenSession" xml:space="preserve"><value>{0} (sessão aberta)</value></data>
+  <data name="MapImportNothingNew" xml:space="preserve"><value>O mapa já tem tudo o que há neste arquivo.</value></data>
+</root>

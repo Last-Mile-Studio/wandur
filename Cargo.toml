@@ -1,0 +1,36 @@
+[workspace]
+resolver = "3"
+members = ["crates/wandur-core", "crates/wandur-term", "crates/wandur-format", "crates/wandur-app", "crates/wandur-bench"]
+default-members = ["crates/wandur-core", "crates/wandur-term", "crates/wandur-format", "crates/wandur-app", "crates/wandur-bench"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+publish = false
+
+[workspace.dependencies]
+wandur-core = { path = "crates/wandur-core" }
+wandur-app = { path = "crates/wandur-app" }
+wandur-term = { path = "crates/wandur-term" }
+wandur-format = { path = "crates/wandur-format", default-features = false }
+alacritty_terminal = { version = "0.26.0", default-features = false }
+eframe = "0.36.2"
+egui = "0.36.2"
+egui_dock = "0.21.1"
+libc = "0.2"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[profile.release]
+debug = "line-tables-only"
+
+# The workspace sits on an exFAT volume, which cannot hard link the incremental cache; cargo
+# warns on every build. Incremental compilation is off to keep the output clean.
+[profile.dev]
+incremental = false

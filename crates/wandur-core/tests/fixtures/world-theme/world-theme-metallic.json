@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "id": "lotj-brushed-alloy-v3",
+  "name": "Legends of the Jedi",
+  "variant": "dark",
+  "corner_radius": 3,
+  "surface": "metallic",
+  "images": {
+    "chrome": {
+      "url": "theme-assets/brushed-gunmetal-v1.png",
+      "opacity": 0.24
+    }
+  },
+  "colors": {
+    "shell": "#18191B",
+    "panel": "#25282B",
+    "terminal": "#0D0F12",
+    "text": "#E7E4DD",
+    "muted": "#A7A6A2",
+    "accent": "#D3A65F",
+    "accent_secondary": "#C9A76B",
+    "border": "#373A3E",
+    "terminal_text": "#DDDAD3"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "id": "icesus-frozen-night-v1",
+  "name": "Icesus · Frozen night",
+  "variant": "dark",
+  "corner_radius": 4,
+  "surface": "standard",
+  "colors": {
+    "shell": "#101F38",
+    "panel": "#14243D",
+    "terminal": "#0C1822",
+    "text": "#EDF7FA",
+    "muted": "#AFBED3",
+    "accent": "#A4DDEB",
+    "accent_secondary": "#A3BBDD",
+    "border": "#405B80",
+    "terminal_text": "#D0DFE6"
+  }
+}

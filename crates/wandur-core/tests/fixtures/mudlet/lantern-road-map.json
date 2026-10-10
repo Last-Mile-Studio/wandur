@@ -1,0 +1,299 @@
+{
+    "formatVersion": 1.0,
+    "defaultAreaName": "Default Area",
+    "playerRoomId": 1,
+    "userData": {
+        "mapper": "lantern-road-1"
+    },
+    "customEnvColors": [
+        {
+            "id": 257,
+            "color32RGBA": [
+                200,
+                120,
+                40,
+                255
+            ]
+        }
+    ],
+    "areas": [
+        {
+            "id": 1,
+            "name": "Lantern Road",
+            "roomCount": 5,
+            "gridMode": false,
+            "rooms": [
+                {
+                    "id": 1,
+                    "name": "Road's End",
+                    "coordinates": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "environment": 2,
+                    "hash": "1001",
+                    "symbol": {
+                        "text": "R"
+                    },
+                    "weight": 1,
+                    "exits": [
+                        {
+                            "exitId": 2,
+                            "name": "north"
+                        },
+                        {
+                            "exitId": 3,
+                            "name": "east",
+                            "door": 2,
+                            "weight": 3
+                        },
+                        {
+                            "exitId": 5,
+                            "name": "up"
+                        }
+                    ],
+                    "stubExits": [
+                        "west"
+                    ],
+                    "userData": {
+                        "description": "A lantern sways over the end of the road.",
+                        "owner": "Odo"
+                    }
+                },
+                {
+                    "id": 2,
+                    "name": "Lantern Square",
+                    "coordinates": [
+                        0,
+                        1,
+                        0
+                    ],
+                    "environment": 257,
+                    "locked": true,
+                    "exits": [
+                        {
+                            "exitId": 1,
+                            "name": "south"
+                        },
+                        {
+                            "exitId": 4,
+                            "name": "in"
+                        }
+                    ],
+                    "specialExits": [
+                        {
+                            "exitId": 5,
+                            "name": "climb the lantern post",
+                            "door": 1
+                        },
+                        {
+                            "exitId": 1,
+                            "name": "script:send('dance')"
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "name": "Smithy",
+                    "coordinates": [
+                        1,
+                        0,
+                        0
+                    ],
+                    "environment": 8,
+                    "weight": 5,
+                    "symbol": {
+                        "text": "⚒",
+                        "color24RGB": [
+                            255,
+                            210,
+                            80
+                        ]
+                    },
+                    "exits": [
+                        {
+                            "exitId": 1,
+                            "name": "west",
+                            "locked": true
+                        },
+                        {
+                            "exitId": 99,
+                            "name": "north"
+                        },
+                        {
+                            "exitId": 1,
+                            "name": "southwest",
+                            "customLine": {
+                                "points": [
+                                    [
+                                        0.5,
+                                        -0.5
+                                    ]
+                                ],
+                                "color24RGB": [
+                                    255,
+                                    0,
+                                    0
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "name": "Old Well",
+                    "coordinates": [
+                        0,
+                        1,
+                        -1
+                    ],
+                    "environment": 4,
+                    "exits": [
+                        {
+                            "exitId": 2,
+                            "name": "out"
+                        }
+                    ],
+                    "userData": {}
+                },
+                {
+                    "id": 5,
+                    "name": "Lamp Top",
+                    "coordinates": [
+                        0,
+                        0,
+                        1
+                    ],
+                    "exits": [
+                        {
+                            "exitId": 1,
+                            "name": "down"
+                        }
+                    ]
+                }
+            ],
+            "labels": [
+                {
+                    "id": 0,
+                    "coordinates": [
+                        -1,
+                        2.5,
+                        0
+                    ],
+                    "size": [
+                        3,
+                        0.6
+                    ],
+                    "text": "Lantern Road",
+                    "fgColor": {
+                        "color32RGBA": [
+                            255,
+                            220,
+                            120,
+                            255
+                        ]
+                    },
+                    "bgColor": {
+                        "color32RGBA": [
+                            20,
+                            20,
+                            20,
+                            255
+                        ]
+                    },
+                    "showOnTop": true,
+                    "noScaling": false
+                },
+                {
+                    "id": 1,
+                    "coordinates": [
+                        1.6,
+                        1.6,
+                        0
+                    ],
+                    "size": [
+                        0.8,
+                        0.8
+                    ],
+                    "text": "",
+                    "image": [
+                        "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAgUlEQVR4nO3WwQ2AMAiF4Q7hOEzinJ5djV6NIYr0lZcaSLj2/05tWwuOiOh1o+eEpwBUwLFvai0l",
+                        "moL5GocirIP1FHPhCG/4DZIahyBG48MIRNxCrAFAxkOIAhSADkAj1rsH7gDKVYxAUF/EqX+C1A/JE8KzkHgUAY17MVOjNb+dDlCsrC287Ec7AAAAAElFTkSuQmCC"
+                    ],
+                    "showOnTop": false,
+                    "noScaling": true
+                },
+                {
+                    "id": 2,
+                    "coordinates": [
+                        3,
+                        3,
+                        0
+                    ],
+                    "text": "No size"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Odo's Garden",
+            "roomCount": 2,
+            "gridMode": true,
+            "userData": {
+                "season": "spring"
+            },
+            "rooms": [
+                {
+                    "id": 10,
+                    "name": "",
+                    "coordinates": [
+                        5,
+                        5,
+                        0
+                    ],
+                    "environment": 2,
+                    "exits": [
+                        {
+                            "exitId": 11,
+                            "name": "east"
+                        }
+                    ]
+                },
+                {
+                    "id": 11,
+                    "name": "Herb Bed",
+                    "coordinates": [
+                        6,
+                        5,
+                        0
+                    ],
+                    "environment": 10,
+                    "exits": [
+                        {
+                            "exitId": 10,
+                            "name": "west",
+                            "door": 3
+                        }
+                    ]
+                }
+            ],
+            "labels": []
+        },
+        {
+            "id": -1,
+            "name": "Default Area",
+            "rooms": [
+                {
+                    "id": 20,
+                    "name": "Lost Room",
+                    "coordinates": [
+                        10,
+                        10,
+                        0
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,92 @@
+[package]
+name = "wandur-core"
+description = "Sessions, transports, telnet, MUD protocols, prompts, reconnect and settings for the Wandur MUD client. No UI dependency."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = ["tls", "http", "vault", "scripting", "lua", "mudlet-import", "agent"]
+# TLS connections (rustls with the ring provider and the operating system's verifier).
+tls = ["dep:rustls", "dep:rustls-platform-verifier"]
+# The directory's HTTP client (ureq over rustls, ring, the operating system's verifier).
+http = ["dep:ureq"]
+# Optional parts later parity tasks build on. They are declared now so every crate the parity plan
+# needs is in Cargo.lock and the local registry after one fetch; none is compiled unless its
+# feature is turned on. The task that implements a part may rename its feature or make it default.
+# JavaScript world scripts (QuickJS through rquickjs). Without it scripts fail to load with a
+# message; the library and the editor still work.
+scripting = ["dep:rquickjs"]
+# Lua world scripts (vendored Lua 5.4 through mlua) on the JavaScript host API, and the Mudlet
+# compatibility layer. Without it a Lua script fails to load with a message; the preference that
+# allows Lua scripts still exists.
+lua = ["scripting", "dep:mlua"]
+# File > Import from Mudlet: Mudlet profile and package XML (quick-xml) and zipped packages
+# (read here, inflated with flate2). Generated scripts are checked with the JavaScript engine.
+mudlet-import = ["scripting", "dep:quick-xml", "dep:flate2"]
+# Look-around patterns for scripts and channel rules (t08, t09). Plain `regex` is always built
+# (login prompt patterns).
+patterns = ["dep:fancy-regex"]
+# Room terrain inference: the classifier package's encoder through tract-onnx (pure Rust, no
+# native runtime), and package archives read with the zip reader (flate2). Without it the map
+# never loads a model and Map tools has no inference section.
+classifier = ["dep:tract-onnx", "dep:flate2"]
+# The operating system's password vault: macOS Keychain and Windows Credential Manager through
+# `keyring`; on Linux the vault runs `secret-tool` (Secret Service), as the C# client does, and
+# needs no crate. Without this feature the vault reports that no credential store is available.
+vault = ["dep:keyring"]
+# Local model agents (t14): per-world agent profiles in `wandur.db`, the LM Studio native and
+# OpenAI-compatible providers over HTTP (ureq), and the decision runner. On by default; without
+# it the world editor's Agent settings section and the footer's Agent menu are not built.
+agent = ["http"]
+# Markdown for help text (reserved; goal descriptions are highlighted by the app's own lexer).
+markdown = ["dep:pulldown-cmark"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+# preserve_order: JSON objects keep the order the server sent (diagnostics, MSDP tables).
+serde_json = { version = "1", features = ["preserve_order"] }
+indexmap = "2"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
+rustls-platform-verifier = { version = "0.7", optional = true }
+ureq = { version = "3.4", default-features = false, features = ["rustls-no-provider", "_ring", "platform-verifier", "gzip"], optional = true }
+# The client database (wandur.db). `bundled` compiles SQLite in, with FTS5 for session history.
+rusqlite = { version = "0.40", features = ["bundled", "functions"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+# Host names in endpoint keys are compared in their ASCII (punycode) form, as the C# client does.
+idna = "1"
+# Macro triggers: every literal pattern matched against a line in one pass.
+aho-corasick = "1"
+# The map's text room observer finds line ends and colour codes in server text with it.
+memchr = "2"
+# Link checks (WebLinks): the WHATWG URL parser and Unicode general categories.
+url = "2"
+unicode-general-category = "1"
+# The classifier tokenizer's accent stripping (NFD).
+unicode-normalization = "0.1"
+rquickjs = { version = "0.14", optional = true }
+# Not `send`: a Lua engine holds JavaScript values of its host engine, which never leave the
+# session's script thread.
+mlua = { version = "0.12", features = ["lua54", "vendored"], optional = true }
+quick-xml = { version = "0.41", optional = true }
+flate2 = { version = "1", optional = true }
+# Login prompt patterns (linear time, like .NET's NonBacktracking).
+regex = "1"
+# Map label pictures: PNG and JPEG checked, and scaled down when too large.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+# Vault keys and map label pictures: SHA-256 of the world's login identity, as the C# client.
+sha2 = "0.10"
+fancy-regex = { version = "0.19", optional = true }
+tract-onnx = { version = "0.23", optional = true }
+pulldown-cmark = { version = "0.13", default-features = false, optional = true }
+
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+keyring = { version = "3", features = ["apple-native", "windows-native"], optional = true }
+
+[dev-dependencies]
+rcgen = { version = "0.14", default-features = false, features = ["ring", "crypto", "pem"] }
+
+[lints]
+workspace = true

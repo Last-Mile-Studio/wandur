@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "id": "skin-contract-v1",
+  "name": "Skin contract",
+  "variant": "light",
+  "corner_radius": 2,
+  "surface": "metallic",
+  "colors": {
+    "shell": "#E8ECF0",
+    "panel": "#F2F5F8",
+    "terminal": "#101820",
+    "text": "#1A2330",
+    "muted": "#5A6A7A",
+    "accent": "#2AA8D8",
+    "accent_secondary": "#28799B",
+    "border": "#B8C4D0",
+    "terminal_text": "#DCE6EE"
+  },
+  "frame": {
+    "kind": "bezel",
+    "inset": {
+      "left": 28,
+      "top": 36,
+      "right": 28,
+      "bottom": 32
+    },
+    "content_radius": 0,
+    "assets": {
+      "border": {
+        "url": "themes/imperial-bezel/border.png",
+        "slice": {
+          "left": 48,
+          "top": 56,
+          "right": 48,
+          "bottom": 48
+        }
+      }
+    }
+  },
+  "skin": {
+    "version": 1,
+    "window": {
+      "border": {
+        "url": "themes/contract/window-border.png",
+        "source_size": {
+          "width": 512,
+          "height": 384
+        },
+        "slice": {
+          "left": 96,
+          "top": 75,
+          "right": 96,
+          "bottom": 48
+        },
+        "thickness": {
+          "left": 96,
+          "top": 75,
+          "right": 96,
+          "bottom": 48
+        },
+        "repeat": "tile"
+      },
+      "inset": {
+        "left": 96,
+        "top": 75,
+        "right": 96,
+        "bottom": 48
+      },
+      "overlays": [
+        {
+          "id": "header",
+          "url": "themes/contract/header.png",
+          "anchor": "top-center",
+          "size": {
+            "width": 420,
+            "height": 96
+          },
+          "text_area": {
+            "left": 40,
+            "top": 24,
+            "width": 340,
+            "height": 44
+          }
+        },
+        {
+          "id": "corner-left",
+          "url": "themes/contract/corner-left.png",
+          "anchor": "bottom-left",
+          "size": {
+            "width": 120,
+            "height": 70
+          }
+        },
+        {
+          "id": "corner-right",
+          "url": "themes/contract/corner-right.png",
+          "anchor": "bottom-right",
+          "size": {
+            "width": 120,
+            "height": 70
+          }
+        }
+      ],
+      "footer_clearance": {
+        "left": 90,
+        "right": 90,
+        "min_height": 46
+      },
+      "compact_below": {
+        "width": 1200,
+        "height": 760
+      }
+    },
+    "panels": {
+      "default": {
+        "border": {
+          "url": "themes/contract/panel-border.png",
+          "source_size": {
+            "width": 512,
+            "height": 1024
+          },
+          "slice": {
+            "left": 64,
+            "top": 72,
+            "right": 64,
+            "bottom": 64
+          },
+          "thickness": {
+            "left": 32,
+            "top": 36,
+            "right": 32,
+            "bottom": 32
+          },
+          "repeat": "stretch"
+        },
+        "inset": {
+          "left": 32,
+          "top": 40,
+          "right": 32,
+          "bottom": 32
+        },
+        "header_height": 30
+      }
+    },
+    "layout": {
+      "titlebar": {
+        "hosts_toolbar": true,
+        "toolbar_align": "right",
+        "title_align": "center",
+        "padding": {
+          "left": 110,
+          "top": 4,
+          "right": 110,
+          "bottom": 4
+        }
+      },
+      "panel_header": {
+        "height": 30,
+        "inset": {
+          "left": 26,
+          "top": 12,
+          "right": 18,
+          "bottom": 0
+        }
+      }
+    }
+  }
+}

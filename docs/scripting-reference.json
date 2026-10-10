@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "title": "Wandur world scripting API",
+  "description": "Machine-readable summary of the JavaScript API a Wandur world script may use. Each script runs in its own engine inside the session's worker process, with no host, filesystem, network or package APIs; a runaway callback stops that script only. Everything a script can reach is listed here.",
+  "globals": [
+    {
+      "name": "mud",
+      "description": "The frozen session object. Every capability a script has is a member of it.",
+      "members": [
+        { "name": "send", "kind": "function", "signature": "mud.send(command)", "description": "Sends one command to the world. Bypasses aliases and manual history. Rejects control characters." },
+        { "name": "echo", "kind": "function", "signature": "mud.echo(text)", "description": "Writes local text to the transcript and this script's output. Never re-enters line events." },
+        { "name": "alias", "kind": "function", "signature": "mud.alias(pattern, callback)", "description": "Matches a typed command. The first matching alias consumes it. The callback receives a regex match array. Returns a hook id for mud.remove." },
+        { "name": "trigger", "kind": "function", "signature": "mud.trigger(pattern, callback)", "description": "Matches a complete server line. Every matching trigger runs. The callback receives a regex match array. Returns a hook id for mud.remove." },
+        { "name": "on", "kind": "function", "signature": "mud.on(event, callback)", "description": "Subscribes to Events.Line, Events.Prompt, Events.Gmcp, Events.Msdp or Events.Key. Returns a hook id for mud.remove." },
+        { "name": "every", "kind": "function", "signature": "mud.every(seconds, callback)", "description": "Repeats a synchronous callback. Missed intervals are not replayed in a burst. Returns a hook id for mud.remove." },
+        { "name": "after", "kind": "function", "signature": "mud.after(seconds, callback)", "description": "Runs a synchronous callback once, at the first timer tick at least this many seconds from now (0 means the next tick). Returns a hook id." },
+        { "name": "remove", "kind": "function", "signature": "mud.remove(id)", "description": "Removes the alias, trigger, listener or timer with this id (every registration returns one) and frees its place in the hook budget. Returns true when something was removed. A hook removed during an event does not run for the rest of that event." },
+        { "name": "panel", "kind": "function", "signature": "mud.panel(id, options)", "description": "Creates or reuses a docked panel and returns its widget builder. Options are { title, dock } where dock is left, right or bars.", "options": [
+            { "name": "title", "type": "string", "required": false, "description": "The dock tool title. Color codes are stripped from it. Defaults to the panel id, and is kept when a later call omits it." },
+            { "name": "dock", "type": "string", "required": false, "values": ["left", "right", "bars"], "default": "right", "description": "Which side of the workspace the tool docks to. bars puts the panel's gauges in the vitals strip under the transcript instead of a docked tool; see panel.bars." }
+        ] },
+        { "name": "format", "kind": "function", "signature": "mud.format(value)", "description": "Display text for any value: undefined and null give \"\", a string passes through unchanged (color codes included), numbers and booleans give their text, an array gives its items formatted and joined with \", \", and an object gives \"key: value\" pairs joined with \", \". Nested objects and arrays are formatted recursively to a depth of 4 and the result is cut at 4096 characters. Use it for MSDP tables such as ROOMEXITS, which would otherwise print as [object Object]." },
+        { "name": "state", "kind": "namespace", "description": "The latest protocol values this session has received, cached in the worker and seeded from the client when the script starts.", "members": [
+            { "name": "get", "kind": "function", "signature": "mud.state.get(path)", "description": "The value at gmcp.<Package>.<field>... or msdp.<VARIABLE>, or undefined when unknown. Objects are returned as copies. Reading an unknown msdp.<VARIABLE> also asks the world once to report it; the value then arrives as an Events.Msdp event." },
+            { "name": "snapshot", "kind": "function", "signature": "mud.state.snapshot()", "description": "A copy of the whole cache as { gmcp, msdp }." }
+        ] }
+      ]
+    },
+    {
+      "name": "Events",
+      "description": "Frozen event constants. The object cannot be replaced or extended.",
+      "members": [
+        { "name": "Line", "kind": "constant", "value": "line" },
+        { "name": "Prompt", "kind": "constant", "value": "prompt" },
+        { "name": "Gmcp", "kind": "constant", "value": "gmcp" },
+        { "name": "Msdp", "kind": "constant", "value": "msdp" },
+        { "name": "Key", "kind": "constant", "value": "key" }
+      ]
+    }
+  ],
+  "events": [
+    { "constant": "Line", "value": "line", "payload": [ { "name": "text", "type": "string", "description": "One completed server line with ANSI styling removed." } ] },
+    { "constant": "Prompt", "value": "prompt", "payload": [ { "name": "text", "type": "string", "description": "A prompt the server marked as finished with telnet GA or EOR: the text since the last newline or the previous prompt, ANSI styling removed. Only public prompts; worlds that mark no prompts send none." } ] },
+    { "constant": "Gmcp", "value": "gmcp", "payload": [
+        { "name": "package", "type": "string", "description": "The GMCP package name, for example Char.Vitals." },
+        { "name": "data", "type": "json|null", "description": "Parsed JSON from the server, or null when the message carries only a package name." } ] },
+    { "constant": "Msdp", "value": "msdp", "payload": [
+        { "name": "variable", "type": "string", "description": "The MSDP variable name, for example SHIPHULL." },
+        { "name": "value", "type": "json", "description": "The decoded value: a string, an array or a table. Numbers sent as text stay strings." } ] },
+    { "constant": "Key", "value": "key", "payload": [ { "name": "text", "type": "string", "description": "The function key name. Used internally by generated shortcut macros." } ] }
+  ],
+  "state": {
+    "paths": [
+      { "pattern": "gmcp.<Package>.<field>...", "example": "gmcp.Char.Vitals.hp", "description": "A GMCP package name is split on dots, so Char.Vitals is nested under Char." },
+      { "pattern": "msdp.<VARIABLE>", "example": "msdp.SHIPHULL", "description": "One entry per MSDP variable, using the variable name exactly as received." }
+    ],
+    "seed": {
+      "description": "When a script starts or restarts, the client sends everything it has received this session (including values that arrived during login, before the script ran) to the worker before the first line of the script runs. No Events.Gmcp or Events.Msdp callback fires for seeded values, so subscribe with mud.on and call your refresh function once at load.",
+      "json": "{\"gmcp\":{\"<Package>\":<json>},\"msdp\":{\"<VARIABLE>\":<json>}}"
+    },
+    "report": {
+      "description": "mud.state.get(\"msdp.<VARIABLE>\") for a variable the cache does not hold asks the world once, per script, to report it (MSDP REPORT then SEND). The answer arrives as an Events.Msdp event and enters the cache. Variables the world's mapping already reports are not asked for again.",
+      "namePattern": "^[A-Za-z_][A-Za-z0-9_]{0,127}$",
+      "maximumPerScript": 64
+    },
+    "notes": [
+      "The cache is fed by the same privacy-gated events a script receives, so nothing private ever enters it.",
+      "An unknown path returns undefined, never null.",
+      "Values are copies: changing what get or snapshot returned does not change the cache.",
+      "The cache is seeded from the client when the script starts, so mud.state.get works from the first line."
+    ]
+  },
+  "panel": {
+    "methods": [
+      { "name": "remove", "signature": "panel.remove(widgetId)", "description": "Removes one widget and its callback." },
+      { "name": "show", "signature": "panel.show(options)", "description": "Shows the docked tool again after hide. Options are optional.", "options": [
+          { "name": "focus", "type": "boolean", "required": false, "default": false, "description": "true also brings the tool's tab to the front, exactly as panel.focus() after show()." } ] },
+      { "name": "hide", "signature": "panel.hide()", "description": "Hides the docked tool without discarding the panel." },
+      { "name": "focus", "signature": "panel.focus()", "rateLimitSeconds": 1, "description": "Brings the panel's tab to the front of its dock, showing the panel first if it is hidden. The client accepts one focus per panel per second and drops the rest, so a script that refreshes on every MSDP event cannot steal focus continuously. A no-op for a bars panel." },
+      { "name": "close", "signature": "panel.close()", "description": "Closes the tool and forgets the panel and its callbacks." }
+    ],
+    "widgets": [
+      { "kind": "gauge", "signature": "panel.gauge(id, props)", "control": "resource bar", "properties": [
+          { "name": "label", "type": "string", "required": false, "description": "Caption. Defaults to the widget id." },
+          { "name": "value", "type": "number", "required": false, "default": 0, "description": "Current amount." },
+          { "name": "max", "type": "number", "required": false, "default": 100, "description": "Full amount." },
+          { "name": "warn", "type": "number", "required": false, "description": "Fraction of max at or below which the bar turns to the warning color." } ], "callbacks": [] },
+      { "kind": "label", "signature": "panel.label(id, props)", "control": "text block", "properties": [
+          { "name": "text", "type": "string", "required": false, "default": "", "description": "One line of text; it wraps when it is long." } ], "callbacks": [] },
+      { "kind": "text", "signature": "panel.text(id, props)", "control": "read-only wrapped text block", "properties": [
+          { "name": "text", "type": "string", "required": false, "default": "", "description": "Multi-line read-only text." } ], "callbacks": [] },
+      { "kind": "list", "signature": "panel.list(id, props)", "control": "list box", "properties": [
+          { "name": "title", "type": "string", "required": false, "description": "Caption above the list." },
+          { "name": "items", "type": "string[]", "required": false, "default": [], "maximum": 500, "description": "Rows, in order." } ],
+        "callbacks": [ { "name": "onSelect", "event": "select", "argument": "the selected item as a string" } ] },
+      { "kind": "table", "signature": "panel.table(id, props)", "control": "grid of text blocks", "properties": [
+          { "name": "title", "type": "string", "required": false, "description": "Caption above the table." },
+          { "name": "columns", "type": "string[]", "required": false, "default": [], "maximum": 32, "description": "Heading cells." },
+          { "name": "rows", "type": "string[][]", "required": false, "default": [], "maximum": 500, "description": "Rows of cells. Numbers and booleans are converted to strings." } ], "callbacks": [] },
+      { "kind": "button", "signature": "panel.button(id, props)", "control": "button", "properties": [
+          { "name": "label", "type": "string", "required": false, "description": "Button text. Defaults to the widget id." } ],
+        "callbacks": [ { "name": "onClick", "event": "click", "argument": "null" } ] },
+      { "kind": "toggle", "signature": "panel.toggle(id, props)", "control": "check box", "properties": [
+          { "name": "label", "type": "string", "required": false, "description": "Caption. Defaults to the widget id." },
+          { "name": "value", "type": "boolean", "required": false, "default": false, "description": "Whether the toggle starts on." } ],
+        "callbacks": [ { "name": "onChange", "event": "change", "argument": "the new state as a boolean" } ] },
+      { "kind": "input", "signature": "panel.input(id, props)", "control": "text box", "properties": [
+          { "name": "placeholder", "type": "string", "required": false, "description": "Hint shown while the box is empty." },
+          { "name": "value", "type": "string", "required": false, "description": "Text to place in the box." } ],
+        "callbacks": [ { "name": "onSubmit", "event": "submit", "argument": "the typed text as a string; the box is cleared" } ] },
+      { "kind": "separator", "signature": "panel.separator(id)", "control": "separator", "properties": [], "callbacks": [] },
+      { "kind": "group", "signature": "panel.group(id, props)", "control": "bordered section", "properties": [
+          { "name": "title", "type": "string", "required": false, "description": "Section heading." },
+          { "name": "children", "type": "string[]", "required": false, "default": [], "maximum": 64, "description": "Widget ids to render inside the section, in order. A widget belongs to the first group that claims it." } ], "callbacks": [] }
+    ],
+    "actions": [
+      { "action": "create", "json": "{\"panel\":\"<id>\",\"action\":\"create\",\"title\":\"<title>\",\"dock\":\"left|right|bars\"}" },
+      { "action": "widget", "json": "{\"panel\":\"<id>\",\"action\":\"widget\",\"widget\":\"<id>\",\"kind\":\"<kind>\",\"props\":{}}" },
+      { "action": "remove", "json": "{\"panel\":\"<id>\",\"action\":\"remove\",\"widget\":\"<id>\"}" },
+      { "action": "show", "json": "{\"panel\":\"<id>\",\"action\":\"show\"}" },
+      { "action": "hide", "json": "{\"panel\":\"<id>\",\"action\":\"hide\"}" },
+      { "action": "focus", "json": "{\"panel\":\"<id>\",\"action\":\"focus\"}" },
+      { "action": "close", "json": "{\"panel\":\"<id>\",\"action\":\"close\"}" }
+    ],
+    "bars": {
+      "description": "A panel declared with dock \"bars\" has no docked tool. Its gauges are shown as cards in the vitals strip under the transcript, after the mapped vitals such as Health and Movement, in declaration order, looking exactly like them. Several bars panels append one after another. Only gauge and label are accepted; a label is ignored in the strip, and any other widget kind is a script error that stops the script. hide() removes the panel's bars, show() restores them, close() removes them for good and focus() does nothing. The strip stays hidden while it has nothing to show.",
+      "widgets": ["gauge", "label"],
+      "error": "A bars panel accepts only gauge and label widgets."
+    },
+    "callbackEvent": {
+      "json": "{\"panel\":\"<id>\",\"widget\":\"<id>\",\"event\":\"click|change|submit|select\",\"value\":null}",
+      "description": "The client sends this back to the worker, which runs the registered handler under the same limits as a trigger."
+    },
+    "identifiers": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+      "description": "Panel and widget ids are 1 to 64 characters of letters, digits, dot, dash or underscore."
+    },
+    "notes": [
+      "A panel is data; the client renders it with native controls and the current theme's brushes.",
+      "Declaring a widget that already exists updates its properties in place instead of rebuilding the panel.",
+      "Panels belong to one session and disappear when their script stops or the session closes.",
+      "Every limit violation is reported as a script error; it never crashes the client.",
+      "Every text a widget shows may carry the color codes described under text: label, text, list items, table cells, gauge, button and toggle labels and group captions render them; the panel title strips them."
+    ]
+  },
+  "text": {
+    "description": "MSDP strings often still carry the SMAUG and SWR style color codes the world uses in its own output. The client renders them in every text-bearing widget with the same palette the transcript uses, so a color in a panel matches the same code in the transcript. Scripts do not need to strip or translate them.",
+    "foreground": "&",
+    "background": "^",
+    "letters": [
+      { "code": "&x", "palette": 0, "name": "black" }, { "code": "&r", "palette": 1, "name": "dark red" },
+      { "code": "&g", "palette": 2, "name": "dark green" }, { "code": "&O", "palette": 3, "name": "orange" },
+      { "code": "&b", "palette": 4, "name": "dark blue" }, { "code": "&p", "palette": 5, "name": "purple" },
+      { "code": "&c", "palette": 6, "name": "dark cyan" }, { "code": "&w", "palette": 7, "name": "grey" },
+      { "code": "&z", "palette": 8, "name": "dark grey" }, { "code": "&R", "palette": 9, "name": "red" },
+      { "code": "&G", "palette": 10, "name": "green" }, { "code": "&Y", "palette": 11, "name": "yellow" },
+      { "code": "&B", "palette": 12, "name": "blue" }, { "code": "&P", "palette": 13, "name": "pink" },
+      { "code": "&C", "palette": 14, "name": "cyan" }, { "code": "&W", "palette": 15, "name": "white" }
+    ],
+    "reset": ["&D", "&d"],
+    "xterm": { "pattern": "&NNN or ^NNN with exactly three digits 000 to 255", "example": "&228", "description": "An xterm 256 color index, the Legends of the Jedi extension. Indexes below 16 follow the theme's palette; the rest are the fixed xterm cube and grey ramp." },
+    "literals": { "&&": "&", "^^": "^" },
+    "rules": [
+      "The same letters after ^ set the background; ^ has no reset letter, use &D.",
+      "& or ^ followed by anything else is ordinary text, so \"50% && rising\" shows as \"50% & rising\" and \"&q\" stays \"&q\".",
+      "Real ANSI escape sequences (ESC [ ... m) are applied when they are simple SGR colors and dropped otherwise.",
+      "Every string starts from the default colors, so a code never leaks from one widget into another.",
+      "Dock tab titles are plain text: color codes in a panel title are removed."
+    ],
+    "example": "&228A Vicious Womprat&D"
+  },
+  "packScripts": {
+    "description": "Scripts a world directory supplies with a listing. They are added to the world's library on open, marked as a pack, shown read-only and enabled by default.",
+    "listingFields": [
+      { "name": "id", "type": "string", "description": "Stable identifier within the world. A library entry is keyed by it." },
+      { "name": "name", "type": "string", "description": "The name shown in the Scripts page." },
+      { "name": "description", "type": "string", "description": "What the script does, shown beside the source." },
+      { "name": "source", "type": "string", "description": "The JavaScript source." },
+      { "name": "provenance", "type": "string", "values": ["generated", "reviewed"], "description": "How the script was produced. Any other value is ignored." },
+      { "name": "version", "type": "integer", "description": "Bumping it replaces the source on the next open." }
+    ],
+    "sendPolicy": {
+      "default": "restricted",
+      "allowedFrom": ["alias", "panel button click"],
+      "refusedFrom": ["trigger", "timer", "line event", "prompt event", "gmcp event", "msdp event", "key event", "panel toggle, input and list callbacks", "top-level code"],
+      "description": "A refused mud.send throws a script error naming the policy and stops that script. The user lifts the restriction per script with the Scripts page toggle \"Allow this script to send commands\"."
+    },
+    "refresh": {
+      "description": "A pack script is replaced when the listing version changes. The user's enable and send-policy choices are kept, so a disabled pack script stays disabled.",
+      "userEdits": "Pack source is read-only. Duplicating a pack script produces an ordinary hand-written script with no policy."
+    }
+  },
+  "limits": {
+    "scriptsPerWorld": 64,
+    "sourceBytes": 262144,
+    "hooksPerScript": 256,
+    "sendAndEchoActionsPerEvent": 32,
+    "sendAndEchoCharactersPerEvent": 32768,
+    "sendCharacters": 4096,
+    "echoCharacters": 8192,
+    "eventCharacters": 32768,
+    "queuedEventsPerSession": 1024,
+    "sendsPerSecond": 20,
+    "sendsPerMinute": 200,
+    "timerSecondsMinimum": 1,
+    "timerSecondsMaximum": 2147483,
+    "panelsPerScript": 8,
+    "widgetsPerPanel": 64,
+    "panelActionsPerEvent": 32,
+    "panelFocusPerSecond": 1,
+    "formatCharacters": 4096,
+    "formatDepth": 4,
+    "panelActionCharacters": 65536,
+    "panelCharactersPerEvent": 262144,
+    "propertyStringCharacters": 4096,
+    "listItems": 500,
+    "tableRows": 500,
+    "tableColumns": 32,
+    "groupChildren": 64,
+    "statePathCharacters": 512,
+    "stateEntriesPerBucket": 512,
+    "stateValueCharacters": 32768,
+    "stateBucketCharacters": 262144,
+    "msdpVariablesPerPayload": 64,
+    "msdpValueCharacters": 8192,
+    "msdpReportsPerScript": 64,
+    "stateSeedCharacters": 1048576,
+    "callbackTimeoutMilliseconds": 300,
+    "callbackStatements": 100000,
+    "workerTimeoutSeconds": 2
+  }
+}

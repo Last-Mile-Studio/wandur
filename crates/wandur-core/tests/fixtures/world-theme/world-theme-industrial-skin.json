@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "wandur-industrial-v2",
+  "name": "Industrial silver",
+  "variant": "light",
+  "corner_radius": 2,
+  "colors": {
+    "shell": "#C9CBC8",
+    "panel": "#D1D3D1",
+    "terminal": "#0E181F",
+    "text": "#22282B",
+    "muted": "#51575A",
+    "accent": "#115C73",
+    "accent_secondary": "#8EC1D8",
+    "border": "#8F9294",
+    "terminal_text": "#CBD6E2"
+  }
+}

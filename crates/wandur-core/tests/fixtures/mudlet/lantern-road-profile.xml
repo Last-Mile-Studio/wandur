@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<!-- Hand-written fictional fixture for WMC tests: The Lantern Road, played by Wren, Odo and Bastian. -->
+<MudletPackage version="1.001">
+    <HostPackage>
+        <Host autoClearCommandLineAfterSend="no" mSslTsl="yes" mEnableGMCP="yes">
+            <name>The Lantern Road</name>
+            <url>lanternroad.example.net</url>
+            <port>4100</port>
+            <mCommandSeparator>;;</mCommandSeparator>
+            <mInstalledModules>
+                <key>RoadSigns</key>
+                <filepath>/fictional/RoadSigns.xml</filepath>
+            </mInstalledModules>
+        </Host>
+    </HostPackage>
+    <TriggerPackage>
+        <TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no">
+            <name>Travel</name>
+            <script></script>
+            <mCommand></mCommand>
+            <regexCodeList />
+            <regexCodePropertyList />
+            <Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no">
+                <name>Lantern lit</name>
+                <script>send("warm hands")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>A lantern flickers to life</string></regexCodeList>
+                <regexCodePropertyList><integer>0</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Gate opens</name>
+                <script></script>
+                <mCommand>north;;look</mCommand>
+                <regexCodeList><string>The gate opens</string></regexCodeList>
+                <regexCodePropertyList><integer>2</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Toll</name>
+                <script>-- the tollkeeper takes copper only
+send('pay toll', false)</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>The tollkeeper waits.</string></regexCodeList>
+                <regexCodePropertyList><integer>3</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Greet arrivals</name>
+                <script>send("wave " .. matches[2]); send([[say Welcome to the road, ]] .. matches[2] .. "!")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>^(\w+) arrives from the (?P&lt;dir&gt;\w+)\.$</string></regexCodeList>
+                <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Rest at prompt</name>
+                <script>send("rest")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string></string></regexCodeList>
+                <regexCodePropertyList><integer>7</integer></regexCodePropertyList>
+            </Trigger>
+        </TriggerGroup>
+        <TriggerGroup isActive="yes" isFolder="yes">
+            <name>Combat</name>
+            <script></script>
+            <mCommand></mCommand>
+            <regexCodeList />
+            <regexCodePropertyList />
+            <Trigger isActive="yes" isFolder="no">
+                <name>Low health</name>
+                <script>local hp = tonumber(matches[2])
+if hp &lt; 50 then
+  send("quaff tonic")
+end</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>^HP: (\d+)/(\d+)</string></regexCodeList>
+                <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Wren bleeds</name>
+                <script>send("bandage wren")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>(?i)^wren is bleeding</string></regexCodeList>
+                <regexCodePropertyList><integer>1</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Ambush</name>
+                <script></script>
+                <mCommand></mCommand>
+                <regexCodeList><string>Bandits leap from the hedge</string></regexCodeList>
+                <regexCodePropertyList><integer>0</integer></regexCodePropertyList>
+                <mStayOpen>3</mStayOpen>
+                <Trigger isActive="yes" isFolder="no">
+                    <name>Bandit flees</name>
+                    <script>send("pursue")</script>
+                    <mCommand></mCommand>
+                    <regexCodeList><string>A bandit flees</string></regexCodeList>
+                    <regexCodePropertyList><integer>0</integer></regexCodePropertyList>
+                </Trigger>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no" isMultiline="yes">
+                <name>Two lines</name>
+                <script>send("duck")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>Odo shouts</string><string>an arrow</string></regexCodeList>
+                <regexCodePropertyList><integer>0</integer><integer>0</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Red text</name>
+                <script>send("look")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>FG4BG0</string></regexCodeList>
+                <regexCodePropertyList><integer>6</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no">
+                <name>Possessive</name>
+                <script>send("parry")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>swing+s+ at you</string><string>a++b</string></regexCodeList>
+                <regexCodePropertyList><integer>1</integer><integer>1</integer></regexCodePropertyList>
+            </Trigger>
+            <Trigger isActive="yes" isFolder="no" isColorizerTrigger="yes">
+                <name>Highlight Bastian</name>
+                <script></script>
+                <mCommand></mCommand>
+                <regexCodeList><string>Bastian</string></regexCodeList>
+                <regexCodePropertyList><integer>0</integer></regexCodePropertyList>
+            </Trigger>
+        </TriggerGroup>
+        <TriggerGroup isActive="no" isFolder="yes">
+            <name>Idle</name>
+            <script></script>
+            <mCommand></mCommand>
+            <regexCodeList />
+            <regexCodePropertyList />
+            <Trigger isActive="yes" isFolder="no">
+                <name>Yawn</name>
+                <script>send("sleep")</script>
+                <mCommand></mCommand>
+                <regexCodeList><string>You feel sleepy</string></regexCodeList>
+                <regexCodePropertyList><integer>0</integer></regexCodePropertyList>
+            </Trigger>
+        </TriggerGroup>
+    </TriggerPackage>
+    <TimerPackage>
+        <Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+            <name>Drink</name>
+            <script>send("drink waterskin")</script>
+            <command></command>
+            <time>00:00:30.000</time>
+        </Timer>
+        <Timer isActive="yes" isFolder="no" isTempTimer="no" isOffsetTimer="no">
+            <name>Too fast</name>
+            <script>send("blink")</script>
+            <command></command>
+            <time>00:00:00.500</time>
+        </Timer>
+    </TimerPackage>
+    <AliasPackage>
+        <AliasGroup isActive="yes" isFolder="yes">
+            <name>Travel</name>
+            <script></script>
+            <command></command>
+            <regex></regex>
+            <Alias isActive="yes" isFolder="no">
+                <name>home</name>
+                <script></script>
+                <command>recall;;rest</command>
+                <regex>^home$</regex>
+            </Alias>
+            <Alias isActive="yes" isFolder="no">
+                <name>kill</name>
+                <script>send("kill " .. matches[2])</script>
+                <command></command>
+                <regex>^k (.+)$</regex>
+            </Alias>
+            <Alias isActive="yes" isFolder="no">
+                <name>greet</name>
+                <script>send("say Hello, " .. matches[2] .. "!")</script>
+                <command></command>
+                <regex>^greet (\w+)$</regex>
+            </Alias>
+            <Alias isActive="yes" isFolder="no">
+                <name>greet the party</name>
+                <script>expandAlias("greet Odo")
+expandAlias("greet Bastian")</script>
+                <command></command>
+                <regex>^gp$</regex>
+            </Alias>
+        </AliasGroup>
+        <Alias isActive="yes" isFolder="no">
+            <name>status window</name>
+            <script>StatusBox = Geyser.Label:new({name = "status", x = 0, y = 0, width = "20%", height = "10%"})
+StatusBox:echo("Wren")</script>
+            <command></command>
+            <regex>^sw$</regex>
+        </Alias>
+    </AliasPackage>
+    <ActionPackage>
+        <Action isActive="yes" isFolder="no" isPushButton="no">
+            <name>Camp</name>
+            <script>send("make camp")</script>
+            <commandButtonUp>make camp</commandButtonUp>
+        </Action>
+    </ActionPackage>
+    <ScriptPackage>
+        <Script isActive="yes" isFolder="no">
+            <name>Vitals</name>
+            <script>function Vitals()
+  cecho("&lt;green&gt;HP " .. gmcp.Char.Vitals.hp)
+end</script>
+            <eventHandlerList><string>gmcp.Char.Vitals</string></eventHandlerList>
+        </Script>
+        <Script isActive="yes" isFolder="no">
+            <name>Road mapper</name>
+            <script>local id = createRoomID()
+addRoom(id)</script>
+            <eventHandlerList />
+        </Script>
+    </ScriptPackage>
+    <KeyPackage>
+        <Key isActive="yes" isFolder="no">
+            <name>Heal</name>
+            <script></script>
+            <command>cast heal</command>
+            <keyCode>16777264</keyCode>
+            <keyModifier>0</keyModifier>
+        </Key>
+        <Key isActive="yes" isFolder="no">
+            <name>Ctrl K</name>
+            <script></script>
+            <command>kick</command>
+            <keyCode>75</keyCode>
+            <keyModifier>67108864</keyModifier>
+        </Key>
+    </KeyPackage>
+    <VariablePackage>
+        <Variable><name>partyLeader</name><keyType>4</keyType><value>Wren</value><valueType>4</valueType></Variable>
+        <Variable><name>tollPaid</name><keyType>4</keyType><value>false</value><valueType>1</valueType></Variable>
+    </VariablePackage>
+</MudletPackage>

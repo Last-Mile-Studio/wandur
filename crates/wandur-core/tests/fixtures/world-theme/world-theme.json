@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "lotj-navy-cyan-gold",
+  "name": "Legends of the Jedi",
+  "variant": "dark",
+  "corner_radius": 3,
+  "colors": {
+    "shell": "#091821",
+    "panel": "#112532",
+    "terminal": "#070D15",
+    "text": "#E4EEF5",
+    "muted": "#9CB3C3",
+    "accent": "#65DDEB",
+    "accent_secondary": "#F4CD72",
+    "border": "#294959",
+    "terminal_text": "#DDE8F0"
+  }
+}

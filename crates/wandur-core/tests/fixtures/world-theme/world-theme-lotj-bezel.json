@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "id": "lotj-imperial-bezel-v1",
+  "name": "Legends of the Jedi · Imperial bezel",
+  "variant": "light",
+  "corner_radius": 2,
+  "surface": "standard",
+  "colors": {
+    "shell": "#E8ECF0",
+    "panel": "#F2F5F8",
+    "terminal": "#FFFFFF",
+    "text": "#1A2430",
+    "muted": "#5A6B7A",
+    "accent": "#3DB8E8",
+    "accent_secondary": "#2AA8D8",
+    "border": "#C5D0DA",
+    "terminal_text": "#1A2430"
+  },
+  "frame": {
+    "kind": "bezel",
+    "inset": { "left": 28, "top": 36, "right": 28, "bottom": 32 },
+    "content_radius": 0,
+    "accent": "#3DB8E8",
+    "plaque": "WANDUR",
+    "assets": {
+      "border": {
+        "url": "themes/imperial-bezel/border.png",
+        "slice": { "left": 48, "top": 56, "right": 48, "bottom": 48 }
+      }
+    }
+  }
+}

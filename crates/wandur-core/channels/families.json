@@ -1,0 +1,310 @@
+{
+ "smaug": [
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you, '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you: (?<text>.*)$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "ooc",
+   "pattern": "\\[OOC\\] @?(?<speaker>[A-Za-z]+)(?: \\[[A-Za-z]+\\])?: (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "\\(OOC\\) @?(?<speaker>[A-Za-z]+)(?: \\[[A-Za-z]+\\])?: (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "(?<speaker>[A-Za-z]+) OOC: '(?<text>.*)'$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "(?<speaker>[A-Za-z]+) OOC: (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "chat",
+   "pattern": "\\[CHAT\\] @?(?<speaker>[A-Za-z]+)(?: \\[[A-Za-z]+\\])?: (?<text>.*)$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "chat",
+   "pattern": "\\(CHAT\\) @?(?<speaker>[A-Za-z]+)(?: \\[[A-Za-z]+\\])?: (?<text>.*)$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "chat",
+   "pattern": "(?<speaker>[A-Za-z]+) CHAT: '(?<text>.*)'$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "chat",
+   "pattern": "(?<speaker>[A-Za-z]+) chats '(?<text>.*)'$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "\\[NEWBIE\\] @?(?<speaker>[A-Za-z]+)(?: \\[[A-Za-z]+\\])?: (?<text>.*)$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "\\(NEWBIE\\) @?(?<speaker>[A-Za-z]+)(?: \\[[A-Za-z]+\\])?: (?<text>.*)$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "(?<speaker>[A-Za-z]+) NEWBIE: '(?<text>.*)'$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "auction",
+   "pattern": "(?<speaker>[A-Za-z]+) auctions '(?<text>.*)'$",
+   "reply_command": "auction"
+  },
+  {
+   "channel": "shout",
+   "pattern": "(?<speaker>[A-Za-z]+) shouts '(?<text>.*)'$",
+   "reply_command": "shout"
+  }
+ ],
+ "swr": [
+  {
+   "include": "smaug"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "\\[OOC\\] \\((?<speaker>[A-Za-z]+)\\) (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "shipchannel",
+   "pattern": "\\[SHIP\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "shipchannel"
+  },
+  {
+   "channel": "clantalk",
+   "pattern": "\\[CLAN\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "clantalk"
+  },
+  {
+   "channel": "commnet",
+   "pattern": "CommNet (?<frequency>[0-9]+) \\[(?<speaker>[^\\]]+)\\](?:\\( ?[^)]*? ?\\))?: (?<text>.*)$",
+   "reply_command": "commnet"
+  }
+ ],
+ "diku": [
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you, '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "group",
+   "pattern": "(?<speaker>[A-Za-z]+) tells the group, '(?<text>.*)'$",
+   "reply_command": "gtell"
+  },
+  {
+   "channel": "group",
+   "pattern": "(?<speaker>[A-Za-z]+) tells the group '(?<text>.*)'$",
+   "reply_command": "gtell"
+  },
+  {
+   "channel": "gossip",
+   "pattern": "(?<speaker>[A-Za-z]+) gossips, '(?<text>.*)'$",
+   "reply_command": "gossip"
+  },
+  {
+   "channel": "gossip",
+   "pattern": "(?<speaker>[A-Za-z]+) gossips '(?<text>.*)'$",
+   "reply_command": "gossip"
+  },
+  {
+   "channel": "auction",
+   "pattern": "(?<speaker>[A-Za-z]+) auctions, '(?<text>.*)'$",
+   "reply_command": "auction"
+  },
+  {
+   "channel": "auction",
+   "pattern": "(?<speaker>[A-Za-z]+) auctions '(?<text>.*)'$",
+   "reply_command": "auction"
+  },
+  {
+   "channel": "shout",
+   "pattern": "(?<speaker>[A-Za-z]+) shouts, '(?<text>.*)'$",
+   "reply_command": "shout"
+  },
+  {
+   "channel": "shout",
+   "pattern": "(?<speaker>[A-Za-z]+) shouts '(?<text>.*)'$",
+   "reply_command": "shout"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "\\[Newbie\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "newbie"
+  }
+ ],
+ "rom": [
+  {
+   "include": "diku"
+  },
+  {
+   "channel": "question",
+   "pattern": "(?<speaker>[A-Za-z]+) questions '(?<text>.*)'$",
+   "reply_command": "question"
+  },
+  {
+   "channel": "answer",
+   "pattern": "(?<speaker>[A-Za-z]+) answers '(?<text>.*)'$",
+   "reply_command": "answer"
+  },
+  {
+   "channel": "music",
+   "pattern": "(?<speaker>[A-Za-z]+) MUSIC: '(?<text>.*)'$",
+   "reply_command": "music"
+  }
+ ],
+ "circle": [
+  {
+   "include": "diku"
+  },
+  {
+   "channel": "holler",
+   "pattern": "(?<speaker>[A-Za-z]+) hollers, '(?<text>.*)'$",
+   "reply_command": "holler"
+  },
+  {
+   "channel": "congrat",
+   "pattern": "(?<speaker>[A-Za-z]+) congrats, '(?<text>.*)'$",
+   "reply_command": "congrat"
+  }
+ ],
+ "lp": [
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you: (?<text>.*)$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "chat",
+   "pattern": "\\[chat\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "chat",
+   "pattern": "(?<speaker>[A-Za-z]+) \\[chat\\]: (?<text>.*)$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "\\[newbie\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "(?<speaker>[A-Za-z]+) \\[newbie\\]: (?<text>.*)$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "\\[ooc\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "(?<speaker>[A-Za-z]+) \\[ooc\\]: (?<text>.*)$",
+   "reply_command": "ooc"
+  }
+ ],
+ "generic": [
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you, '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you '(?<text>.*)'$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "tell",
+   "pattern": "(?<speaker>[A-Za-z]+) tells you: (?<text>.*)$",
+   "reply_command": "tell {speaker}",
+   "private": true
+  },
+  {
+   "channel": "ooc",
+   "pattern": "\\[OOC\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "ooc",
+   "pattern": "\\(OOC\\) (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "ooc"
+  },
+  {
+   "channel": "chat",
+   "pattern": "\\[CHAT\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "chat",
+   "pattern": "\\(CHAT\\) (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "chat"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "\\[NEWBIE\\] (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "newbie",
+   "pattern": "\\(NEWBIE\\) (?<speaker>[A-Za-z]+): (?<text>.*)$",
+   "reply_command": "newbie"
+  },
+  {
+   "channel": "gossip",
+   "pattern": "(?<speaker>[A-Za-z]+) gossips, '(?<text>.*)'$",
+   "reply_command": "gossip"
+  },
+  {
+   "channel": "gossip",
+   "pattern": "(?<speaker>[A-Za-z]+) gossips '(?<text>.*)'$",
+   "reply_command": "gossip"
+  }
+ ]
+}

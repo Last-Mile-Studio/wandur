@@ -1,0 +1,20 @@
+[package]
+name = "wandur-bench"
+description = "Loopback MUD server and in-process measurements for the Wandur Rust prototype."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+wandur-core.workspace = true
+wandur-app.workspace = true
+wandur-term.workspace = true
+egui.workspace = true
+eframe.workspace = true
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+serde_json = "1"
+
+[lints]
+workspace = true

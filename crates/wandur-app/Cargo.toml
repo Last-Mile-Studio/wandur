@@ -1,0 +1,74 @@
+[package]
+name = "wandur-app"
+description = "The Wandur MUD client desktop app (egui, eframe, egui_dock)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "wandur"
+path = "src/main.rs"
+
+[features]
+default = ["native-dialogs", "agent", "format"]
+# Also build eframe's OpenGL renderer, selectable with --renderer glow (the default is wgpu: Metal on macOS).
+glow = ["eframe/glow"]
+# Native file dialogs (Save transcript, imports). Without it Save Transcript writes into the data
+# directory's transcripts folder.
+native-dialogs = ["dep:rfd"]
+# The system clipboard beyond what egui offers (t05 and later).
+clipboard = ["dep:arboard"]
+# Room terrain inference with a local classifier package (tract-onnx). Off by default: the
+# default build does not link a classifier, and Map tools has no inference section.
+classifier = ["wandur-core/classifier"]
+# Local model agents: the world editor's Agent settings section and the session footer's Agent
+# menu. On by default.
+agent = ["wandur-core/agent"]
+# Scripts shown formatted in the world editor's script editor (Biome's JavaScript formatter, about
+# 3.7 MB, loaded on the first script shown). Without it scripts are shown as stored.
+format = ["wandur-format/javascript"]
+
+[dependencies]
+wandur-core.workspace = true
+wandur-term.workspace = true
+wandur-format.workspace = true
+eframe.workspace = true
+egui.workspace = true
+egui_dock = { workspace = true, features = ["serde"] }
+fontdb = "0.24"
+# The system language, for the "System language" choice.
+sys-locale = "0.2"
+# Opening help links in the system browser (already used by eframe).
+webbrowser = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Ids of rooms added in the map editor ("manual:" and 32 hex digits, as C#).
+uuid = { version = "1", features = ["v4"] }
+# Artwork: image for the final resize, PNG fallback and the thumbnail cache's JPEG encoder;
+# jpeg-decoder for JPEG decoding scaled down by 1/2, 1/4 or 1/8 while decoding; png for decoding
+# row by row into a reduced image.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
+jpeg-decoder = { version = "0.3", default-features = false }
+png = "0.18"
+skrifa = "0.44"
+memmap2 = "0.9"
+# Headless rendering for `--scene` captures (wgpu without a window).
+egui_kittest = { version = "0.36.2", default-features = false, features = ["wgpu"] }
+rfd = { version = "0.17", optional = true }
+arboard = { version = "3", optional = true }
+
+[target.'cfg(unix)'.dependencies]
+libc.workspace = true
+
+# The native macOS menu bar (MIT or Apache-2.0, the Tauri project's menu crate).
+[target.'cfg(target_os = "macos")'.dependencies]
+muda = { version = "0.21", default-features = false }
+
+[dev-dependencies]
+# The C# import tests edit a copy of the synthetic C# fixture (same version as wandur-core's).
+rusqlite = { version = "0.40", features = ["bundled"] }
+
+[lints]
+workspace = true
