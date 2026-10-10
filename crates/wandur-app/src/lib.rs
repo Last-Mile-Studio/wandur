@@ -5,11 +5,12 @@
 //! [`session_tab`] (session state), [`session_tabs`] (the tabs over the document area), [`toast`] (the undo toast), [`terminal_view`] (grid drawing, selection, input line),
 //! [`workspace_panel`] (Find a MUD, open sessions), [`saved_worlds_panel`] and [`panel_header`] (the Saved worlds panel, panel actions and headers), [`world_form`],
 //! [`directory_view`] and [`world_page`] (the world directory), [`artwork`] (bounded, cancellable
-//! picture loading), [`channels_view`] and [`mark_channel`] (the Channels panel and the teaching dialog), [`map_view`], [`diagnostics_view`] and [`vitals_view`] (the Diagnostics page and the vitals strip), [`settings_dialog`], [`menus`], [`dialogs`], [`csharp_import`] (File > Import from Wandur (C#)... and `--import-csharp`), [`update_notice`] (the update check's strip and schedule), [`theme`], [`widgets`],
+//! picture loading), [`channels_view`] and [`mark_channel`] (the Channels panel and the teaching dialog), [`map_view`], [`diagnostics_view`] and [`vitals_view`] (the Diagnostics page and the vitals strip), [`settings_dialog`], [`about_window`] (Help > About Wandur), [`menus`], [`dialogs`], [`csharp_import`] (File > Import from Wandur (C#)... and `--import-csharp`), [`update_notice`] (the update check's strip and schedule), [`theme`], [`widgets`],
 //! [`scene`] (named screens for headless screenshots), [`a11y`] (AccessKit for the transcript), [`fonts`], [`grid_text`] (the grid's text as one mesh), [`pacer`] (output redraw cap), [`traffic_lights`] and [`platform`] (the macOS window buttons on a drawn skin), [`probe`]
 //! and [`sysstat`] (opt-in measurement).
 
 pub mod a11y;
+pub mod about_window;
 #[cfg(feature = "agent")]
 pub mod agent_menu;
 pub mod agent_session;

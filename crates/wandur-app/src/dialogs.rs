@@ -1,5 +1,5 @@
-//! Small modal dialogs drawn over the dimmed window, as the C# client shows its dialogs: About
-//! Wandur, the "Open this link?" confirmation, an information box (Check for Updates), and File > Import from Mudlet (the chooser and
+//! Small modal dialogs drawn over the dimmed window, as the C# client shows its dialogs: the
+//! "Open this link?" confirmation, an information box (Check for Updates), and File > Import from Mudlet (the chooser and
 //! the summary, the C# `MainWindow.MudletImport`).
 
 use egui::{Align, Layout, RichText, Ui};
@@ -33,22 +33,16 @@ pub enum MudletPick {
 /// A dialog on screen.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Dialog {
-    About,
     /// Confirm before opening `url` in the browser.
     Link(String),
     /// Import from Mudlet: what can be imported, and where a package goes (the selected world's
     /// name, or none).
-    MudletChooser {
-        target: Option<String>,
-    },
+    MudletChooser { target: Option<String> },
     /// Import finished: the summary text.
     MudletSummary(String),
     /// A heading and a message with Done (the C# `ShowInformationAsync`): Check for Updates'
     /// answer.
-    Information {
-        heading: String,
-        message: String,
-    },
+    Information { heading: String, message: String },
 }
 
 /// A modal frame of `width` with the theme's panel colour over the dimmed window.
@@ -96,7 +90,6 @@ pub fn secondary_button(ui: &mut Ui, text: &str) -> egui::Response {
 impl Dialog {
     pub fn show(&self, ctx: &egui::Context, theme: &Theme) -> DialogResult {
         match self {
-            Dialog::About => about(ctx, theme),
             Dialog::Link(url) => link(ctx, url, theme),
             Dialog::MudletChooser { target } => mudlet_chooser(ctx, target.as_deref(), theme),
             Dialog::MudletSummary(text) => mudlet_summary(ctx, text, theme),
@@ -113,28 +106,6 @@ fn information(ctx: &egui::Context, heading: &str, message: &str, theme: &Theme)
             ui.add_space(8.0);
             ui.label(RichText::new(message).size(13.0).color(theme.muted));
         }
-        ui.add_space(12.0);
-        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            primary_button(ui, t(S::Done), theme).clicked()
-        })
-        .inner
-    });
-    if response.inner || response.should_close() {
-        DialogResult::Closed
-    } else {
-        DialogResult::Open
-    }
-}
-
-fn about(ctx: &egui::Context, theme: &Theme) -> DialogResult {
-    let response = modal(ctx, "about", 424.0, theme, |ui| {
-        ui.label(RichText::new(DISPLAY_NAME).size(25.0).color(theme.text));
-        ui.add_space(12.0);
-        ui.label(
-            RichText::new(t(S::ADoorwayToOtherWorldsAnOpenSourceMUD))
-                .size(13.0)
-                .color(theme.text),
-        );
         ui.add_space(12.0);
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             primary_button(ui, t(S::Done), theme).clicked()

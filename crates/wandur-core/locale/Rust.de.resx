@@ -527,4 +527,38 @@
   <data name="CmdHelpExample" xml:space="preserve"><value>Beispiel: {0}</value></data>
   <data name="EnterACommandOr" xml:space="preserve"><value>Befehl eingeben, oder {0} für Wandurs eigene</value></data>
   <data name="CmdA11ySignature" xml:space="preserve"><value>{0}. Jetzt: {1}</value></data>
+  <data name="AboutTabAbout" xml:space="preserve"><value>Über</value></data>
+  <data name="AboutTabSystem" xml:space="preserve"><value>Systeminformationen</value></data>
+  <data name="AboutTabLinks" xml:space="preserve"><value>Links</value></data>
+  <data name="AboutTagline" xml:space="preserve"><value>Ein Tor zu anderen Welten. Ein quelloffener MUD-Client.</value></data>
+  <data name="AboutVersion" xml:space="preserve"><value>Version {0}</value></data>
+  <data name="AboutStudio" xml:space="preserve"><value>Studio</value></data>
+  <data name="AboutLicence" xml:space="preserve"><value>Lizenz</value></data>
+  <data name="AboutLicenceValue" xml:space="preserve"><value>MIT-Lizenz. Copyright © {0} {1}.</value></data>
+  <data name="AboutFonts" xml:space="preserve"><value>Schriften</value></data>
+  <data name="AboutBuiltWith" xml:space="preserve"><value>Erstellt mit</value></data>
+  <data name="AboutLibrariesNote" xml:space="preserve"><value>Jede Bibliothek wird unter ihrer eigenen Open-Source-Lizenz verwendet.</value></data>
+  <data name="AboutSystemIntro" xml:space="preserve"><value>Fügen Sie dies in einen Fehlerbericht ein. Es nennt keine Welten, Server oder Konten und zeigt Ihren Benutzerordner als ~.</value></data>
+  <data name="AboutSysVersion" xml:space="preserve"><value>Version</value></data>
+  <data name="AboutSysCommit" xml:space="preserve"><value>Commit</value></data>
+  <data name="AboutSysBuild" xml:space="preserve"><value>Build</value></data>
+  <data name="AboutSysOs" xml:space="preserve"><value>Betriebssystem</value></data>
+  <data name="AboutSysArch" xml:space="preserve"><value>Architektur</value></data>
+  <data name="AboutSysRenderer" xml:space="preserve"><value>Renderer</value></data>
+  <data name="AboutSysScale" xml:space="preserve"><value>Anzeigeskalierung</value></data>
+  <data name="AboutSysDataDir" xml:space="preserve"><value>Datenordner</value></data>
+  <data name="AboutSysFeatures" xml:space="preserve"><value>Funktionen</value></data>
+  <data name="AboutSysSessions" xml:space="preserve"><value>Offene Sitzungen</value></data>
+  <data name="AboutSysMemory" xml:space="preserve"><value>Belegter Speicher</value></data>
+  <data name="AboutNotReported" xml:space="preserve"><value>nicht verfügbar</value></data>
+  <data name="AboutMemoryMb" xml:space="preserve"><value>{0} MB</value></data>
+  <data name="AboutCopied" xml:space="preserve"><value>Kopiert</value></data>
+  <data name="AboutCopySystemInfo" xml:space="preserve"><value>Systeminformationen kopieren</value></data>
+  <data name="AboutReportTitle" xml:space="preserve"><value>Systeminformationen von {0}</value></data>
+  <data name="AboutLinksIntro" xml:space="preserve"><value>Links öffnen sich in Ihrem Browser.</value></data>
+  <data name="AboutLinkWebsite" xml:space="preserve"><value>Website</value></data>
+  <data name="AboutLinkFindAMud" xml:space="preserve"><value>Ein MUD im Web finden</value></data>
+  <data name="AboutLinkOtherClients" xml:space="preserve"><value>Andere MUD-Clients</value></data>
+  <data name="AboutLinkSource" xml:space="preserve"><value>Quellcode</value></data>
+  <data name="AboutLinkIssue" xml:space="preserve"><value>Problem melden</value></data>
 </root>

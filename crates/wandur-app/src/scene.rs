@@ -183,8 +183,8 @@ pub enum Overlay {
     None,
     /// A menu of the menu bar, by its title.
     Menu(S),
-    /// The About dialog.
-    About,
+    /// Help > About Wandur on a tab (`about`, `system`, `links`).
+    About(&'static str),
     /// The settings dialog on a section (`general`, `mud-colors`, `terminal`, `input`).
     Settings(&'static str),
     /// The world editor on the first saved world, at this section.
@@ -771,8 +771,64 @@ pub const SCENES: &[Scene] = &[
         Overlay::Menu(S::Help),
     ),
     with(
-        scene("about", "The About dialog over a session", "Hull", Show::Session),
-        Overlay::About,
+        scene(
+            "about",
+            "Help > About Wandur, the About tab, over the offline demo",
+            "Hull",
+            Show::Demo,
+        ),
+        Overlay::About("about"),
+    ),
+    with(
+        skinned(
+            scene(
+                "about-system-armored",
+                "About Wandur's System information tab, Armored skin, Slate",
+                "Slate",
+                Show::Demo,
+            ),
+            "Armored",
+        ),
+        Overlay::About("system"),
+    ),
+    with(
+        skinned(
+            scene(
+                "about-links-midnight",
+                "About Wandur's Links tab, System skin, Midnight",
+                "Midnight",
+                Show::Demo,
+            ),
+            "System",
+        ),
+        Overlay::About("links"),
+    ),
+    in_language(
+        with(
+            skinned(
+                scene(
+                    "about-system-de",
+                    "About Wandur's System information tab in German, System skin, Linen",
+                    "Linen",
+                    Show::Demo,
+                ),
+                "System",
+            ),
+            Overlay::About("system"),
+        ),
+        Language::De,
+    ),
+    in_language(
+        with(
+            scene(
+                "about-fr",
+                "About Wandur's About tab in French, Fleet skin, Ember",
+                "Ember",
+                Show::Demo,
+            ),
+            Overlay::About("about"),
+        ),
+        Language::Fr,
     ),
     scene(
         "demo-session",
@@ -2004,7 +2060,11 @@ pub fn configure(scene: &Scene, options: &mut Options) {
     match scene.overlay {
         Overlay::None => {}
         Overlay::Menu(title) => options.open_menu = Some(title),
-        Overlay::About => options.dialog = Some("about".into()),
+        Overlay::About(tab) => {
+            options.dialog = Some(format!("about:{tab}"));
+            // A headless capture has no window to ask (a real run's `main` says).
+            options.renderer.get_or_insert_with(|| "wgpu, headless".into());
+        }
         Overlay::Settings(section) => options.show = Some(format!("settings:{section}")),
         Overlay::WorldEditor(section) => options.world_editor = Some((0, section)),
         Overlay::MudletImport => options.dialog = Some("mudlet-import".into()),
@@ -2873,6 +2933,8 @@ mod tests {
             "menu-view",
             "menu-help",
             "about",
+            "about-system-armored",
+            "about-links-midnight",
             "demo-session",
             "update-notice",
             "world-editor-connection",

@@ -216,6 +216,26 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "Wandur",
         native,
-        Box::new(move |cc| Ok(Box::new(WandurApp::new(&cc.egui_ctx, options)))),
+        Box::new(move |cc| {
+            options.renderer = renderer_info(cc);
+            Ok(Box::new(WandurApp::new(&cc.egui_ctx, options)))
+        }),
     )
+}
+
+/// The renderer in use and its graphics adapter, for Help > About Wandur's System information:
+/// `wgpu, Metal, Apple M2 Pro` or `glow, <the GL renderer string>`.
+fn renderer_info(cc: &eframe::CreationContext<'_>) -> Option<String> {
+    if let Some(state) = &cc.wgpu_render_state {
+        let info = state.adapter.get_info();
+        return Some(format!("wgpu, {:?}, {}", info.backend, info.name));
+    }
+    #[cfg(feature = "glow")]
+    if let Some(gl) = &cc.gl {
+        use eframe::glow::HasContext as _;
+        // SAFETY: the context is current while the app is created; RENDERER is a string query.
+        let name = unsafe { gl.get_parameter_string(eframe::glow::RENDERER) };
+        return Some(format!("glow, {name}"));
+    }
+    None
 }

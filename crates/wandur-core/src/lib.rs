@@ -70,6 +70,16 @@ pub mod updates;
 pub mod utf8;
 pub mod weblinks;
 
+/// The optional parts of this build by feature name, and whether each was compiled in (Help >
+/// About Wandur's System information).
+pub const FEATURES: [(&str, bool); 5] = [
+    ("scripting", cfg!(feature = "scripting")),
+    ("lua", cfg!(feature = "lua")),
+    ("classifier", cfg!(feature = "classifier")),
+    ("agent", cfg!(feature = "agent")),
+    ("mudlet-import", cfg!(feature = "mudlet-import")),
+];
+
 pub use charset::Charset;
 pub use connection::{Connection, ConnectionState, Notice};
 pub use endpoint::Endpoint;

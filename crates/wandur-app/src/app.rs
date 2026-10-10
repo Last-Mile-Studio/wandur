@@ -19,6 +19,7 @@ use wandur_core::{Endpoint, Waker};
 
 use wandur_core::l10n::{self, Language, S, plural, t, tf};
 
+use crate::about_window::{AboutResult, AboutTab, AboutWindow, SystemInfo};
 use crate::artwork::{self, ArtLoader, FetchArt, ThumbCache};
 use crate::autohide::{self, AutoHide, Edge};
 use crate::channels_view::ChannelsViewState;
@@ -115,9 +116,12 @@ pub struct Options {
     pub select_world: Option<usize>,
     /// Open this menu at start (scenes), by its title.
     pub open_menu: Option<S>,
-    /// Open this dialog at start (scenes): `about`, `mudlet-import` (the chooser) or
-    /// `mudlet-import-summary` (with `mudlet_summary`).
+    /// Open this dialog at start (scenes): `about` (or `about:system`, `about:links` for a tab),
+    /// `mudlet-import` (the chooser) or `mudlet-import-summary` (with `mudlet_summary`).
     pub dialog: Option<String>,
+    /// The renderer and graphics adapter the window uses, for Help > About Wandur's System
+    /// information (`main` fills it from eframe; unknown in tests).
+    pub renderer: Option<String>,
     /// The summary text the `mudlet-import-summary` dialog shows (scenes).
     pub mudlet_summary: Option<String>,
     /// Allow Lua scripts for this run (scenes), without saving it.
@@ -483,6 +487,10 @@ pub struct WandurApp {
     platform: Platform,
     toolbar_visible: bool,
     dialog: Option<Dialog>,
+    /// Help > About Wandur, while it is open.
+    about: Option<AboutWindow>,
+    /// What [`Options::renderer`] reported.
+    renderer: Option<String>,
     settings_dialog: Option<SettingsDialog>,
     /// File > Import from Wandur (C#), while open.
     csharp_import: Option<crate::csharp_import::CsharpImportDialog>,
@@ -940,6 +948,8 @@ impl WandurApp {
             platform: options.platform.unwrap_or_else(Platform::current),
             toolbar_visible: true,
             dialog: None,
+            about: None,
+            renderer: options.renderer.clone(),
             settings_dialog: None,
             csharp_import: None,
             map_import: None,
@@ -1091,7 +1101,13 @@ impl WandurApp {
             }
         }
         match options.dialog.as_deref() {
-            Some("about") => app.dialog = Some(Dialog::About),
+            Some(about) if about == "about" || about.starts_with("about:") => {
+                let tab = about
+                    .strip_prefix("about:")
+                    .and_then(AboutTab::from_name)
+                    .unwrap_or(AboutTab::About);
+                app.about = Some(AboutWindow::new(tab));
+            }
             Some("mudlet-import") => app.open_mudlet_import(),
             Some("csharp-import") => app.open_csharp_import(ctx),
             Some("mudlet-import-summary") => {
@@ -3610,7 +3626,8 @@ impl WandurApp {
             egui::Key::Num8,
             egui::Key::Num9,
         ];
-        let blocked = self.dialog.is_some() || self.settings_dialog.is_some() || self.form.is_some();
+        let blocked =
+            self.dialog.is_some() || self.about.is_some() || self.settings_dialog.is_some() || self.form.is_some();
         let (next, prev, jump) = ctx.input_mut(|i| {
             let jump = if blocked {
                 None
@@ -4466,6 +4483,24 @@ impl WandurApp {
         }
     }
 
+    /// Help > About Wandur while it is open: a link chosen there opens at once (the app's own
+    /// pages, not a link from a MUD).
+    fn show_about(&mut self, ctx: &egui::Context) {
+        let Some(about) = &mut self.about else { return };
+        let info = SystemInfo::gather(
+            self.renderer.as_deref(),
+            ctx.pixels_per_point(),
+            self.data_dir.as_deref(),
+            self.sessions.len(),
+        );
+        let links = crate::about_window::links(&self.site);
+        match about.show(ctx, &self.theme, &info, &links) {
+            AboutResult::Open => {}
+            AboutResult::Closed => self.about = None,
+            AboutResult::OpenLink(url) => self.open_link(&url),
+        }
+    }
+
     /// Open a link after the person confirmed it; a browser that does not open is a notice.
     fn open_link(&mut self, url: &str) {
         if !(self.launcher)(url) {
@@ -4540,7 +4575,11 @@ impl WandurApp {
             Command::OtherClients => {
                 self.dialog = Some(Dialog::Link(wandur_core::site::other_clients(&self.site)));
             }
-            Command::About => self.dialog = Some(Dialog::About),
+            Command::About => {
+                if self.about.is_none() {
+                    self.about = Some(AboutWindow::default());
+                }
+            }
             Command::CheckForUpdates => self.check_for_updates_now(ctx),
             Command::PrivateInput => {
                 if let Some(e) = self.active_session.and_then(|id| self.sessions.get_mut(id))
@@ -5359,7 +5398,7 @@ impl eframe::App for WandurApp {
         }
         self.menu_keys(ctx);
         // Window shortcuts, unless a dialog is open.
-        if self.dialog.is_none() && self.settings_dialog.is_none() && self.form.is_none() {
+        if self.dialog.is_none() && self.about.is_none() && self.settings_dialog.is_none() && self.form.is_none() {
             let state = self.menu_state();
             for command in menus::shortcuts(ctx, self.platform, &state) {
                 self.run_command(ctx, command);
@@ -5533,6 +5572,7 @@ impl eframe::App for WandurApp {
         }
         self.show_csharp_import(&ctx);
         self.show_map_import(&ctx);
+        self.show_about(&ctx);
         if let Some(dialog) = &self.dialog {
             match dialog.show(&ctx, &self.theme) {
                 DialogResult::Open => {}
@@ -7507,11 +7547,137 @@ mod tests {
         app.open_link("http://127.0.0.1:9/clients");
         assert_eq!(app.notes.first().map(String::as_str), Some(t(S::LinkNotOpened)));
         app.run_command(&ctx, Command::About);
-        assert_eq!(app.dialog, Some(Dialog::About));
+        assert_eq!(app.about.as_ref().map(|a| a.tab), Some(AboutTab::About));
         let texts = drawn_text(&mut app, &ctx);
         assert!(texts.iter().any(|t| t == crate::dialogs::DISPLAY_NAME), "{texts:?}");
         app.on_exit();
         drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Help > About Wandur: a tab list of three tabs and a tab panel for screen readers; Up and
+    /// Down move between the tabs from the keyboard and the selection follows; a link opens its
+    /// address through the launcher at once (a fake here, so no browser opens); Copy puts the
+    /// English report on the clipboard; Escape closes the window.
+    #[test]
+    fn about_window_tabs_keys_links_and_copy() {
+        use egui::accesskit::Role;
+        use egui_kittest::kittest::{NodeT as _, Queryable};
+        let dir = superpowers_dir("app-about");
+        let mut harness = app_harness(&dir);
+        let launched = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+        let record = Arc::clone(&launched);
+        let ctx = harness.ctx.clone();
+        {
+            let app = harness.state_mut().as_mut().unwrap();
+            app.launcher = Arc::new(move |url: &str| {
+                record.lock().unwrap().push(url.to_string());
+                true
+            });
+            app.site = "http://127.0.0.1:9/".into();
+            app.run_command(&ctx, Command::About);
+        }
+        harness.run_steps(3);
+        let tab = |harness: &egui_kittest::Harness<'static, Option<WandurApp>>| {
+            harness.state().as_ref().unwrap().about.as_ref().map(|a| a.tab)
+        };
+        assert_eq!(tab(&harness), Some(AboutTab::About));
+        harness.get_by_role_and_label(Role::TabList, t(S::AboutWandur));
+        let tabs: Vec<(String, Option<bool>)> = harness
+            .get_all_by_role(Role::Tab)
+            .filter(|n| {
+                AboutTab::ALL
+                    .iter()
+                    .any(|t| n.accesskit_node().label().as_deref() == Some(t.label()))
+            })
+            .map(|n| (n.accesskit_node().label().unwrap(), n.accesskit_node().is_selected()))
+            .collect();
+        assert_eq!(
+            tabs,
+            [
+                (AboutTab::About.label().to_string(), Some(true)),
+                (AboutTab::System.label().to_string(), Some(false)),
+                (AboutTab::Links.label().to_string(), Some(false)),
+            ]
+        );
+        harness.get_by_role_and_label(Role::TabPanel, AboutTab::About.label());
+
+        // From the keyboard: Tab reaches the first tab (in a window inside the main one, after
+        // the window's close button and title bar; first in a window of its own), then Down,
+        // Down, Up.
+        for _ in 0..3 {
+            harness.key_press(egui::Key::Tab);
+            harness.run_steps(2);
+        }
+        assert_eq!(harness.ctx.memory(|m| m.focused()), Some(AboutTab::About.id()));
+        assert_eq!(tab(&harness), Some(AboutTab::About), "reaching the tabs chooses none");
+        harness.key_press(egui::Key::ArrowDown);
+        harness.run_steps(3);
+        assert_eq!(tab(&harness), Some(AboutTab::System));
+        harness.get_by_role_and_label(Role::TabPanel, AboutTab::System.label());
+        harness.key_press(egui::Key::ArrowDown);
+        harness.run_steps(3);
+        assert_eq!(tab(&harness), Some(AboutTab::Links));
+        harness.key_press(egui::Key::ArrowUp);
+        harness.run_steps(3);
+        assert_eq!(tab(&harness), Some(AboutTab::System));
+
+        // Copy: the report, in English, the version in it.
+        harness.get_by_label(t(S::AboutCopySystemInfo)).click();
+        let mut copied = None;
+        for _ in 0..4 {
+            harness.step();
+            copied = copied.or_else(|| {
+                harness.output().platform_output.commands.iter().find_map(|c| match c {
+                    egui::OutputCommand::CopyText(text) => Some(text.clone()),
+                    _ => None,
+                })
+            });
+        }
+        let copied = copied.expect("Copy put text on the clipboard");
+        assert!(
+            copied.contains(&format!("Version: {}", crate::about_window::VERSION)),
+            "{copied}"
+        );
+        assert!(copied.contains("Open sessions: 0"), "{copied}");
+        harness.get_by_label(t(S::AboutCopied));
+
+        // Links: each opens its own address, without asking first.
+        harness
+            .get_by_role_and_label(Role::Tab, AboutTab::Links.label())
+            .click();
+        harness.run_steps(2);
+        for title in [
+            S::AboutLinkWebsite,
+            S::AboutLinkFindAMud,
+            S::AboutLinkOtherClients,
+            S::AboutLinkSource,
+            S::AboutLinkIssue,
+        ] {
+            harness.get_by_role_and_label(Role::Link, t(title)).click();
+            harness.run_steps(2);
+        }
+        assert_eq!(
+            *launched.lock().unwrap(),
+            [
+                "http://127.0.0.1:9/",
+                "http://127.0.0.1:9/worlds",
+                "http://127.0.0.1:9/clients",
+                "https://github.com/Last-Mile-Studio/wandur",
+                "https://github.com/Last-Mile-Studio/wandur/issues",
+            ]
+        );
+        assert!(
+            harness.state().as_ref().unwrap().dialog.is_none(),
+            "no Open this link? question"
+        );
+
+        // Escape closes it.
+        harness.key_press(egui::Key::Escape);
+        harness.run_steps(2);
+        assert_eq!(tab(&harness), None);
+        harness.state_mut().as_mut().unwrap().on_exit();
+        drop(harness);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

@@ -4,3 +4,6 @@
 unchanged from `src/Wandur.Desktop/Assets/icon-1024.png` at 27f66d2. `scripts/make-icons.sh`
 derives the packaging icons from it (the macOS `.icns`, a 256 pixel PNG for Linux, a `.ico` for
 Windows) into `target/package/icons`; none of those is committed.
+
+`about-icon-160.png` is `icon-1024.png` scaled to 160 pixels with `sips -Z 160`, the logo in
+Help > About Wandur (80 points at twice the pixels).
