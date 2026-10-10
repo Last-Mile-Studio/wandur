@@ -2,7 +2,9 @@
 //! characters it cannot draw.
 //!
 //! JetBrains Mono Regular and Bold (SIL Open Font License 1.1, `assets/fonts/JetBrainsMono-OFL.txt`)
-//! are compiled in. egui's own fonts stay behind them as fallbacks (Hack, Noto Emoji, the emoji
+//! are compiled in, and Ubuntu Medium (Ubuntu Font Licence 1.0, `assets/fonts/Ubuntu-UFL.txt`) as
+//! the interface's bold: the heavier weight of egui's Ubuntu Light, so bold interface text stays in
+//! the interface face instead of a second drawing or the terminal's bold. egui's own fonts stay behind them as fallbacks (Hack, Noto Emoji, the emoji
 //! icon font, Ubuntu Light). When the terminal shows a character that none of these can draw, the
 //! renderer notes it; [`FallbackFonts::poll`] sends the batch to a worker thread that, once per
 //! app run, indexes the system fonts with `fontdb` and then picks faces whose character map covers
@@ -24,12 +26,29 @@ use egui::{FontData, FontDefinitions, FontFamily, FontId};
 
 /// Family name of the bold terminal face.
 pub const BOLD_FAMILY: &str = "mono-bold";
+/// Family name of the bold interface face.
+pub const UI_BOLD_FAMILY: &str = "ui-bold";
 
 const REGULAR: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf");
 const BOLD: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Bold.ttf");
+const UI_BOLD: &[u8] = include_bytes!("../assets/fonts/Ubuntu-Medium.ttf");
 
 pub fn bold_family() -> FontFamily {
     FontFamily::Name(BOLD_FAMILY.into())
+}
+
+pub fn ui_bold_family() -> FontFamily {
+    FontFamily::Name(UI_BOLD_FAMILY.into())
+}
+
+/// The bold of a font: the terminal's bold for monospace text, the interface's for the rest.
+pub fn bold_of(font: &FontId) -> FontId {
+    let family = if font.family == FontFamily::Monospace {
+        bold_family()
+    } else {
+        ui_bold_family()
+    };
+    FontId::new(font.size, family)
 }
 
 /// Install the bundled fonts: JetBrains Mono first for monospace text, its bold face as
@@ -52,6 +71,17 @@ pub fn install(ctx: &egui::Context) {
     if let Some(proportional) = defs.families.get_mut(&FontFamily::Proportional) {
         proportional.push("JetBrainsMono-Regular".into());
     }
+    // The interface's bold: Ubuntu Medium, then the interface face's own fallbacks.
+    defs.font_data
+        .insert("Ubuntu-Medium".into(), FontData::from_static(UI_BOLD).into());
+    let mut ui_bold = vec!["Ubuntu-Medium".to_string()];
+    ui_bold.extend(
+        defs.families
+            .get(&FontFamily::Proportional)
+            .cloned()
+            .unwrap_or_default(),
+    );
+    defs.families.insert(ui_bold_family(), ui_bold);
     ctx.set_fonts(defs);
 }
 
@@ -229,13 +259,18 @@ impl FallbackFonts {
             }
             let mut data = FontData::from_static(found.data);
             data.index = found.index;
-            let families = [FontFamily::Monospace, bold_family(), FontFamily::Proportional]
-                .into_iter()
-                .map(|family| InsertFontFamily {
-                    family,
-                    priority: FontPriority::Lowest,
-                })
-                .collect();
+            let families = [
+                FontFamily::Monospace,
+                bold_family(),
+                FontFamily::Proportional,
+                ui_bold_family(),
+            ]
+            .into_iter()
+            .map(|family| InsertFontFamily {
+                family,
+                priority: FontPriority::Lowest,
+            })
+            .collect();
             ctx.add_font(FontInsert {
                 name: found.name.clone(),
                 data,

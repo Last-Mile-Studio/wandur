@@ -88,4 +88,5 @@ MUD and directory servers, the GMCP demo world, micro measurements).
 ## License
 
 MIT, see [LICENSE](LICENSE). The bundled JetBrains Mono fonts are under the SIL Open Font
-License 1.1 (`crates/wandur-app/assets/fonts/JetBrainsMono-OFL.txt`).
+License 1.1 (`crates/wandur-app/assets/fonts/JetBrainsMono-OFL.txt`), and the bundled Ubuntu Medium
+under the Ubuntu Font Licence 1.0 (`crates/wandur-app/assets/fonts/Ubuntu-UFL.txt`).

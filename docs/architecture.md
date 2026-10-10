@@ -43,7 +43,7 @@ crates/
   wandur-app/      egui, eframe, egui_dock presentation (lib plus the `wandur` binary)
     app.rs         WandurApp: frame loop, settings, actions
     pacer.rs       output redraw cap
-    fonts.rs       bundled JetBrains Mono Regular and Bold, lazy system fallback (fontdb, skrifa)
+    fonts.rs       bundled JetBrains Mono Regular and Bold, Ubuntu Medium (the interface's bold), lazy system fallback (fontdb, skrifa)
     terminal_view.rs  grid painter, mouse selection, scrollbar, copy, status line, input line
     grid_text.rs   (M4) the grid's plain text as one reused mesh of cached glyph quads; AtlasWatch
     autohide.rs    (M4) pinned and auto-hidden tool panels: state, where to put a panel back

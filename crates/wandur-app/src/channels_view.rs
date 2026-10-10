@@ -68,7 +68,7 @@ pub fn ansi_job(job: &mut LayoutJob, text: &str, theme: &Theme, font: &FontId) {
         let color = fg.unwrap_or(theme.terminal_text);
         let mut format = TextFormat::simple(font.clone(), color);
         if bold {
-            format.font_id = FontId::new(font.size, crate::fonts::bold_family());
+            format.font_id = crate::fonts::bold_of(font);
         }
         job.append(run, 0.0, format);
         run.clear();
@@ -128,15 +128,10 @@ pub fn ansi_job(job: &mut LayoutJob, text: &str, theme: &Theme, font: &FontId) {
     flush(job, &mut run, fg, bold);
 }
 
-/// One laid-out message: the muted time, the speaker and text beside it, and the speaker's name
-/// alone (drawn again a fraction of a point to the right, so it reads heavier: the interface face
-/// has no bold weight).
-/// The last value is the time column's width (the widest of the time and `00:00`), so every
-/// message's text starts at the same x.
-pub type Row = (Arc<egui::Galley>, Arc<egui::Galley>, Option<Arc<egui::Galley>>, f32);
-
-/// How far the speaker's name is drawn a second time to the right.
-const SPEAKER_WEIGHT: f32 = 0.6;
+/// One laid-out message: the muted time, then the speaker (in the interface's bold) and text
+/// beside it. The last value is the time column's width (the widest of the time and `00:00`), so
+/// every message's text starts at the same x.
+pub type Row = (Arc<egui::Galley>, Arc<egui::Galley>, f32);
 
 /// The gap between the time and the message, and between two messages (C# UI review, item 4).
 const TIME_GAP: f32 = 6.0;
@@ -156,19 +151,18 @@ fn layout(ui: &Ui, m: &ChannelMessage, theme: &Theme, width: f32) -> Row {
     let font = FontId::proportional(13.0);
     let mut job = LayoutJob::default();
     job.wrap.max_width = (width - column - TIME_GAP).max(40.0);
-    let mut speaker = None;
     if !m.speaker.is_empty() {
-        let f = TextFormat::simple(font.clone(), theme.terminal_text);
-        job.append(&m.speaker, 0.0, f.clone());
-        job.append(": ", 0.0, f);
-        speaker = Some(ui.fonts_mut(|f| f.layout_no_wrap(m.speaker.clone(), font.clone(), theme.terminal_text)));
+        job.append(
+            &m.speaker,
+            0.0,
+            TextFormat::simple(crate::fonts::bold_of(&font), theme.terminal_text),
+        );
+        job.append(": ", 0.0, TextFormat::simple(font.clone(), theme.terminal_text));
     }
     // The world's own prefix (tag and speaker) is cut out: the speaker is shown above.
     ansi_job(&mut job, &m.body, theme, &font);
     let body = ui.fonts_mut(|f| f.layout_job(job));
-    // A name too long for the first row wraps; the heavier copy is drawn only when it fits.
-    let speaker = speaker.filter(|s| body.rows.first().is_some_and(|r| r.rect().width() >= s.size().x));
-    (time, body, speaker, column)
+    (time, body, column)
 }
 
 fn row_height(row: &Row) -> f32 {
@@ -178,11 +172,14 @@ fn row_height(row: &Row) -> f32 {
 /// A tab of the strip: the title (private channels in bold) and, while it has unread messages,
 /// a count in an accent pill.
 fn tab_header(ui: &mut Ui, title: &str, private: bool, unread: usize, selected: bool, theme: &Theme) -> egui::Response {
-    let font = if private {
-        FontId::new(12.0, crate::fonts::bold_family())
-    } else {
-        FontId::proportional(12.0)
-    };
+    let font = FontId::new(
+        12.0,
+        if private {
+            crate::fonts::ui_bold_family()
+        } else {
+            egui::FontFamily::Proportional
+        },
+    );
     let title = ui.fonts_mut(|f| f.layout_no_wrap(title.to_string(), font, theme.text));
     let count = (unread > 0).then(|| {
         let label = if unread > 99 {
@@ -362,20 +359,13 @@ pub fn show(
                         if top > viewport.max.y {
                             break;
                         }
-                        let (time, body, speaker, column) = row;
+                        let (time, body, column) = row;
                         // The time sits on the first line's baseline band.
                         let dy = (body.rows.first().map_or(0.0, |r| r.height()) - time.size().y).max(0.0) / 2.0;
                         ui.painter()
                             .galley(rect.min + vec2(0.0, top + dy), Arc::clone(time), theme.muted);
                         let text_at = rect.min + vec2(column + TIME_GAP, top);
                         ui.painter().galley(text_at, Arc::clone(body), theme.terminal_text);
-                        if let Some(speaker) = speaker {
-                            ui.painter().galley(
-                                text_at + vec2(SPEAKER_WEIGHT, 0.0),
-                                Arc::clone(speaker),
-                                theme.terminal_text,
-                            );
-                        }
                         *painted += 1;
                     }
                 });
@@ -471,10 +461,11 @@ mod tests {
     }
 
     /// A message row in a narrow panel: the time in a column of its own (every row's text starts
-    /// at the same x), the speaker drawn heavier, the text wrapped inside the panel with a hanging
-    /// indent (the rows after the first start under the text, not under the time), colours kept.
+    /// at the same x), the speaker in the interface's bold, the text wrapped inside the panel with a
+    /// hanging indent (the rows after the first start under the text, not under the time), colours
+    /// kept, and bold text from the world in the interface's bold too (never the terminal's).
     #[test]
-    fn a_message_row_has_a_time_column_a_heavier_speaker_and_a_hanging_indent() {
+    fn a_message_row_has_a_time_column_a_bold_speaker_and_a_hanging_indent() {
         let ctx = egui::Context::default();
         crate::fonts::install(&ctx);
         let theme = Theme::ember();
@@ -482,7 +473,7 @@ mod tests {
         let long = log.add(
             "gossip",
             "Talek",
-            "has anyone restocked with \u{1b}[31mhunted goods\u{1b}[0m at the market yet, or are the traders still waiting",
+            "has anyone restocked with \u{1b}[31mhunted goods\u{1b}[0m at the \u{1b}[1mmarket\u{1b}[0m yet, or are the traders still waiting",
             0,
         );
         let short = log.add("ooc", "Ilsa", "yes", 11 * 3600 + 7 * 60);
@@ -493,10 +484,29 @@ mod tests {
                 rows.push(layout(ui, &short, &theme, width));
             });
             out.textures_delta.clear();
-            let (_, body, speaker, column) = &rows[0];
-            assert_eq!(*column, rows[1].3, "one time column for every row");
+            let (_, body, column) = &rows[0];
+            assert_eq!(*column, rows[1].2, "one time column for every row");
             assert!(*column >= rows[0].0.size().x && *column >= rows[1].0.size().x);
-            assert!(speaker.is_some(), "the speaker is drawn heavier");
+            let sections = &body.job.sections;
+            assert_eq!(
+                sections[0].format.font_id.family,
+                crate::fonts::ui_bold_family(),
+                "the speaker is in the interface's bold"
+            );
+            assert_eq!(
+                sections
+                    .iter()
+                    .filter(|s| s.format.font_id.family == crate::fonts::ui_bold_family())
+                    .count(),
+                2,
+                "the speaker and the world's bold word, both in the interface face"
+            );
+            assert!(
+                sections
+                    .iter()
+                    .all(|s| s.format.font_id.family != crate::fonts::bold_family()),
+                "never the terminal's bold"
+            );
             assert!(
                 body.size().x <= width - column - TIME_GAP + 0.5,
                 "{width}: {}",

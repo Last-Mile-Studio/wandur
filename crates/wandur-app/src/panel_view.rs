@@ -100,8 +100,8 @@ pub fn mud_job(text: &str, font: FontId, color: Color32, theme: &Theme) -> Layou
         if run.style.underline {
             format.underline = egui::Stroke::new(1.0, format.color);
         }
-        if run.style.bold && font.family == egui::FontFamily::Monospace {
-            format.font_id = FontId::new(font.size, crate::fonts::bold_family());
+        if run.style.bold {
+            format.font_id = crate::fonts::bold_of(&font);
         }
         job.append(&run.text, 0.0, format);
     }
