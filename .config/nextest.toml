@@ -14,3 +14,8 @@ slow-timeout = { period = "60s", terminate-after = 3 }
 fail-fast = false
 # The headless scene capture alone takes about 3 minutes; stop anything past 8.
 slow-timeout = { period = "120s", terminate-after = 4 }
+
+# The flood stall test measures frame times, so it runs with nothing else beside it.
+[[profile.ship.overrides]]
+filter = 'test(no_long_ui_thread_stalls_under_a_flood)'
+threads-required = "num-test-threads"
