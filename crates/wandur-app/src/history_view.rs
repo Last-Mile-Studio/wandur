@@ -738,6 +738,8 @@ pub struct HistoryWindow {
     until_text: String,
     calendar: Option<(DateField, i64, i64)>,
     first_frame: bool,
+    /// Search / refresh was asked for this frame: open sessions flush their history first.
+    searching: bool,
     /// Open the first item of this list once it is read (scenes).
     pub open_first: Option<BrowseTab>,
 }
@@ -756,6 +758,7 @@ impl HistoryWindow {
             until_text: String::new(),
             calendar: None,
             first_frame: true,
+            searching: false,
             open_first: None,
         }
     }
@@ -784,8 +787,16 @@ impl HistoryWindow {
         self.model.filters_changed();
     }
 
-    /// Draw the window; returns false once it was closed.
-    pub fn show(&mut self, ctx: &egui::Context, theme: &Theme) -> bool {
+    /// Search / refresh, as the button does: read again once `flush` (asked this frame) has had
+    /// the open sessions' recorders write what they hold.
+    pub fn request_search(&mut self) {
+        self.searching = true;
+    }
+
+    /// Draw the window; returns false once it was closed. `flush` asks the open sessions'
+    /// recorders to write their pending batches, for a search or refresh (it only sends a
+    /// message to each; the read waits for them on its own thread, at most three seconds).
+    pub fn show(&mut self, ctx: &egui::Context, theme: &Theme, flush: impl FnOnce() -> Vec<Receiver<()>>) -> bool {
         if self.first_frame {
             self.first_frame = false;
             self.model.refresh();
@@ -865,6 +876,9 @@ impl HistoryWindow {
         }
         if !open {
             self.model.dispose();
+        } else if std::mem::take(&mut self.searching) {
+            self.model.wait_for(flush());
+            self.model.refresh();
         }
         open
     }
@@ -939,7 +953,7 @@ impl HistoryWindow {
             self.model.filters_changed();
         }
         if search {
-            self.model.refresh();
+            self.request_search();
         }
     }
 

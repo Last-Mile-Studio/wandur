@@ -2,10 +2,11 @@
 //! server origin, the profile's response timeout over the whole exchange, a 128 KiB response
 //! limit, and errors that never carry the server's text or the API key.
 //!
-//! ureq calls cannot be interrupted. A cancelled call is therefore abandoned: the caller gets
-//! [`AgentError::Cancelled`] at once (or as soon as it was waiting for its turn), the request
-//! finishes on its own thread within the timeout, and its answer is dropped. The origin's turn
-//! is released when its holder is cancelled, as cancelling a C# request releases its gate.
+//! A cancelled call really stops, as cancelling a C# request does: the connection reads in
+//! short slices and checks the cancel flag between them ([`CancelConnector`]), so within a
+//! fraction of a second the call returns [`AgentError::Cancelled`] and its connection is closed
+//! (a model server then stops generating). The origin's turn is released only when the call
+//! has ended, so a server never has two requests from this client at once.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex, OnceLock, PoisonError};
@@ -58,7 +59,7 @@ fn take_turn(origin: &str, cancel: &CancelToken, deadline: Instant) -> Result<Tu
         if cancel.is_cancelled() {
             return Err(AgentError::Cancelled);
         }
-        if holder.as_ref().is_none_or(CancelToken::is_cancelled) {
+        if holder.is_none() {
             *holder = Some(cancel.clone());
             drop(holder);
             return Ok(Turn {
@@ -70,7 +71,7 @@ fn take_turn(origin: &str, cancel: &CancelToken, deadline: Instant) -> Result<Tu
         if now >= deadline {
             return Err(AgentError::Timeout);
         }
-        // Short waits: a cancelled holder or caller is noticed without a wake-up.
+        // Short waits: a cancelled caller is noticed without a wake-up.
         let wait = (deadline - now).min(Duration::from_millis(25));
         holder = gate
             .changed
@@ -102,7 +103,7 @@ pub fn send(
     if remaining.is_zero() {
         return Err(AgentError::Timeout);
     }
-    let result = exchange(&address, payload, api_key, remaining);
+    let result = exchange(&address, payload, api_key, remaining, cancel);
     if cancel.is_cancelled() {
         return Err(AgentError::Cancelled);
     }
@@ -114,15 +115,25 @@ fn exchange(
     payload: Option<&Value>,
     api_key: Option<&str>,
     timeout: Duration,
+    cancel: &CancelToken,
 ) -> Result<Value, AgentError> {
     use ureq::tls::{RootCerts, TlsConfig};
-    let agent: ureq::Agent = ureq::Agent::config_builder()
+    use ureq::unversioned::resolver::DefaultResolver;
+    use ureq::unversioned::transport::{ConnectProxyConnector, Connector as _, RustlsConnector, TcpConnector};
+    let config = ureq::Agent::config_builder()
         .timeout_global(Some(timeout))
         .http_status_as_error(false)
         .max_redirects(0)
         .tls_config(TlsConfig::builder().root_certs(RootCerts::PlatformVerifier).build())
-        .build()
-        .into();
+        .build();
+    // ureq's own chain (a CONNECT proxy, TCP, TLS) with the cancel check over the socket, under
+    // TLS, so a cancel also ends a handshake or an encrypted read.
+    let connector =
+        ().chain(ConnectProxyConnector::default())
+            .chain(TcpConnector::default())
+            .chain(CancelConnector(cancel.clone()))
+            .chain(RustlsConnector::default());
+    let agent = ureq::Agent::with_parts(config, connector, DefaultResolver::default());
     let bearer = api_key
         .filter(|k| !k.trim().is_empty())
         .map(|k| ["Bearer ", k].concat());
@@ -168,6 +179,93 @@ fn exchange(
     serde_json::from_slice(&body).map_err(|_| AgentError::InvalidResponse)
 }
 
+/// How long one read waits before the cancel flag is looked at again.
+const CANCEL_POLL: Duration = Duration::from_millis(50);
+
+/// Wraps each connection of one call in [`Cancellable`].
+#[derive(Debug)]
+struct CancelConnector(CancelToken);
+
+impl<In: ureq::unversioned::transport::Transport> ureq::unversioned::transport::Connector<In> for CancelConnector {
+    type Out = Cancellable<In>;
+
+    fn connect(
+        &self,
+        _: &ureq::unversioned::transport::ConnectionDetails,
+        chained: Option<In>,
+    ) -> Result<Option<Self::Out>, ureq::Error> {
+        Ok(chained.map(|inner| Cancellable {
+            inner,
+            cancel: self.0.clone(),
+        }))
+    }
+}
+
+/// A connection that gives up once its call is cancelled: reads wait at most [`CANCEL_POLL`]
+/// at a time, within the timeout ureq asked for. Dropping it (the call ends) closes the socket.
+#[derive(Debug)]
+struct Cancellable<T> {
+    inner: T,
+    cancel: CancelToken,
+}
+
+impl<T> Cancellable<T> {
+    fn check(&self) -> Result<(), ureq::Error> {
+        if self.cancel.is_cancelled() {
+            // Not `Interrupted`: readers retry that kind.
+            return Err(ureq::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::ConnectionAborted,
+                "cancelled",
+            )));
+        }
+        Ok(())
+    }
+}
+
+impl<T: ureq::unversioned::transport::Transport> ureq::unversioned::transport::Transport for Cancellable<T> {
+    fn buffers(&mut self) -> &mut dyn ureq::unversioned::transport::Buffers {
+        self.inner.buffers()
+    }
+
+    fn transmit_output(
+        &mut self,
+        amount: usize,
+        timeout: ureq::unversioned::transport::NextTimeout,
+    ) -> Result<(), ureq::Error> {
+        self.check()?;
+        self.inner.transmit_output(amount, timeout)
+    }
+
+    fn await_input(&mut self, timeout: ureq::unversioned::transport::NextTimeout) -> Result<bool, ureq::Error> {
+        use ureq::unversioned::transport::{NextTimeout, time};
+        let started = Instant::now();
+        loop {
+            self.check()?;
+            // `NotHappening` reads as a very long time, so this also covers no timeout at all.
+            let left = timeout.after.saturating_sub(started.elapsed());
+            if left.is_zero() {
+                return Err(ureq::Error::Timeout(timeout.reason));
+            }
+            let slice = NextTimeout {
+                after: time::Duration::Exact(left.min(CANCEL_POLL)),
+                reason: timeout.reason,
+            };
+            match self.inner.await_input(slice) {
+                Err(ureq::Error::Timeout(_)) if left > CANCEL_POLL => continue,
+                other => return other,
+            }
+        }
+    }
+
+    fn is_open(&mut self) -> bool {
+        !self.cancel.is_cancelled() && self.inner.is_open()
+    }
+
+    fn is_tls(&self) -> bool {
+        self.inner.is_tls()
+    }
+}
+
 fn transport_error(e: ureq::Error) -> AgentError {
     match e {
         ureq::Error::Timeout(_) => AgentError::Timeout,
@@ -182,7 +280,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_turn_is_released_by_drop_or_by_cancelling_its_holder() {
+    fn a_turn_is_released_only_when_its_call_ends() {
         let origin = "http://gate-test.invalid:1";
         let deadline = || Instant::now() + Duration::from_secs(5);
         let first = CancelToken::new();
@@ -202,19 +300,101 @@ mod tests {
             take_turn(origin, &third, Instant::now() + Duration::from_millis(30)).err(),
             Some(AgentError::Timeout)
         );
-        // The holder is cancelled (Stop): the turn is free although its call still runs.
+        // The holder is cancelled (Stop): the turn stays taken until its call has ended.
         first.cancel();
         let fourth = CancelToken::new();
-        let next = take_turn(origin, &fourth, deadline()).unwrap();
-        drop(turn);
-        // The old turn's drop does not release the new holder.
-        let fifth = CancelToken::new();
         assert_eq!(
-            take_turn(origin, &fifth, Instant::now() + Duration::from_millis(30)).err(),
+            take_turn(origin, &fourth, Instant::now() + Duration::from_millis(30)).err(),
             Some(AgentError::Timeout)
         );
+        drop(turn);
+        let next = take_turn(origin, &fourth, deadline()).unwrap();
         drop(next);
-        assert!(take_turn(origin, &fifth, deadline()).is_ok());
+        assert!(take_turn(origin, &CancelToken::new(), deadline()).is_ok());
+    }
+
+    /// A model server that never answers: it counts the requests open at once (the most ever)
+    /// and reports each connection the client closed.
+    struct SlowServer {
+        port: u16,
+        most_open: Arc<std::sync::atomic::AtomicUsize>,
+        arrived: std::sync::mpsc::Receiver<()>,
+        closed: std::sync::mpsc::Receiver<()>,
+    }
+
+    fn slow_server() -> SlowServer {
+        use std::io::Read as _;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let open = Arc::new(AtomicUsize::new(0));
+        let most_open = Arc::new(AtomicUsize::new(0));
+        let (arrived_tx, arrived) = std::sync::mpsc::channel();
+        let (closed_tx, closed) = std::sync::mpsc::channel();
+        let most = Arc::clone(&most_open);
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { return };
+                let (open, most) = (Arc::clone(&open), Arc::clone(&most));
+                let (arrived, closed) = (arrived_tx.clone(), closed_tx.clone());
+                std::thread::spawn(move || {
+                    let now = open.fetch_add(1, Ordering::SeqCst) + 1;
+                    most.fetch_max(now, Ordering::SeqCst);
+                    let _ = arrived.send(());
+                    // Hold the request: read until the client goes (or 20 s pass).
+                    stream.set_read_timeout(Some(Duration::from_secs(20))).unwrap();
+                    let mut buf = [0u8; 4096];
+                    while matches!(stream.read(&mut buf), Ok(n) if n > 0) {}
+                    open.fetch_sub(1, Ordering::SeqCst);
+                    let _ = closed.send(());
+                });
+            }
+        });
+        SlowServer {
+            port,
+            most_open,
+            arrived,
+            closed,
+        }
+    }
+
+    /// Stop really stops a request in flight: the call returns at once, the server sees its
+    /// connection close, and the next request is never sent while the old one is still open.
+    #[test]
+    fn a_cancelled_request_ends_before_the_server_gets_another() {
+        let server = slow_server();
+        let profile = AgentProfile {
+            endpoint: format!("http://127.0.0.1:{}/v1", server.port),
+            response_timeout_seconds: 30,
+            ..AgentProfile::default()
+        };
+        let call = |cancel: &CancelToken| {
+            let (profile, cancel) = (profile.clone(), cancel.clone());
+            std::thread::spawn(move || send(&profile, "models", None, None, &cancel))
+        };
+        let first = CancelToken::new();
+        let running = call(&first);
+        server.arrived.recv_timeout(Duration::from_secs(10)).unwrap();
+        let stopped = Instant::now();
+        first.cancel();
+        // The next call starts at once (Play again), before the first has been seen to end.
+        let second = CancelToken::new();
+        let next = call(&second);
+        assert_eq!(running.join().unwrap().unwrap_err(), AgentError::Cancelled);
+        server
+            .closed
+            .recv_timeout(Duration::from_secs(5))
+            .expect("the server saw it close");
+        assert!(stopped.elapsed() < Duration::from_secs(3), "{:?}", stopped.elapsed());
+        server.arrived.recv_timeout(Duration::from_secs(10)).unwrap();
+        second.cancel();
+        assert_eq!(next.join().unwrap().unwrap_err(), AgentError::Cancelled);
+        server.closed.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            server.most_open.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "never two requests on the server"
+        );
     }
 
     #[test]

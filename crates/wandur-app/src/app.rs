@@ -102,7 +102,8 @@ pub struct Options {
     /// Use this fetcher instead of HTTP (tests).
     pub fetcher: Option<Arc<dyn Fetcher>>,
     /// Save nothing (settings, layout, database writes): a scene for screenshots, set up in
-    /// memory over whatever data directory it is given.
+    /// memory over whatever data directory it is given. Its database is an empty one of its
+    /// own in a temporary folder; the data directory's `wandur.db` is never opened.
     pub ephemeral: bool,
     /// Use these saved worlds for this run instead of the saved ones (scenes).
     pub worlds: Option<Vec<SavedWorld>>,
@@ -532,6 +533,30 @@ pub struct WandurApp {
     update_source: Option<Arc<dyn wandur_core::updates::UpdateSource>>,
     update_version: Option<String>,
     update_clock: Option<wandur_core::updates::Clock>,
+    /// An ephemeral run's own database folder, removed with the app (declared last, so it goes
+    /// after everything that could still be using it).
+    _scratch_db: Option<ScratchDir>,
+}
+
+/// A temporary folder of its own, removed when dropped: where an ephemeral run (a scene) keeps
+/// its database, so it never opens the data directory's `wandur.db` (opening can create or
+/// migrate it, or move a damaged one aside).
+struct ScratchDir(PathBuf);
+
+impl ScratchDir {
+    fn new() -> Self {
+        static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("wandur-scene-{}-{n}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        Self(dir)
+    }
+}
+
+impl Drop for ScratchDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
 }
 
 /// Accessible names for what the dock draws itself: each tab (role Tab, its title, selected
@@ -609,6 +634,13 @@ fn name_dock(ctx: &egui::Context, dock: &DockState<Tab>, viewer: &mut Viewer<'_>
     }
 }
 
+/// Ask every open session's history recorder to write its pending batch now. Only a message to
+/// each recorder's thread; the receivers hear when the writes are done (the History window's
+/// read waits for them off the UI thread).
+fn history_flushes(sessions: &mut Sessions) -> Vec<std::sync::mpsc::Receiver<()>> {
+    sessions.iter_mut().filter_map(|e| e.tab.flush_history()).collect()
+}
+
 fn repaint_waker(ctx: &egui::Context) -> Waker {
     let ctx = ctx.clone();
     Arc::new(move || ctx.request_repaint())
@@ -643,7 +675,14 @@ impl WandurApp {
         };
         let saver = dir.clone().filter(|_| !options.ephemeral).map(Saver::new);
         let mut notes: Vec<String> = settings_note.into_iter().collect();
-        let db = match dir.as_deref().map(Database::open) {
+        // A scene saves nothing and reads nothing of the person's database: it gets an empty one
+        // of its own instead.
+        let scratch_db = options.ephemeral.then(ScratchDir::new);
+        let db_dir = match &scratch_db {
+            Some(scratch) => Some(scratch.0.clone()),
+            None => dir.clone(),
+        };
+        let db = match db_dir.as_deref().map(Database::open) {
             Some(Ok((db, note))) => {
                 notes.extend(note);
                 Some(db)
@@ -927,6 +966,7 @@ impl WandurApp {
             update_source: options.update_source.clone(),
             update_version: options.update_version.clone(),
             update_clock: options.update_clock.clone(),
+            _scratch_db: scratch_db,
         };
         if keep_install_id {
             app.save_settings();
@@ -2315,7 +2355,7 @@ impl WandurApp {
         let Some(store) = self.history_store.clone() else {
             return;
         };
-        let flushes: Vec<_> = self.sessions.iter_mut().filter_map(|e| e.tab.flush_history()).collect();
+        let flushes = history_flushes(&mut self.sessions);
         let repaint = ctx.clone();
         let mut model = HistoryModel::new(store, Arc::new(move || repaint.request_repaint()));
         model.wait_for(flushes);
@@ -2513,20 +2553,52 @@ impl WandurApp {
     /// Store what the world form saved: an edit replaces the world (keeping its id), a new one
     /// is added and selected.
     fn save_world(&mut self, index: Option<usize>, world: SavedWorld) -> usize {
-        let index = match index {
+        let (index, added) = match index {
             Some(i) if i < self.settings.worlds.len() => {
                 self.settings.worlds[i] = world;
-                i
+                (i, false)
             }
             _ => {
                 self.settings.worlds.push(world);
                 self.panel.selected_world = Some(self.settings.worlds.len() - 1);
-                self.settings.worlds.len() - 1
+                (self.settings.worlds.len() - 1, true)
             }
         };
         self.save_settings();
+        if added {
+            self.adopt_sessions(index);
+        }
         self.refresh_channel_rules();
         index
+    }
+
+    /// A world was just saved: sessions opened by address at its address (not from a saved
+    /// world, not the demo) take it as their world now, so teaching a channel, Edit scripts and
+    /// Configure agent work without reconnecting. Their macros follow its id when that differs.
+    /// The map and the agent profile are kept by address, which `wandur.db` resolves to the same
+    /// world, so they stay as they are (a running agent is not stopped). The caller refreshes
+    /// the channel rules. Call after `save_settings`, which gives the world its id.
+    fn adopt_sessions(&mut self, index: usize) {
+        let Some(world) = self.settings.worlds.get(index) else {
+            return;
+        };
+        let adopted: Vec<SessionId> = self
+            .sessions
+            .iter()
+            .filter(|e| e.tab.world.is_none() && !e.tab.is_demo() && world.is_at(&e.tab.endpoint))
+            .map(|e| e.tab.id)
+            .collect();
+        for id in adopted {
+            let Some(entry) = self.sessions.get_mut(id) else {
+                continue;
+            };
+            entry.tab.world = Some(index);
+            let endpoint = entry.tab.endpoint.clone();
+            let current = entry.tab.world_id.clone();
+            if self.session_world_id(&endpoint, Some(index)) != current {
+                self.attach_macros(id);
+            }
+        }
     }
 
     /// Where something a scene points at was drawn last frame: a panel's header, a saved world's
@@ -3254,6 +3326,8 @@ impl WandurApp {
                             }
                             self.settings.worlds.push(world);
                             self.save_settings();
+                            self.adopt_sessions(self.settings.worlds.len() - 1);
+                            self.refresh_channel_rules();
                         }
                     }
                 }
@@ -5309,8 +5383,9 @@ impl eframe::App for WandurApp {
                 },
             }
         }
+        let sessions = &mut self.sessions;
         if let Some(window) = &mut self.history_window
-            && !window.show(&ctx, &self.theme)
+            && !window.show(&ctx, &self.theme, || history_flushes(sessions))
         {
             self.history_window = None;
         }
@@ -6688,6 +6763,77 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// Save world on a session opened by address (Quick connect): the new saved world is the
+    /// session's world at once, so Mark as channel can teach it without reconnecting. Another
+    /// session at the same address follows; one elsewhere and the demo do not.
+    #[test]
+    fn save_world_attaches_the_open_session_at_that_address() {
+        use wandur_core::channels::ChannelRule;
+        let dir = superpowers_dir("app-save-world-attach");
+        let ctx = egui::Context::default();
+        let mut app = WandurApp::new(
+            &ctx,
+            Options {
+                language: Some(Language::En),
+                ..offline_options(&dir)
+            },
+        );
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let other = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let endpoint = Endpoint::new("127.0.0.1", port);
+        app.push_action(AppAction::Connect(endpoint.clone()));
+        frame(&mut app, &ctx, vec![]);
+        let id = app.active_session.unwrap();
+        app.push_action(AppAction::Connect(endpoint));
+        frame(&mut app, &ctx, vec![]);
+        let twin = app.active_session.unwrap();
+        let elsewhere = Endpoint::new("127.0.0.1", other.local_addr().unwrap().port());
+        app.push_action(AppAction::Connect(elsewhere));
+        frame(&mut app, &ctx, vec![]);
+        let apart = app.active_session.unwrap();
+        assert_eq!(app.sessions.get(id).unwrap().tab.world, None);
+        assert_eq!(
+            app.teach_channel_rule(id, ChannelRule::new("clan", "x", None)),
+            Err(t(S::TeachChannelNoProfile).to_string())
+        );
+
+        app.push_action(AppAction::SaveWorld(id));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.settings.worlds.len(), 1);
+        let world_id = app.settings.worlds[0].world_id.clone();
+        assert!(worlds::valid_world_id(&world_id));
+        for session in [id, twin] {
+            let tab = &app.sessions.get(session).unwrap().tab;
+            assert_eq!(tab.world, Some(0), "attached without reconnecting");
+            assert_eq!(tab.world_id.as_deref(), Some(world_id.as_str()));
+        }
+        assert_eq!(app.sessions.get(apart).unwrap().tab.world, None);
+
+        // Mark as channel can teach it now, and the rule is in force for the session.
+        app.actions
+            .push(AppAction::MarkChannel(id, "[CLAN] Vex: meeting at dawn".into(), None));
+        frame(&mut app, &ctx, vec![]);
+        assert!(app.mark.as_ref().unwrap().can_teach);
+        app.mark = None;
+        let rule = ChannelRule::new("clan", r"^\[CLAN\] (?<speaker>\w+): (?<text>.*)$", Some("clan"));
+        app.teach_channel_rule(id, rule.clone()).unwrap();
+        assert_eq!(app.settings.worlds[0].channel_rules, std::slice::from_ref(&rule));
+        assert_eq!(
+            app.sessions.get(id).unwrap().tab.channels.rules().rules()[0].channel,
+            "clan"
+        );
+
+        // Saving again changes nothing: the world is already saved.
+        app.push_action(AppAction::SaveWorld(twin));
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(app.settings.worlds.len(), 1);
+        app.on_exit();
+        drop(app);
+        drop((listener, other));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     /// A damaged wandur.db is moved aside, a new one is made, the app starts and says so.
     #[test]
     fn a_corrupt_database_does_not_stop_the_app() {
@@ -6711,6 +6857,51 @@ mod tests {
         app.on_exit();
         drop(app);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A scene (an ephemeral run) never opens the data directory's wandur.db: a damaged one is
+    /// not moved aside and none is made where there was none. It gets a database of its own,
+    /// elsewhere, removed with the app.
+    #[test]
+    fn an_ephemeral_run_leaves_the_data_directory_database_alone() {
+        let damaged = b"this is not a database, honestly".repeat(200);
+        for existing in [Some(damaged.clone()), None] {
+            let dir = superpowers_dir("app-ephemeral-db");
+            std::fs::create_dir_all(&dir).unwrap();
+            let file = dir.join(wandur_core::db::DB_FILE);
+            if let Some(bytes) = &existing {
+                std::fs::write(&file, bytes).unwrap();
+            }
+            let ctx = egui::Context::default();
+            let mut app = WandurApp::new(
+                &ctx,
+                Options {
+                    ephemeral: true,
+                    ..offline_options(&dir)
+                },
+            );
+            frame(&mut app, &ctx, vec![]);
+            let scratch = app.db.as_ref().expect("a database of its own").path().to_path_buf();
+            assert!(!scratch.starts_with(&dir), "{}", scratch.display());
+            assert!(!app.notes.iter().any(|n| n.contains("unreadable")), "{:?}", app.notes);
+            app.shutdown();
+            drop(app);
+            assert!(!scratch.exists(), "the scene's database is removed with it");
+            let mut names: Vec<String> = std::fs::read_dir(&dir)
+                .unwrap()
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .filter(|n| n.starts_with(wandur_core::db::DB_FILE))
+                .collect();
+            names.sort();
+            match &existing {
+                Some(bytes) => {
+                    assert_eq!(names, [wandur_core::db::DB_FILE]);
+                    assert_eq!(&std::fs::read(&file).unwrap(), bytes, "left exactly as it was");
+                }
+                None => assert!(names.is_empty(), "{names:?}"),
+            }
+            let _ = std::fs::remove_dir_all(&dir);
+        }
     }
 
     /// Unpin Map through the app: it moves to the right strip; a click on its strip tab slides
@@ -7822,6 +8013,48 @@ mod tests {
         assert!(app.sessions.get(id).unwrap().tab.is_connected());
         let texts = drawn_text(&mut app, &ctx);
         assert!(texts.iter().any(|x| x == t(S::HistoryLocalNotice)));
+        app.on_exit();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Search / refresh in an open History window flushes the open sessions first: a command
+    /// sent after the window opened is found at once, not after the recorder's two second batch.
+    #[test]
+    fn a_history_search_flushes_open_sessions_first() {
+        let dir = superpowers_dir("app-history-search-flush");
+        let (ctx, mut app) = history_app(&dir, None);
+        app.open_demo();
+        frame(&mut app, &ctx, vec![]);
+        let id = app.active_session.unwrap();
+        app.run_command(&ctx, Command::SessionHistory);
+        let settle = |app: &mut WandurApp| {
+            let deadline = Instant::now() + Duration::from_secs(10);
+            loop {
+                frame(app, &ctx, vec![]);
+                if !app.history_window.as_ref().unwrap().model.working() {
+                    break;
+                }
+                assert!(Instant::now() < deadline, "the window never finished reading");
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        };
+        settle(&mut app);
+        // Sent while the window is open: still in the recorder's batch.
+        let tab = &mut app.sessions.get_mut(id).unwrap().tab;
+        tab.input = "south".into();
+        tab.submit();
+        frame(&mut app, &ctx, vec![]);
+        let window = app.history_window.as_mut().unwrap();
+        window.model.query = "south".into();
+        window.model.filters_changed();
+        window.request_search();
+        settle(&mut app);
+        let model = &app.history_window.as_ref().unwrap().model;
+        assert!(
+            model.results.iter().any(|h| h.entry.text == "south"),
+            "{:?}",
+            model.results
+        );
         app.on_exit();
         let _ = std::fs::remove_dir_all(&dir);
     }

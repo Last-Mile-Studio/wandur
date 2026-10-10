@@ -2,7 +2,8 @@
 //! drives from the UI thread: [`AgentRunner::start`], then [`AgentRunner::poll`] each frame (and
 //! at [`AgentRunner::deadline`]). The credential read and every model call run on a thread of
 //! their own and report back over a channel, so the UI never waits on the model; a cancelled
-//! call is abandoned and its answer dropped.
+//! call's answer is dropped, and an HTTP call stops within a fraction of a second, ending its
+//! thread (see `agent_http`).
 //!
 //! The rules are the C# ones:
 //! - a run starts only while the session can act (connected, logged in, input public);

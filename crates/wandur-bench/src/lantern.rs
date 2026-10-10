@@ -450,12 +450,13 @@ mod tests {
             assert_eq!(image.dimensions(), (1300, 820), "{}", scene.name);
             let first = image.get_pixel(0, 0);
             assert!(image.pixels().any(|p| p != first), "{} is blank", scene.name);
-            // Scenes save nothing but the database file.
+            // Scenes save nothing in their data directory, not even a database (they make one of
+            // their own elsewhere), so it may not exist at all.
             let saved: Vec<String> = std::fs::read_dir(root.join(scene.name))
-                .unwrap()
+                .into_iter()
+                .flatten()
                 .filter_map(|e| e.ok())
                 .map(|e| e.file_name().to_string_lossy().into_owned())
-                .filter(|n| !n.starts_with("wandur.db"))
                 .collect();
             assert!(saved.is_empty(), "{}: {saved:?}", scene.name);
         }

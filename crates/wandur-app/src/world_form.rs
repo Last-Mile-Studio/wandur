@@ -719,7 +719,17 @@ impl WorldForm {
             self.section = Section::Login;
             return Err(e);
         }
-        Ok(self.world.clone())
+        let mut world = self.world.clone();
+        // Another address (host, port or TLS) is another world as far as the directory knows:
+        // the codebase and theme it gave for the old one go (C# `SaveProfileAsync`), and so does
+        // the listing link, which the codebase is also read through. The taught channel rules,
+        // the world id and the saved password stay.
+        if self.index.is_some() && !self.baseline.0.is_at(&world.endpoint()) {
+            world.codebase.clear();
+            world.theme = None;
+            world.listing_id.clear();
+        }
+        Ok(world)
     }
 
     /// The agent settings could not be saved: show why on their section.
@@ -2217,6 +2227,50 @@ mod tests {
         assert!(toast.undo.in_editor());
         form.macros.delete_selected();
         assert_eq!(form.macros.macros().count(), 0);
+    }
+
+    /// C# `SaveProfileAsync`: what came from the directory for the old address (the codebase,
+    /// the theme, and here the listing link the codebase is also read through) goes when the
+    /// host, port or TLS changes; the taught rules and the saved password stay. A name change
+    /// or a host differing only in case or a trailing dot keeps them.
+    #[test]
+    fn a_new_address_drops_what_the_directory_said_about_the_old_one() {
+        use wandur_core::channels::ChannelRule;
+        override_thread(Some(Language::En));
+        let mut listed = world();
+        listed.world_id = "0123456789abcdef0123456789abcdef".into();
+        listed.codebase = "SMAUG 1.4a".into();
+        listed.listing_id = "lotj".into();
+        listed.theme = serde_json::from_str(crate::scene::WORLD_THEME_FIXTURE)
+            .ok()
+            .and_then(|v| wandur_core::directory::WorldTheme::parse(&v));
+        listed.channel_rules = vec![ChannelRule::new("clan", r"^\[CLAN\] (?<text>.*)$", Some("clan"))];
+        let saved = |edit: &dyn Fn(&mut WorldForm)| {
+            let mut form = WorldForm::edit(Some(0), listed.clone());
+            edit(&mut form);
+            match form.save() {
+                FormResult::Saved { world, .. } => world,
+                _ => panic!("expected a save: {:?}", form.error),
+            }
+        };
+        let kept = |w: &SavedWorld| {
+            w.codebase == listed.codebase && w.listing_id == listed.listing_id && w.theme == listed.theme
+        };
+        assert!(listed.theme.is_some());
+        assert!(kept(&saved(&|f| f.world.name = "Renamed".into())));
+        assert!(kept(&saved(&|f| f.world.host = "LANTERNROAD.example.org.".into())));
+        let edits: [&dyn Fn(&mut WorldForm); 3] = [
+            &|f| f.world.host = "elsewhere.example.org".into(),
+            &|f| f.port_text = "4001".into(),
+            &|f| f.world.tls = true,
+        ];
+        for edit in edits {
+            let world = saved(edit);
+            assert!(world.codebase.is_empty() && world.listing_id.is_empty() && world.theme.is_none());
+            assert_eq!(world.channel_rules, listed.channel_rules);
+            assert_eq!(world.world_id, listed.world_id);
+        }
+        override_thread(None);
     }
 
     /// The C# world editor case: the rules are listed, a rule turned off and an exclusion

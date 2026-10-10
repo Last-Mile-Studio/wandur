@@ -91,15 +91,24 @@ the first four are the ones I would fix first.
 
 1. **Ad hoc session stays unteachable after Save world** (t08). `AppAction::SaveWorld` in
    `crates/wandur-app/src/app.rs` never sets `tab.world` on the open session, so Mark as channel
-   keeps saying "Open a saved world" until a reconnect.
+   keeps saying "Open a saved world" until a reconnect. **Fixed:** a newly saved world becomes
+   the world of every session opened by address at it (`WandurApp::adopt_sessions`).
 2. **History refresh misses recent text** (t07). Search / refresh does not flush open recorders,
    and batches wait up to 2 s, so the last couple of seconds may be missing from a refresh.
+   **Fixed:** Search / refresh asks every open session's recorder to flush (a message each) and
+   the read waits for them on its own thread, as opening the window did.
 3. **Scenes touch the data directory's database** (t01). `WandurApp::new` opens `wandur.db` even
    for ephemeral scene runs, which can create, migrate, or move aside a damaged file there.
+   **Fixed:** an ephemeral run opens an empty database of its own in a temporary folder, removed
+   with the app; the data directory's `wandur.db` is never opened.
 4. **Agent Stop can leave two requests on one model server** (t14). A cancelled request is
    abandoned while still running, and its server slot is released at once; repeated Play and Stop
-   also leaves threads alive up to 120 s.
-5. Changing a world's host or port keeps its old codebase (C# clears it) (t08).
+   also leaves threads alive up to 120 s. **Fixed:** the connection reads in 50 ms slices and
+   checks the cancel flag, so a cancelled call ends (and closes its connection) at once; the
+   origin's turn is released only when the call has ended (`agent_http`).
+5. Changing a world's host or port keeps its old codebase (C# clears it) (t08). **Fixed:** a
+   saved world whose host, port or TLS changes in the editor drops its codebase, theme and
+   listing link, as C# `SaveProfileAsync` does (the saved password stays).
 6. Two saved worlds at one address share one world id (t01).
 7. The terrain confidence slider does not reclassify rooms already classified (t13).
 8. Vault key JSON is not the C# digest (keys sorted). Harmless because the Keychain services are
