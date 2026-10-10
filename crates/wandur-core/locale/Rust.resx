@@ -489,6 +489,7 @@
   <data name="CommandRepeatUnclosed" xml:space="preserve"><value>A {{ after a repeat count needs its closing }}</value></data>
   <data name="CommandTooMany" xml:space="preserve"><value>That line makes more than {0} commands</value></data>
   <data name="CommandWaiting" xml:space="preserve"><value>Waiting for “{0}” · Esc to stop</value></data>
+  <data name="CommandWaitingCounted" xml:space="preserve"><value>Waiting for “{0}” · {1} of {2} sent · Esc to stop</value></data>
   <data name="CommandWaitTimedOut" xml:space="preserve"><value>Gave up waiting for “{0}” after {1} s; {2} of {3} sent</value></data>
   <data name="CommandWaitUsage" xml:space="preserve"><value>{0}wait takes seconds from 1 to {1}, or text: {0}wait {{the droid is dead}}</value></data>
   <data name="CommandStyle" xml:space="preserve"><value>Command style</value></data>

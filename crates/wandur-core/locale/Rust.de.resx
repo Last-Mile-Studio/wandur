@@ -489,6 +489,7 @@
   <data name="CommandRepeatUnclosed" xml:space="preserve"><value>Eine {{ nach einer Wiederholungszahl braucht ihre schließende }}</value></data>
   <data name="CommandTooMany" xml:space="preserve"><value>Diese Zeile ergibt mehr als {0} Befehle</value></data>
   <data name="CommandWaiting" xml:space="preserve"><value>Warte auf „{0}“ · Esc zum Anhalten</value></data>
+  <data name="CommandWaitingCounted" xml:space="preserve"><value>Warte auf „{0}“ · {1} von {2} gesendet · Esc zum Anhalten</value></data>
   <data name="CommandWaitTimedOut" xml:space="preserve"><value>Warten auf „{0}“ nach {1} s aufgegeben; {2} von {3} gesendet</value></data>
   <data name="CommandWaitUsage" xml:space="preserve"><value>{0}wait braucht Sekunden von 1 bis {1} oder Text: {0}wait {{the droid is dead}}</value></data>
   <data name="CommandStyle" xml:space="preserve"><value>Befehlsstil</value></data>

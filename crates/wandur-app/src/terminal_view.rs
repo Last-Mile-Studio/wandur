@@ -1637,10 +1637,7 @@ fn footer(
                 // No standing hint (C# UI review, item 6): only while input is private or a
                 // completion waits for Tab, or a typed line's commands are still going.
                 if let Some((sent, total)) = tab.queue_progress() {
-                    let status = match tab.queue_waiting() {
-                        Some(text) => tf(S::CommandWaiting, &[&text]),
-                        None => tf(S::CommandRepeating, &[&sent, &total]),
-                    };
+                    let status = queue_status(tab.queue_waiting(), sent, total);
                     ui.label(RichText::new(status).size(11.0).color(theme.accent));
                 } else if ui.available_width() > 240.0 && (tab.private_input() || suggesting) {
                     let hint = footer_hint(tab.private_input(), suggesting);
@@ -1649,6 +1646,16 @@ fn footer(
             });
         },
     );
+}
+
+/// The footer's line while a typed line is still going: the command it is on, or the text a wait
+/// holds for with how many commands have gone (just the text when the line sends none).
+fn queue_status(waiting: Option<&str>, sent: usize, total: usize) -> String {
+    match waiting {
+        Some(text) if total > 0 => tf(S::CommandWaitingCounted, &[&text, &sent, &total]),
+        Some(text) => tf(S::CommandWaiting, &[&text]),
+        None => tf(S::CommandRepeating, &[&sent, &total]),
+    }
 }
 
 /// Width of the Scripts menu's content (the C# flyout's 340).
@@ -2475,6 +2482,19 @@ mod tests {
         runs.iter()
             .map(|r| (r.col, r.cols, text[r.text_start..r.text_end].to_string()))
             .collect()
+    }
+
+    #[test]
+    fn a_wait_shows_how_far_the_line_got() {
+        assert_eq!(
+            queue_status(Some("explode"), 2, 20),
+            "Waiting for “explode” · 2 of 20 sent · Esc to stop"
+        );
+        assert_eq!(
+            queue_status(Some("explode"), 0, 0),
+            "Waiting for “explode” · Esc to stop"
+        );
+        assert_eq!(queue_status(None, 3, 10), "Sending 3 of 10 · Esc to stop");
     }
 
     #[test]

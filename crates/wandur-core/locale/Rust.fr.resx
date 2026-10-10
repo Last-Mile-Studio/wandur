@@ -489,6 +489,7 @@
   <data name="CommandRepeatUnclosed" xml:space="preserve"><value>Une {{ après un nombre de répétitions doit être fermée par }}</value></data>
   <data name="CommandTooMany" xml:space="preserve"><value>Cette ligne produit plus de {0} commandes</value></data>
   <data name="CommandWaiting" xml:space="preserve"><value>En attente de « {0} » · Échap pour arrêter</value></data>
+  <data name="CommandWaitingCounted" xml:space="preserve"><value>En attente de « {0} » · {1} sur {2} envoyées · Échap pour arrêter</value></data>
   <data name="CommandWaitTimedOut" xml:space="preserve"><value>Attente de « {0} » abandonnée après {1} s ; {2} sur {3} envoyés</value></data>
   <data name="CommandWaitUsage" xml:space="preserve"><value>{0}wait prend des secondes de 1 à {1}, ou un texte : {0}wait {{the droid is dead}}</value></data>
   <data name="CommandStyle" xml:space="preserve"><value>Style de commandes</value></data>

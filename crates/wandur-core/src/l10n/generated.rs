@@ -3034,6 +3034,8 @@ pub enum S {
     CommandTooMany,
     /// Waiting for “{0}” · Esc to stop
     CommandWaiting,
+    /// Waiting for “{0}” · {1} of {2} sent · Esc to stop
+    CommandWaitingCounted,
     /// Gave up waiting for “{0}” after {1} s; {2} of {3} sent
     CommandWaitTimedOut,
     /// {0}wait takes seconds from 1 to {1}, or text: {0}wait {{the droid is dead}}
@@ -3181,7 +3183,7 @@ pub enum S {
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1586;
+pub const COUNT: usize = 1587;
 
 impl S {
     /// Every key, in table order.
@@ -4700,6 +4702,7 @@ impl S {
         S::CommandRepeatUnclosed,
         S::CommandTooMany,
         S::CommandWaiting,
+        S::CommandWaitingCounted,
         S::CommandWaitTimedOut,
         S::CommandWaitUsage,
         S::CommandStyle,
@@ -6291,6 +6294,7 @@ pub static NAMES: [&str; COUNT] = [
     "CommandRepeatUnclosed",
     "CommandTooMany",
     "CommandWaiting",
+    "CommandWaitingCounted",
     "CommandWaitTimedOut",
     "CommandWaitUsage",
     "CommandStyle",
@@ -7883,6 +7887,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "A {{ after a repeat count needs its closing }}",
         "That line makes more than {0} commands",
         "Waiting for “{0}” · Esc to stop",
+        "Waiting for “{0}” · {1} of {2} sent · Esc to stop",
         "Gave up waiting for “{0}” after {1} s; {2} of {3} sent",
         "{0}wait takes seconds from 1 to {1}, or text: {0}wait {{the droid is dead}}",
         "Command style",
@@ -9472,6 +9477,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Una {{ tras un número de repeticiones necesita su }} de cierre",
         "Esa línea genera más de {0} comandos",
         "Esperando «{0}» · Esc para detener",
+        "Esperando «{0}» · {1} de {2} enviados · Esc para detener",
         "Se dejó de esperar «{0}» tras {1} s; {2} de {3} enviados",
         "{0}wait lleva segundos de 1 a {1}, o un texto: {0}wait {{the droid is dead}}",
         "Estilo de comandos",
@@ -11061,6 +11067,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Une {{ après un nombre de répétitions doit être fermée par }}",
         "Cette ligne produit plus de {0} commandes",
         "En attente de « {0} » · Échap pour arrêter",
+        "En attente de « {0} » · {1} sur {2} envoyées · Échap pour arrêter",
         "Attente de « {0} » abandonnée après {1} s ; {2} sur {3} envoyés",
         "{0}wait prend des secondes de 1 à {1}, ou un texte : {0}wait {{the droid is dead}}",
         "Style de commandes",
@@ -12650,6 +12657,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Eine {{ nach einer Wiederholungszahl braucht ihre schließende }}",
         "Diese Zeile ergibt mehr als {0} Befehle",
         "Warte auf „{0}“ · Esc zum Anhalten",
+        "Warte auf „{0}“ · {1} von {2} gesendet · Esc zum Anhalten",
         "Warten auf „{0}“ nach {1} s aufgegeben; {2} von {3} gesendet",
         "{0}wait braucht Sekunden von 1 bis {1} oder Text: {0}wait {{the droid is dead}}",
         "Befehlsstil",
@@ -14239,6 +14247,7 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Uma {{ depois de um número de repetições precisa do }} de fechamento",
         "Essa linha gera mais de {0} comandos",
         "Aguardando “{0}” · Esc para parar",
+        "Aguardando “{0}” · {1} de {2} enviados · Esc para parar",
         "Desistiu de aguardar “{0}” após {1} s; {2} de {3} enviados",
         "{0}wait recebe segundos de 1 a {1}, ou um texto: {0}wait {{the droid is dead}}",
         "Estilo de comandos",
