@@ -1286,7 +1286,7 @@ impl SessionTab {
         }
         self.prompt_line.clear();
         self.prompt_private = false;
-        match &mut self.link {
+        let sent = match &mut self.link {
             Link::Net(conn) => conn.send_line(line),
             Link::Demo { running: false, .. } => false,
             Link::Demo { world, .. } => {
@@ -1295,7 +1295,14 @@ impl SessionTab {
                 self.pending_demo = Some((reply, name));
                 true
             }
+        };
+        // A prompt the world left open (`[Speaking: basic ] `) is finished here, as a terminal's
+        // Enter would, so the answer starts on a line of its own. With echo on, the caller shows
+        // the command after the prompt instead; private input and login break the line themselves.
+        if sent && !self.echo_commands && !gate.private && origin != Origin::Login && !self.terminal.at_line_start() {
+            self.terminal.feed_local("\n", LOCAL_ECHO_COLOR);
         }
+        sent
     }
 
     /// The demo's answer goes after the local echo, as a server's would.
@@ -3039,6 +3046,46 @@ mod tests {
         tab.submit();
         assert!(!tab.style_tip_shown());
         assert_eq!(read_lines(&mut server, 1), ["#2 n"]);
+    }
+
+    /// A prompt without a line break (`[Speaking: basic ] `) is finished when a command goes, as a
+    /// terminal's Enter would, so the answer starts on a line of its own; with echo on the command
+    /// is shown after the prompt instead. A server that breaks the line itself gets no blank line.
+    #[test]
+    fn a_sent_command_ends_the_prompt_line() {
+        let (mut tab, mut server) = local_tab();
+        pump_until(&mut tab, |t| t.is_connected());
+        tab.echo_commands = false;
+        server.write_all(b"[Speaking: basic ] ").unwrap();
+        pump_until(&mut tab, |t| t.terminal.transcript().contains("[Speaking: basic ]"));
+        tab.input = "skills".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["skills"]);
+        server.write_all(b"combat   Level: 7\r\nAnother line.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.terminal.transcript().contains("Another line."));
+        let text = tab.terminal.transcript();
+        assert!(text.contains("[Speaking: basic ]\ncombat"), "{text:?}");
+        // Already at a line's start: nothing more.
+        tab.input = "look".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["look"]);
+        server.write_all(b"A room.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.terminal.transcript().contains("A room."));
+        assert!(
+            tab.terminal.transcript().contains("Another line.\nA room."),
+            "no blank line"
+        );
+
+        tab.echo_commands = true;
+        server.write_all(b"Lantern > ").unwrap();
+        pump_until(&mut tab, |t| t.terminal.transcript().contains("Lantern >"));
+        tab.input = "north".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 1), ["north"]);
+        assert!(
+            tab.terminal.transcript().contains("Lantern > north"),
+            "echo follows the prompt"
+        );
     }
 
     /// Over loopback: a trigger answers a public server line; an alias replaces the typed
