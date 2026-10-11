@@ -165,6 +165,20 @@ fn titles_match_with_flags_case_and_spacing() {
     assert!(title_matches("A Ward [Hospital]", "A Ward [Hospital]"));
     assert!(!title_matches("TRAINING: Bacta Tanks", "TRAINING: HP"));
     assert!(!title_matches("[Bacta]", ""));
+    assert!(title_matches("Charlie Block | Ring of Kafrene", "charlie block"));
+    assert!(title_matches("Main Hall - East Wing [Indoors]", "Main Hall"));
+    assert!(
+        !title_matches("Charlie Block |", "Charlie Block"),
+        "a separator alone is not an area"
+    );
+    assert!(
+        !title_matches("Charlie Blockade | Ring", "Charlie Block"),
+        "whole words only"
+    );
+    assert!(
+        !title_matches("TRAINING: Bacta Tanks", "TRAINING"),
+        "a colon belongs to the name"
+    );
 }
 
 #[test]
@@ -433,4 +447,37 @@ fn a_walk_is_not_stopped_by_descriptions_and_gets_them_when_it_ends() {
 
 fn ids(rooms: Vec<&MapRoom>) -> Vec<&str> {
     rooms.iter().map(|r| r.id.as_str()).collect()
+}
+
+/// A real LotJ room as the client showed it (October 2026): no flags, `Name | Area` in the
+/// title, an arrival line before it and an occupant after the exits.
+fn kafrene_text() -> String {
+    [
+        "A Port Authority Officer arrives from the west.",
+        "Charlie Block | Ring of Kafrene",
+        "A wide array of people of many professions make their way through Charlie Block",
+        "in an attempt to get to their classrooms on time. The majority of the walls in",
+        "Obvious exits:",
+        "East  - Charlie Block | Ring of Kafrene",
+        "West  - Charlie Block | Ring of Kafrene",
+        "(Police) A port authority officer is patrolling the streets of Kafrene.",
+        "",
+    ]
+    .join("\r\n")
+}
+
+#[test]
+fn a_lotj_title_with_its_area_matches_the_shorter_room_name() {
+    for name in ["Charlie Block | Ring of Kafrene", "Charlie Block"] {
+        let mut map = session();
+        let now = Instant::now();
+        map.observe_room(lotj_gmcp(7, name, &["east", "west"]), gate(), now);
+        map.track_output(&kafrene_text(), gate(), now + Duration::from_millis(20));
+        assert_eq!(
+            description(&map, "s:7"),
+            "A wide array of people of many professions make their way through Charlie Block in an \
+             attempt to get to their classrooms on time. The majority of the walls in",
+            "{name}"
+        );
+    }
 }

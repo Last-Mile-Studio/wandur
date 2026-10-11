@@ -186,13 +186,29 @@ fn without_flags(text: &str) -> &str {
 }
 
 /// Whether a text title names the protocol room `name`: equal ignoring case and spacing, or
-/// equal once trailing bracketed flags are left out of both.
+/// equal once trailing bracketed flags are left out of both, or the name followed by a separator
+/// and more (`Charlie Block | Ring of Kafrene`: LOTJ titles add the area, its `Room.Info` name
+/// does not).
 pub fn title_matches(title: &str, name: &str) -> bool {
     let same = |a: &str, b: &str| {
         let (a, b) = (collapse_whitespace(a), collapse_whitespace(b));
         !a.is_empty() && a.to_lowercase() == b.to_lowercase()
     };
-    same(title, name) || same(without_flags(title), without_flags(name))
+    let leads = |title: &str, name: &str| {
+        let (title, name) = (
+            collapse_whitespace(title).to_lowercase(),
+            collapse_whitespace(name).to_lowercase(),
+        );
+        !name.is_empty()
+            && title.strip_prefix(&name).is_some_and(|rest| {
+                rest.trim_start()
+                    .strip_prefix(['|', '-', '–', '—', '/'])
+                    .is_some_and(|after| !after.trim().is_empty())
+            })
+    };
+    same(title, name)
+        || same(without_flags(title), without_flags(name))
+        || leads(without_flags(title), without_flags(name))
 }
 
 #[derive(Debug, Default)]

@@ -260,7 +260,9 @@ world sends structured rooms, or has GMCP or MSDP on, it hands each finished roo
 to the exits, and the exits) to the session (`MapSession`):
 
 - A protocol room without a description takes the lines under the block's title that matches its
-  name (case and spacing ignored; trailing bracketed flags such as `[Bacta]` left out of both),
+  name (case and spacing ignored; trailing bracketed flags such as `[Bacta]` left out of both; a
+  title may add an area after a separator, as LotJ's `Charlie Block | Ring of Kafrene` for the room
+  `Charlie Block`),
   and only when the block's exits share one with the protocol's. Occupants and objects after the
   exits are never part of a block; occupant lines and rules inside it are left out, whitespace is
   collapsed, the tracker's 16,000 limit holds.
