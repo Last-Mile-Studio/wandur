@@ -860,7 +860,8 @@ impl HistoryWindow {
             let builder = egui::ViewportBuilder::default()
                 .with_title(title)
                 .with_inner_size(SIZE)
-                .with_min_inner_size(MIN_SIZE);
+                .with_min_inner_size(MIN_SIZE)
+                .with_icon(crate::app_icon::icon());
             ctx.show_viewport_immediate(egui::ViewportId::from_hash_of("session-history"), builder, |ui, _| {
                 if ui.ctx().input(|i| i.viewport().close_requested()) {
                     open = false;

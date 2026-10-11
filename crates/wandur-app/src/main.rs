@@ -196,7 +196,8 @@ fn main() -> eframe::Result {
     let viewport = egui::ViewportBuilder::default()
         .with_title("Wandur")
         .with_inner_size(cli.window.unwrap_or([1200.0, 780.0]))
-        .with_min_inner_size([480.0, 320.0]);
+        .with_min_inner_size([480.0, 320.0])
+        .with_icon(wandur_app::app_icon::icon());
     #[cfg(target_os = "macos")]
     let viewport = viewport
         .with_fullsize_content_view(true)

@@ -17,6 +17,7 @@ pub mod agent_session;
 #[cfg(feature = "agent")]
 pub mod agent_settings;
 pub mod app;
+pub mod app_icon;
 pub mod artwork;
 pub mod autohide;
 pub mod channels_view;

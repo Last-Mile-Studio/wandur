@@ -171,7 +171,8 @@ fn native(ctx: &egui::Context, spec: Spec<'_>, theme: &Theme, add: impl FnOnce(&
     let mut builder = egui::ViewportBuilder::default()
         .with_title(spec.title)
         .with_inner_size(start.size)
-        .with_min_inner_size(spec.min_size);
+        .with_min_inner_size(spec.min_size)
+        .with_icon(crate::app_icon::icon());
     if let Some(position) = start.position {
         builder = builder.with_position(position);
     }
