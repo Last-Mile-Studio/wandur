@@ -102,6 +102,23 @@ impl Connection {
         }
     }
 
+    /// Not connected, and not trying: closed with `reason` until [`Self::reconnect`] (a
+    /// session reopened from the last run, offline).
+    pub fn offline(config: SessionConfig, waker: Waker, reason: String) -> Self {
+        Self {
+            config,
+            waker,
+            session: None,
+            state: ConnectionState::Closed { reason },
+            auto_reconnect: false,
+            backoff: Backoff::default(),
+            attempt: 0,
+            connected_at: None,
+            user_closed: true,
+            generation: 0,
+        }
+    }
+
     pub fn state(&self) -> &ConnectionState {
         &self.state
     }
@@ -322,6 +339,34 @@ mod tests {
         assert_eq!(scheduled, [1, 2, 3]);
         assert_eq!(notices.last(), Some(&Notice::GaveUp { attempts: 3 }));
         assert_eq!(conn.generation(), 4);
+    }
+
+    /// An offline connection opens nothing and never retries by itself; Reconnect connects it.
+    #[test]
+    fn an_offline_connection_waits_for_reconnect() {
+        let (ep, accepted) = flaky_server(Duration::from_secs(5));
+        let mut conn = Connection::offline(SessionConfig::new(ep), Arc::new(|| {}), "offline".into());
+        fast(&mut conn);
+        let mut notices = Vec::new();
+        let mut batch = Drained::default();
+        conn.drain(Instant::now(), &mut batch, &mut notices);
+        assert!(!conn.poll(Instant::now() + Duration::from_secs(60), &mut notices));
+        assert_eq!(conn.deadline(), None);
+        thread::sleep(Duration::from_millis(50));
+        assert_eq!(accepted.load(Ordering::SeqCst), 0);
+        assert_eq!(
+            conn.state(),
+            &ConnectionState::Closed {
+                reason: "offline".into()
+            }
+        );
+        assert!(conn.is_down() && conn.session().is_none() && !conn.send_line("look"));
+        assert_eq!(conn.generation(), 0);
+        conn.reconnect();
+        let (text, _) = run_until(&mut conn, |_, text| text.contains("hello 1"));
+        assert!(text.contains("hello 1"));
+        assert!(conn.is_connected());
+        assert_eq!(conn.generation(), 1);
     }
 
     #[test]

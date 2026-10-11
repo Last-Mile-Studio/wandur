@@ -562,4 +562,14 @@
   <data name="AboutLinkOtherClients" xml:space="preserve"><value>Autres clients MUD</value></data>
   <data name="AboutLinkSource" xml:space="preserve"><value>Code source</value></data>
   <data name="AboutLinkIssue" xml:space="preserve"><value>Signaler un problème</value></data>
+  <data name="StartupSessions" xml:space="preserve"><value>Au démarrage de Wandur</value></data>
+  <data name="StartupFresh" xml:space="preserve"><value>Repartir de zéro</value></data>
+  <data name="StartupTabs" xml:space="preserve"><value>Rouvrir mes sessions (onglets, sans connexion)</value></data>
+  <data name="StartupReconnect" xml:space="preserve"><value>Rouvrir et se reconnecter</value></data>
+  <data name="StartupSessionsHint" xml:space="preserve"><value>Les sessions connectées au moment de quitter se reconnectent ; la connexion automatique ne s’exécute que pour les mondes où elle est activée. Maintenez Maj enfoncée au démarrage de Wandur pour les rouvrir sans connexion.</value></data>
+  <data name="RestoredNotConnected" xml:space="preserve"><value>Rouverte depuis la dernière fois, non connectée</value></data>
+  <data name="RestoreCrashedNotice" xml:space="preserve"><value>Wandur ne s’est pas fermé correctement la dernière fois. Vos sessions sont de retour, non connectées.</value></data>
+  <data name="RestoreShiftNotice" xml:space="preserve"><value>Maj était enfoncée au démarrage : vos sessions ont été rouvertes sans connexion.</value></data>
+  <data name="RestoreReconnectAll" xml:space="preserve"><value>Tout reconnecter</value></data>
+  <data name="RestoreLeaveOffline" xml:space="preserve"><value>Laisser hors ligne</value></data>
 </root>

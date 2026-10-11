@@ -9,8 +9,8 @@
 use egui::{Align, Layout, RichText, Ui};
 use wandur_core::l10n::{self, S, t, tf};
 use wandur_core::settings::{
-    ANSI_DEFAULTS, COLOR_KEYS, CustomTheme, FONT_SIZES, MAX_OUTPUT_FPS, MIN_SCROLLBACK, Settings, clamp_tail_share,
-    is_color,
+    ANSI_DEFAULTS, COLOR_KEYS, CustomTheme, FONT_SIZES, MAX_OUTPUT_FPS, MIN_SCROLLBACK, Settings, StartupSessions,
+    clamp_tail_share, is_color,
 };
 
 use crate::dialogs;
@@ -95,6 +95,8 @@ pub struct SettingsDialog {
     pub error: Option<String>,
     /// Hold the Keep history list open (scenes).
     pub open_retention: bool,
+    /// Hold the When Wandur starts list open (scenes).
+    pub open_startup: bool,
 }
 
 /// Switch the UI to a language setting (`""` follows the system).
@@ -117,6 +119,7 @@ impl SettingsDialog {
             background: settings.background.clone().unwrap_or_default(),
             error: None,
             open_retention: false,
+            open_startup: false,
         };
         dialog.load_palette();
         dialog
@@ -422,6 +425,21 @@ impl SettingsDialog {
             self.choose_language(code);
         }
         hint(ui, t(S::LanguageLiveHint), theme);
+        field_label(ui, t(S::StartupSessions), theme);
+        let choices = StartupSessions::ALL;
+        let mut index = choices
+            .iter()
+            .position(|&c| c == self.draft.startup_sessions)
+            .unwrap_or(choices.len() - 1);
+        if Select::new("settings-startup", t(S::StartupSessions))
+            .height(SELECT_H)
+            .open_now(self.open_startup)
+            .show_index(ui, &mut index, choices.len(), |i| startup_label(choices[i]))
+            .changed()
+        {
+            self.draft.startup_sessions = choices[index];
+        }
+        hint(ui, t(S::StartupSessionsHint), theme);
         ui.add_space(8.0);
         ui.checkbox(&mut self.draft.show_channels, t(S::ShowChannelsPanel));
         hint(ui, t(S::ShowChannelsPanelHint), theme);
@@ -1012,6 +1030,15 @@ fn color_box(ui: &mut Ui, text: &mut String, label: &str, theme: &Theme) {
     crate::a11y::label(&field, label);
 }
 
+/// A When Wandur starts choice's name.
+pub fn startup_label(choice: StartupSessions) -> &'static str {
+    t(match choice {
+        StartupSessions::Fresh => S::StartupFresh,
+        StartupSessions::Tabs => S::StartupTabs,
+        StartupSessions::Reconnect => S::StartupReconnect,
+    })
+}
+
 /// A command style's name in the Command style lists.
 pub fn command_style_label(style: CommandStyle) -> &'static str {
     t(match style {
@@ -1089,6 +1116,50 @@ mod tests {
                 assert!(!saved.history_enabled);
             }
             other => panic!("{other:?}"),
+        }
+        override_thread(None);
+    }
+
+    /// When Wandur starts: Reopen and reconnect by default; its list holds the three choices
+    /// and a choice is saved.
+    #[test]
+    fn the_startup_choice_lists_three_and_saves() {
+        override_thread(Some(Language::En));
+        let mut dialog = SettingsDialog::new(&Settings::default());
+        dialog.open_startup = true;
+        let ctx = egui::Context::default();
+        let theme = Theme::default();
+        let mut texts = Vec::new();
+        for _ in 0..4 {
+            let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+                let _ = dialog.show(ui.ctx(), &theme, "");
+            });
+            output.textures_delta.clear();
+            texts = output
+                .shapes
+                .iter()
+                .filter_map(|s| match &s.shape {
+                    egui::Shape::Text(t) => Some(t.galley.text().to_string()),
+                    _ => None,
+                })
+                .collect();
+        }
+        assert!(egui::Popup::is_any_open(&ctx), "the list is open");
+        for label in [
+            "When Wandur starts",
+            "Start fresh",
+            "Reopen my sessions (tabs, no connecting)",
+            "Reopen and reconnect",
+        ] {
+            assert!(texts.iter().any(|t| t == label), "{label} in {texts:?}");
+        }
+        assert_eq!(dialog.draft.startup_sessions, StartupSessions::Reconnect);
+        for choice in StartupSessions::ALL {
+            dialog.draft.startup_sessions = choice;
+            match dialog.save() {
+                SettingsResult::Saved(saved) => assert_eq!(saved.startup_sessions, choice),
+                other => panic!("{other:?}"),
+            }
         }
         override_thread(None);
     }

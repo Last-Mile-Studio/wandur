@@ -562,4 +562,14 @@
   <data name="AboutLinkOtherClients" xml:space="preserve"><value>Other MUD clients</value></data>
   <data name="AboutLinkSource" xml:space="preserve"><value>Source code</value></data>
   <data name="AboutLinkIssue" xml:space="preserve"><value>Report an issue</value></data>
+  <data name="StartupSessions" xml:space="preserve"><value>When Wandur starts</value></data>
+  <data name="StartupFresh" xml:space="preserve"><value>Start fresh</value></data>
+  <data name="StartupTabs" xml:space="preserve"><value>Reopen my sessions (tabs, no connecting)</value></data>
+  <data name="StartupReconnect" xml:space="preserve"><value>Reopen and reconnect</value></data>
+  <data name="StartupSessionsHint" xml:space="preserve"><value>Sessions that were connected when you quit connect again; auto-login runs only for worlds that have it on. Hold Shift while Wandur starts to reopen them without connecting.</value></data>
+  <data name="RestoredNotConnected" xml:space="preserve"><value>Reopened from last time, not connected</value></data>
+  <data name="RestoreCrashedNotice" xml:space="preserve"><value>Wandur did not close properly last time. Your sessions are back, not connected.</value></data>
+  <data name="RestoreShiftNotice" xml:space="preserve"><value>Shift was held at start, so your sessions reopened without connecting.</value></data>
+  <data name="RestoreReconnectAll" xml:space="preserve"><value>Reconnect all</value></data>
+  <data name="RestoreLeaveOffline" xml:space="preserve"><value>Leave offline</value></data>
 </root>

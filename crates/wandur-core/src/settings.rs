@@ -309,6 +309,38 @@ pub struct Settings {
     /// A release the person chose to skip; only a newer one is offered again.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub skipped_update_version: Option<String>,
+    /// What happens at start to the sessions open when Wandur last quit (Settings > General).
+    #[serde(deserialize_with = "lenient_startup")]
+    pub startup_sessions: StartupSessions,
+}
+
+/// What Wandur does at start with the sessions that were open when it last quit (Settings >
+/// General, "When Wandur starts").
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StartupSessions {
+    /// No sessions open, as before the setting existed.
+    Fresh,
+    /// The tabs come back, none connected.
+    Tabs,
+    /// The tabs come back and those connected at quit connect again.
+    #[default]
+    Reconnect,
+}
+
+impl StartupSessions {
+    /// In the setting's list order.
+    pub const ALL: [StartupSessions; 3] = [
+        StartupSessions::Fresh,
+        StartupSessions::Tabs,
+        StartupSessions::Reconnect,
+    ];
+}
+
+/// The start-up choice from the settings file: anything unknown is the default.
+fn lenient_startup<'de, D: serde::Deserializer<'de>>(d: D) -> Result<StartupSessions, D::Error> {
+    let value = Option::<serde_json::Value>::deserialize(d)?;
+    Ok(value.and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default())
 }
 
 /// A colour scheme copied from a preset, with its own chrome and terminal colours. Selected by
@@ -527,6 +559,7 @@ impl Default for Settings {
             send_install_id: true,
             last_update_check: None,
             skipped_update_version: None,
+            startup_sessions: StartupSessions::Reconnect,
         }
     }
 }
@@ -1417,7 +1450,36 @@ mod tests {
             "command_style_tip_answered",
             "the one-time tip offering # commands was answered",
         ),
+        (
+            "startup_sessions",
+            "Settings > General: reopen the last run's sessions at start",
+        ),
     ];
+
+    /// When Wandur starts: Reopen and reconnect by default and in files from before it existed;
+    /// each choice round-trips; an unknown value is the default.
+    #[test]
+    fn the_startup_choice_round_trips_and_defaults_to_reconnect() {
+        let old: Settings = serde_json::from_str(r#"{"version":1}"#).unwrap();
+        assert_eq!(old.startup_sessions, StartupSessions::Reconnect);
+        for (choice, name) in StartupSessions::ALL.into_iter().zip(["fresh", "tabs", "reconnect"]) {
+            let settings = Settings {
+                startup_sessions: choice,
+                ..Settings::default()
+            };
+            let json = serde_json::to_string(&settings).unwrap();
+            assert!(json.contains(&format!(r#""startup_sessions":"{name}""#)), "{json}");
+            assert_eq!(
+                serde_json::from_str::<Settings>(&json).unwrap().startup_sessions,
+                choice
+            );
+        }
+        for odd in [r#""later""#, "3", "null", r#"{"a":1}"#] {
+            let s: Settings = serde_json::from_str(&format!(r#"{{"startup_sessions":{odd},"font_size":14}}"#)).unwrap();
+            assert_eq!(s.startup_sessions, StartupSessions::Reconnect, "{odd}");
+            assert_eq!(s.font_size, 14.0, "the rest of the file still loads");
+        }
+    }
 
     /// The command style: Wandur's by default and in files from before it existed; the global
     /// one, the tip's answer and a world's own choice round-trip; a world without one writes none.

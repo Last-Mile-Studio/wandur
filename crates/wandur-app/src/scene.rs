@@ -83,6 +83,8 @@ pub enum Show {
     WorldTheme,
     /// Several sessions in the session tabs (Panels on the left, the Workspace closed).
     Tabs(TabsScene),
+    /// Four sessions reopened from the last run, not connected, and the strip saying why.
+    Restored(crate::session_restore::Why),
 }
 
 /// What a session tabs scene shows.
@@ -1567,6 +1569,30 @@ pub const SCENES: &[Scene] = &[
         "Hull",
         Show::WorldTheme,
     ),
+    scene(
+        "restore-crashed",
+        "Started after a run that did not quit cleanly: four sessions back, not connected, the strip offering Reconnect all",
+        "Hull",
+        Show::Restored(crate::session_restore::Why::Crashed),
+    ),
+    skinned(
+        scene(
+            "restore-shift",
+            "Started with Shift held: the sessions back without connecting, and the strip saying so (System, Linen)",
+            "Linen",
+            Show::Restored(crate::session_restore::Why::Shift),
+        ),
+        "System",
+    ),
+    with(
+        scene(
+            "settings-general-startup",
+            "Settings, General: the When Wandur starts list open (Start fresh, Reopen my sessions, Reopen and reconnect)",
+            "Hull",
+            Show::Session,
+        ),
+        Overlay::Settings("general:startup"),
+    ),
 ];
 
 /// The world theme of the C# `world-theme-session` capture.
@@ -2179,6 +2205,10 @@ pub fn configure(scene: &Scene, options: &mut Options) {
             options.font_size = Some(15.0);
             return;
         }
+        Show::Restored(why) => {
+            restore_scene(why, options, worlds);
+            return;
+        }
         Show::Demo => {
             options.demo = true;
             options.worlds = Some(Vec::new());
@@ -2656,6 +2686,53 @@ fn tabs_scene(kind: TabsScene, options: &mut Options, worlds: &mut Vec<SavedWorl
     });
 }
 
+/// A reopened sessions scene: The Lantern Road (shown), Starfall Reach on its Map page,
+/// Emberwake (disconnected at quit) and a world kept by its address under a name of its own.
+/// Nothing connects, so it needs no server: after a crash the last run's file says it was still
+/// running; with Shift held the scene says Shift was down.
+fn restore_scene(why: crate::session_restore::Why, options: &mut Options, mut worlds: Vec<SavedWorld>) {
+    use crate::session_restore::{SavedSession, SavedView, SessionsFile, Why};
+    let ids = [
+        LANTERN_ID,
+        "5a7f0b3e9c214d6e8f1a2b3c4d5e6f70",
+        "e3b9c1d7a5f24068b1c3d5e7f9a1b2c4",
+    ];
+    for (world, id) in worlds.iter_mut().zip(ids) {
+        world.world_id = id.into();
+    }
+    worlds[0].username = "Odo".into();
+    worlds[1].username = "Mira".into();
+    let tab = |world: &SavedWorld, view: SavedView, connected: bool| SavedSession {
+        world_id: world.world_id.clone(),
+        address: world.endpoint().to_string(),
+        view,
+        connected,
+        ..Default::default()
+    };
+    let tabs = vec![
+        tab(&worlds[0], SavedView::Play, true),
+        tab(&worlds[1], SavedView::Map, true),
+        tab(&worlds[2], SavedView::Play, false),
+        SavedSession {
+            address: "duskmoor.example.net:7000".into(),
+            name: Some("Duskmoor test".into()),
+            connected: true,
+            ..Default::default()
+        },
+    ];
+    options.restore = Some(SessionsFile {
+        version: crate::session_restore::SESSIONS_VERSION,
+        running: why == Why::Crashed,
+        active: Some(0),
+        tabs,
+    });
+    options.launch_shift = Some(why == Why::Shift);
+    options.connect.clear();
+    options.worlds = Some(worlds);
+    options.layout_preset = Some(crate::workspace::Preset::Left);
+    options.font_size = Some(15.0);
+}
+
 /// The login world's address: the second `connect` entry a test passed, else the environment's.
 fn options_login(options: &Options) -> Endpoint {
     options.connect.get(1).cloned().unwrap_or_else(login_endpoint)
@@ -2714,6 +2791,7 @@ fn ready(scene: &Scene, probe: &SceneProbe) -> bool {
         Show::History(_) => lantern && probe.steps_done && probe.history_ready,
         Show::SessionMarkChannel => lantern && probe.steps_done && probe.mark_open,
         Show::WorldTheme => probe.session_text.contains("Exits: north"),
+        Show::Restored(_) => probe.restore_notice && probe.sessions == 4,
         // The rooms toast scene deletes three of the map's rooms: its prompt, not the room count.
         Show::Tabs(_) => {
             probe.session_text.contains("Lantern Crossroads >") && probe.tabs_ready && !probe.map_scene_pending
@@ -3055,6 +3133,9 @@ mod tests {
             "skin-menu",
             "settings-appearance",
             "world-theme-session",
+            "restore-crashed",
+            "restore-shift",
+            "settings-general-startup",
         ] {
             assert!(find(required).is_some(), "{required}");
         }

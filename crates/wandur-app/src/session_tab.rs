@@ -431,6 +431,42 @@ impl SessionTab {
         tab
     }
 
+    /// A session reopened from the last run, not connected: its tab, map and scripts as
+    /// [`Self::open`] makes them, a line in the transcript saying so, and no connection until
+    /// [`Self::connect`] (or Reconnect).
+    pub fn offline(id: SessionId, endpoint: Endpoint, options: &TabOptions, waker: Waker) -> Self {
+        let mut config = SessionConfig::new(endpoint.clone()).with_charset(options.charset);
+        config.window = (100, 40);
+        let reason = t(S::Disconnected).to_string();
+        let mut conn = Connection::offline(config, Arc::clone(&waker), reason);
+        conn.auto_reconnect = options.auto_reconnect;
+        let mut tab = Self::with_link(id, endpoint, options, Link::Net(conn));
+        tab.scripts = SessionScripts::new(&format!("wandur-scripts {id}"), Arc::clone(&waker));
+        tab.waker = Some(waker);
+        tab.status = tab.link_status();
+        tab.notice(t(S::RestoredNotConnected));
+        // That line is not news: no unseen-output dot on its tab.
+        tab.mark_seen();
+        tab.load_map();
+        tab
+    }
+
+    /// Connect a session that is not connected, as opening it would (no "Reconnecting" line):
+    /// a reopened session's first connection. Auto-login runs as on any connection when the
+    /// world has it on. Does nothing while connected or connecting.
+    pub fn connect(&mut self) {
+        let Link::Net(conn) = &mut self.link else {
+            return;
+        };
+        if !conn.is_down() {
+            return;
+        }
+        self.disconnecting = false;
+        conn.reconnect();
+        self.new_connection();
+        self.status = Status::Connecting;
+    }
+
     /// Read the world's saved map off the UI thread; rooms seen meanwhile wait for it.
     fn load_map(&mut self) {
         let Some(maps) = &self.maps else {

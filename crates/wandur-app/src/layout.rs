@@ -4,8 +4,9 @@
 //! leaves with their panels), not egui_dock's internal state: a restored layout is rebuilt through
 //! egui_dock's own split calls, so any file that parses gives a valid dock, an unknown panel name
 //! is dropped, and a file that does not parse is moved aside (`layout.json.bad`) and the default
-//! layout is used. Session tabs are not saved (sessions are not restored on start). Panels that
-//! were in floating windows come back docked in the first leaf.
+//! layout is used. Session tabs are not in it: `sessions.json` keeps them
+//! ([`crate::session_restore`]). Panels that were in floating windows come back docked in the
+//! first leaf.
 //!
 //! Version 2 (Saved worlds became its own panel): a version 1 file gets Saved worlds under the
 //! Workspace (or at the left of the dock when the Workspace is not docked), as the default
@@ -56,7 +57,7 @@ pub struct LayoutFile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub auto_hide: Vec<SavedHidden>,
     /// The map's share of a session's width with Play and Map side by side, last settled on
-    /// (sessions are not saved; new ones start at this share).
+    /// (new sessions start at this share).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub split_share: Option<f32>,
 }

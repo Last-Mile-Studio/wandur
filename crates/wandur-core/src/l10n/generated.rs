@@ -3180,10 +3180,30 @@ pub enum S {
     AboutLinkSource,
     /// Report an issue
     AboutLinkIssue,
+    /// When Wandur starts
+    StartupSessions,
+    /// Start fresh
+    StartupFresh,
+    /// Reopen my sessions (tabs, no connecting)
+    StartupTabs,
+    /// Reopen and reconnect
+    StartupReconnect,
+    /// Sessions that were connected when you quit connect again; auto-login runs only for worl...
+    StartupSessionsHint,
+    /// Reopened from last time, not connected
+    RestoredNotConnected,
+    /// Wandur did not close properly last time. Your sessions are back, not connected.
+    RestoreCrashedNotice,
+    /// Shift was held at start, so your sessions reopened without connecting.
+    RestoreShiftNotice,
+    /// Reconnect all
+    RestoreReconnectAll,
+    /// Leave offline
+    RestoreLeaveOffline,
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1587;
+pub const COUNT: usize = 1597;
 
 impl S {
     /// Every key, in table order.
@@ -4775,6 +4795,16 @@ impl S {
         S::AboutLinkOtherClients,
         S::AboutLinkSource,
         S::AboutLinkIssue,
+        S::StartupSessions,
+        S::StartupFresh,
+        S::StartupTabs,
+        S::StartupReconnect,
+        S::StartupSessionsHint,
+        S::RestoredNotConnected,
+        S::RestoreCrashedNotice,
+        S::RestoreShiftNotice,
+        S::RestoreReconnectAll,
+        S::RestoreLeaveOffline,
     ];
 }
 
@@ -6367,6 +6397,16 @@ pub static NAMES: [&str; COUNT] = [
     "AboutLinkOtherClients",
     "AboutLinkSource",
     "AboutLinkIssue",
+    "StartupSessions",
+    "StartupFresh",
+    "StartupTabs",
+    "StartupReconnect",
+    "StartupSessionsHint",
+    "RestoredNotConnected",
+    "RestoreCrashedNotice",
+    "RestoreShiftNotice",
+    "RestoreReconnectAll",
+    "RestoreLeaveOffline",
 ];
 
 /// The text of every key in each language, in the order of `Language`.
@@ -7960,6 +8000,16 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Other MUD clients",
         "Source code",
         "Report an issue",
+        "When Wandur starts",
+        "Start fresh",
+        "Reopen my sessions (tabs, no connecting)",
+        "Reopen and reconnect",
+        "Sessions that were connected when you quit connect again; auto-login runs only for worlds that have it on. Hold Shift while Wandur starts to reopen them without connecting.",
+        "Reopened from last time, not connected",
+        "Wandur did not close properly last time. Your sessions are back, not connected.",
+        "Shift was held at start, so your sessions reopened without connecting.",
+        "Reconnect all",
+        "Leave offline",
     ],
     // es
     [
@@ -9550,6 +9600,16 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Otros clientes MUD",
         "Código fuente",
         "Informar de un problema",
+        "Al iniciar Wandur",
+        "Empezar de cero",
+        "Reabrir mis sesiones (pestañas, sin conectar)",
+        "Reabrir y reconectar",
+        "Las sesiones que estaban conectadas al salir se vuelven a conectar; el inicio de sesión automático solo se usa en los mundos que lo tienen activado. Mantén pulsada Mayús al iniciar Wandur para reabrirlas sin conectar.",
+        "Reabierta de la última vez, sin conectar",
+        "Wandur no se cerró correctamente la última vez. Tus sesiones han vuelto, sin conectar.",
+        "Mantuviste pulsada Mayús al iniciar, así que tus sesiones se reabrieron sin conectar.",
+        "Reconectar todas",
+        "Dejar sin conexión",
     ],
     // fr
     [
@@ -11140,6 +11200,16 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Autres clients MUD",
         "Code source",
         "Signaler un problème",
+        "Au démarrage de Wandur",
+        "Repartir de zéro",
+        "Rouvrir mes sessions (onglets, sans connexion)",
+        "Rouvrir et se reconnecter",
+        "Les sessions connectées au moment de quitter se reconnectent ; la connexion automatique ne s’exécute que pour les mondes où elle est activée. Maintenez Maj enfoncée au démarrage de Wandur pour les rouvrir sans connexion.",
+        "Rouverte depuis la dernière fois, non connectée",
+        "Wandur ne s’est pas fermé correctement la dernière fois. Vos sessions sont de retour, non connectées.",
+        "Maj était enfoncée au démarrage : vos sessions ont été rouvertes sans connexion.",
+        "Tout reconnecter",
+        "Laisser hors ligne",
     ],
     // de
     [
@@ -12730,6 +12800,16 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Andere MUD-Clients",
         "Quellcode",
         "Problem melden",
+        "Beim Start von Wandur",
+        "Ohne Sitzungen starten",
+        "Meine Sitzungen wieder öffnen (Tabs, ohne Verbindung)",
+        "Wieder öffnen und neu verbinden",
+        "Sitzungen, die beim Beenden verbunden waren, verbinden sich wieder; die automatische Anmeldung läuft nur bei Welten, für die sie aktiviert ist. Halte beim Start von Wandur die Umschalttaste gedrückt, um sie ohne Verbindung zu öffnen.",
+        "Vom letzten Mal wieder geöffnet, nicht verbunden",
+        "Wandur wurde beim letzten Mal nicht richtig beendet. Deine Sitzungen sind wieder da, nicht verbunden.",
+        "Beim Start war die Umschalttaste gedrückt, daher wurden deine Sitzungen ohne Verbindung geöffnet.",
+        "Alle neu verbinden",
+        "Offline lassen",
     ],
     // pt-BR
     [
@@ -14320,5 +14400,15 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "Outros clientes MUD",
         "Código-fonte",
         "Relatar um problema",
+        "Ao iniciar o Wandur",
+        "Começar do zero",
+        "Reabrir minhas sessões (abas, sem conectar)",
+        "Reabrir e reconectar",
+        "As sessões que estavam conectadas ao sair se conectam de novo; o login automático só roda nos mundos em que está ativado. Segure Shift ao iniciar o Wandur para reabri-las sem conectar.",
+        "Reaberta da última vez, sem conexão",
+        "O Wandur não foi fechado corretamente da última vez. Suas sessões voltaram, sem conexão.",
+        "Shift estava pressionado ao iniciar, então suas sessões foram reabertas sem conectar.",
+        "Reconectar todas",
+        "Deixar offline",
     ],
 ];

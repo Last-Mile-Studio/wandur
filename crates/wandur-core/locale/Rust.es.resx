@@ -562,4 +562,14 @@
   <data name="AboutLinkOtherClients" xml:space="preserve"><value>Otros clientes MUD</value></data>
   <data name="AboutLinkSource" xml:space="preserve"><value>Código fuente</value></data>
   <data name="AboutLinkIssue" xml:space="preserve"><value>Informar de un problema</value></data>
+  <data name="StartupSessions" xml:space="preserve"><value>Al iniciar Wandur</value></data>
+  <data name="StartupFresh" xml:space="preserve"><value>Empezar de cero</value></data>
+  <data name="StartupTabs" xml:space="preserve"><value>Reabrir mis sesiones (pestañas, sin conectar)</value></data>
+  <data name="StartupReconnect" xml:space="preserve"><value>Reabrir y reconectar</value></data>
+  <data name="StartupSessionsHint" xml:space="preserve"><value>Las sesiones que estaban conectadas al salir se vuelven a conectar; el inicio de sesión automático solo se usa en los mundos que lo tienen activado. Mantén pulsada Mayús al iniciar Wandur para reabrirlas sin conectar.</value></data>
+  <data name="RestoredNotConnected" xml:space="preserve"><value>Reabierta de la última vez, sin conectar</value></data>
+  <data name="RestoreCrashedNotice" xml:space="preserve"><value>Wandur no se cerró correctamente la última vez. Tus sesiones han vuelto, sin conectar.</value></data>
+  <data name="RestoreShiftNotice" xml:space="preserve"><value>Mantuviste pulsada Mayús al iniciar, así que tus sesiones se reabrieron sin conectar.</value></data>
+  <data name="RestoreReconnectAll" xml:space="preserve"><value>Reconectar todas</value></data>
+  <data name="RestoreLeaveOffline" xml:space="preserve"><value>Dejar sin conexión</value></data>
 </root>

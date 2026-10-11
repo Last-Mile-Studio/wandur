@@ -138,7 +138,7 @@ and character search. The probe records a histogram of UI-thread time per frame 
 - The layout is saved as our own description (splits with fractions, leaves with panel names),
   not egui_dock's internal tree, and restored by replaying splits. Any file that parses gives a
   valid dock; unknown names are dropped; a bad file is moved to `layout.json.bad`. Sessions are
-  not saved. Saved every two seconds when changed, and on exit.
+  not in it (see Reopening sessions below). Saved every two seconds when changed, and on exit.
 - Map and Channels follow the active session: the session tab focused last.
 - **(ui/full-map)** Each session's document switches between Play, Map and Diagnostics in its
   footer's view tabs, with a side-by-side toggle beside them. Map is the session's full map
@@ -159,6 +159,38 @@ and character search. The probe records a histogram of UI-thread time per frame 
   dock; Escape, Hide, a click elsewhere, or moving away for 400 ms (when opened by hovering) hides
   it; Pin splits it back beside the smallest subtree that holds what was on the other side. The
   unpinned panels are saved in `layout.json` (`auto_hide`). Documents cannot be unpinned.
+
+## Reopening sessions (feature/session-restore, October 2026)
+
+`session_restore.rs` keeps the session tabs in `sessions.json`, beside `layout.json` and on the
+same clock (checked with the layout every two seconds, written by its own `FileSaver` when it
+changed, and on exit), but in a file of its own: the layout file is compared and replaced as a
+whole and moved aside when it does not parse, and the sessions change far more often (every
+connect and disconnect) and carry the crash marker. Per tab: the saved world's id (else the
+address), a Rename name, the character the world reported when it differs from the saved
+username, the page and side by side, and whether it was connected (connected, connecting or
+waiting to reconnect); and which tab was shown. No secret: a reopened session that connects
+reads the vault for auto-login as any connection does.
+
+- Start (`WandurApp::reopen_sessions`, before the command line's addresses): `plan` maps the
+  file through the setting (`Settings::startup_sessions`: Fresh, Tabs, Reconnect) and the saved
+  worlds (a world id no longer saved is skipped). Every tab opens offline
+  (`SessionTab::offline` over `Connection::offline`: no socket until `connect`), then the ones
+  to reconnect connect, unless the last run crashed or Shift is held. A command line address
+  equal to a reopened tab (address and world) uses that tab. Then the file is written at once
+  with `running: true`.
+- Crash marker: `on_exit` writes `running: false`. eframe calls it for a window close, a
+  `ViewportCommand::Close` (File > Exit, the app menu's Quit) and on macOS for Cmd+Q from the
+  system menu and a logout (winit's `applicationWillTerminate` ends the loop, and eframe saves
+  and calls `on_exit` there). A kill, a crash, power loss, or a Windows or Linux logout that
+  ends the process leaves it true: the next start reopens without connecting and shows the
+  strip (Reconnect all, Leave offline) under the toolbar.
+- Shift: `main` reads `+[NSEvent modifierFlags]` on macOS before parsing the arguments (it
+  reads the keyboard, not an event stream, so it works with no window or focus). Elsewhere
+  `ShiftWatch` holds the reconnects for 400 ms after the first frame and skips them if egui
+  sees Shift in any of those frames; a Shift let go before the window is focused is missed.
+- Scenes (`Options::ephemeral`) never read or write the file; `Options::restore` hands a scene
+  its own tabs. The perf probe (`WANDUR_PERF_PROBE`) does not reopen anything.
 
 ## Panel headers (ui-chrome, October 2026)
 
@@ -527,6 +559,7 @@ hanging indent, off by default). It is a display layout over the grid, not a sec
 
 `settings.json` (versioned, unknown fields ignored, values clamped; M3 added theme, directory
 address, adult worlds, and per world the listing id and usage), `layout.json` (M3),
+`sessions.json` (the tabs to reopen and the crash marker, October 2026),
 `directory.json` (the snapshot, M3) and `thumbnails/` (M3) in the data directory:
 `--data-dir`, else the platform data directory plus `Wandur-Rust` (never the C# client's
 `Wandur`). Written to a temporary file and renamed. Unreadable files are moved to

@@ -562,4 +562,14 @@
   <data name="AboutLinkOtherClients" xml:space="preserve"><value>Andere MUD-Clients</value></data>
   <data name="AboutLinkSource" xml:space="preserve"><value>Quellcode</value></data>
   <data name="AboutLinkIssue" xml:space="preserve"><value>Problem melden</value></data>
+  <data name="StartupSessions" xml:space="preserve"><value>Beim Start von Wandur</value></data>
+  <data name="StartupFresh" xml:space="preserve"><value>Ohne Sitzungen starten</value></data>
+  <data name="StartupTabs" xml:space="preserve"><value>Meine Sitzungen wieder öffnen (Tabs, ohne Verbindung)</value></data>
+  <data name="StartupReconnect" xml:space="preserve"><value>Wieder öffnen und neu verbinden</value></data>
+  <data name="StartupSessionsHint" xml:space="preserve"><value>Sitzungen, die beim Beenden verbunden waren, verbinden sich wieder; die automatische Anmeldung läuft nur bei Welten, für die sie aktiviert ist. Halte beim Start von Wandur die Umschalttaste gedrückt, um sie ohne Verbindung zu öffnen.</value></data>
+  <data name="RestoredNotConnected" xml:space="preserve"><value>Vom letzten Mal wieder geöffnet, nicht verbunden</value></data>
+  <data name="RestoreCrashedNotice" xml:space="preserve"><value>Wandur wurde beim letzten Mal nicht richtig beendet. Deine Sitzungen sind wieder da, nicht verbunden.</value></data>
+  <data name="RestoreShiftNotice" xml:space="preserve"><value>Beim Start war die Umschalttaste gedrückt, daher wurden deine Sitzungen ohne Verbindung geöffnet.</value></data>
+  <data name="RestoreReconnectAll" xml:space="preserve"><value>Alle neu verbinden</value></data>
+  <data name="RestoreLeaveOffline" xml:space="preserve"><value>Offline lassen</value></data>
 </root>

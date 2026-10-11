@@ -52,6 +52,7 @@ pub mod scene;
 pub mod screenshot;
 pub mod script_editor;
 pub mod select;
+pub mod session_restore;
 pub mod session_tab;
 pub mod session_tabs;
 pub mod sessions;

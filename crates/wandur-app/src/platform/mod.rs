@@ -2,4 +2,6 @@
 //! own platform and keeps its unsafe code to itself.
 
 #[cfg(target_os = "macos")]
+pub mod mac_keys;
+#[cfg(target_os = "macos")]
 pub mod mac_traffic_lights;

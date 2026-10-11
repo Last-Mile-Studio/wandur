@@ -125,6 +125,17 @@ impl Sessions {
         id
     }
 
+    /// Reopen a session from the last run, not connected ([`SessionTab::offline`]).
+    pub fn reopen(&mut self, endpoint: Endpoint, options: &TabOptions, waker: Waker) -> SessionId {
+        self.next_id += 1;
+        let id = self.next_id;
+        self.entries.push(SessionEntry {
+            tab: SessionTab::offline(id, endpoint, options, waker),
+            view: TerminalViewState::default(),
+        });
+        id
+    }
+
     /// Open the offline demo world.
     pub fn open_demo(&mut self, options: &TabOptions) -> SessionId {
         self.next_id += 1;

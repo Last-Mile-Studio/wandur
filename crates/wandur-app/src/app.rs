@@ -230,6 +230,12 @@ pub struct Options {
     pub update_clock: Option<wandur_core::updates::Clock>,
     /// How long after start the first automatic update check waits (20 seconds otherwise).
     pub update_delay: Option<Duration>,
+    /// Whether Shift was held at start, as `main` asked the system (macOS) or a test says;
+    /// `None`: the first frames are watched for it ([`crate::session_restore`]).
+    pub launch_shift: Option<bool>,
+    /// Reopen these sessions instead of what `sessions.json` holds (scenes). An ephemeral run
+    /// never reads or writes that file.
+    pub restore: Option<crate::session_restore::SessionsFile>,
 }
 
 /// How a scene sets up the agent screens.
@@ -358,6 +364,10 @@ pub struct SceneProbe {
     /// A session tabs scene has every session settled (its Lantern sessions at the prompt,
     /// its toast shown); true without such a scene.
     pub tabs_ready: bool,
+    /// The strip offering to reconnect reopened sessions shows.
+    pub restore_notice: bool,
+    /// Sessions open.
+    pub sessions: usize,
 }
 
 /// A session tabs scene (`tabs-*`, `toast-*`).
@@ -414,6 +424,13 @@ pub struct WandurApp {
     saver: Option<Saver>,
     layout_saver: Option<FileSaver>,
     saved_layout: Option<String>,
+    /// `sessions.json` (none in an ephemeral run) and what was last written to it.
+    sessions_saver: Option<FileSaver>,
+    saved_sessions: String,
+    /// Reopened sessions that did not connect (a crash, Shift held), offered to reconnect.
+    restore_notice: Option<crate::session_restore::RestoreNotice>,
+    /// Reopened sessions waiting for Shift's chance before they connect.
+    shift_watch: Option<crate::session_restore::ShiftWatch>,
     layout_checked: Instant,
     /// Messages about settings or the layout (unreadable files, no data directory).
     notes: Vec<String>,
@@ -810,6 +827,10 @@ impl WandurApp {
             .as_ref()
             .filter(|_| !options.ephemeral)
             .map(|d| FileSaver::new(d.join(layout::LAYOUT_FILE)));
+        let sessions_saver = dir
+            .as_ref()
+            .filter(|_| !options.ephemeral)
+            .map(|d| FileSaver::new(d.join(crate::session_restore::SESSIONS_FILE)));
 
         let pacer = Arc::new(Pacer::new(settings.output_fps));
         let waker: Waker = {
@@ -913,6 +934,10 @@ impl WandurApp {
             saver,
             layout_saver,
             saved_layout,
+            sessions_saver,
+            saved_sessions: String::new(),
+            restore_notice: None,
+            shift_watch: None,
             layout_checked: Instant::now(),
             notes,
             connect_error: None,
@@ -1056,10 +1081,7 @@ impl WandurApp {
                 discover: !options.agent_no_discovery,
             }));
         }
-        for endpoint in options.connect {
-            let world = app.settings.worlds.iter().position(|w| w.is_at(&endpoint));
-            app.open(endpoint, world);
-        }
+        app.reopen_sessions(&options);
         let first = app.sessions.iter().next().map(|e| e.tab.id);
         if let Some(id) = first {
             if let Some(scene) = options.map_scene.clone() {
@@ -1850,6 +1872,8 @@ impl WandurApp {
                 .and_then(|id| self.sessions.get(id))
                 .is_some_and(|e| e.tab.strip.is_some()),
             update_shown: self.updates.visible(self.active_private()),
+            restore_notice: self.restore_notice.is_some(),
+            sessions: self.sessions.len(),
             tabs_ready: self.scene_tabs.as_ref().is_none_or(|scene| {
                 let prompts = self
                     .sessions
@@ -2043,6 +2067,11 @@ impl WandurApp {
             "settings:general:history" => {
                 let mut dialog = SettingsDialog::new(&self.settings);
                 dialog.open_retention = true;
+                self.settings_dialog = Some(dialog);
+            }
+            "settings:general:startup" => {
+                let mut dialog = SettingsDialog::new(&self.settings);
+                dialog.open_startup = true;
                 self.settings_dialog = Some(dialog);
             }
             other if other.starts_with("settings:") => {
@@ -2589,6 +2618,207 @@ impl WandurApp {
                 writer.submit(Box::new(move |c| worlds::record_connection(c, &id, now)));
             }
             self.save_settings();
+        }
+    }
+
+    /// At start: reopen the last run's sessions as the setting says, then open the command
+    /// line's addresses. A reopened session at the same address and world as one of those is
+    /// used for it (it connects, as asked) instead of a second session. Then marks this run as
+    /// running in `sessions.json`, so a run that does not end cleanly is noticed next time.
+    fn reopen_sessions(&mut self, options: &Options) {
+        use crate::session_restore::{self, RestoreNotice, ShiftWatch, Why};
+        // A scene reads nothing of the data directory; the perf probe measures a known start.
+        let file = match &options.restore {
+            Some(file) => Some(file.clone()),
+            None if options.ephemeral || self.probe.is_some() => None,
+            None => self.data_dir.as_deref().and_then(session_restore::load),
+        };
+        let plan = file
+            .map(|f| session_restore::plan(&f, &self.settings.worlds, self.settings.startup_sessions))
+            .unwrap_or_default();
+        let mut reopened: Vec<(SessionId, &session_restore::Reopen)> = Vec::new();
+        for tab in &plan.tabs {
+            reopened.push((self.reopen(tab), tab));
+        }
+        let mut wanted: Vec<SessionId> = reopened
+            .iter()
+            .filter(|(_, r)| r.reconnect)
+            .map(|(id, _)| *id)
+            .collect();
+        let mut shown = plan.active.and_then(|i| reopened.get(i)).map(|(id, _)| *id);
+        let mut taken: Vec<SessionId> = Vec::new();
+        for endpoint in options.connect.clone() {
+            let world = self.settings.worlds.iter().position(|w| w.is_at(&endpoint));
+            let same = reopened
+                .iter()
+                .find(|(id, r)| !taken.contains(id) && r.world == world && r.endpoint == endpoint)
+                .map(|(id, _)| *id);
+            match same {
+                Some(id) => {
+                    taken.push(id);
+                    wanted.retain(|w| *w != id);
+                    if let Some(e) = self.sessions.get_mut(id) {
+                        e.tab.connect();
+                    }
+                    shown = Some(id);
+                }
+                None => {
+                    self.open(endpoint, world);
+                    shown = self.active_session;
+                }
+            }
+        }
+        if let Some(id) = shown {
+            self.focus_session(id);
+        }
+        if !wanted.is_empty() {
+            let shift = options.launch_shift;
+            match (plan.crashed, shift) {
+                (true, _) => {
+                    self.restore_notice = Some(RestoreNotice {
+                        why: Why::Crashed,
+                        sessions: wanted,
+                    });
+                }
+                (false, Some(true)) => {
+                    self.restore_notice = Some(RestoreNotice {
+                        why: Why::Shift,
+                        sessions: wanted,
+                    });
+                }
+                (false, Some(false)) => self.connect_reopened(&wanted),
+                (false, None) => self.shift_watch = Some(ShiftWatch::new(wanted)),
+            }
+        }
+        // Written at once (not on the saver's thread): a crash right after start still counts.
+        if self.sessions_saver.is_some()
+            && let Some(dir) = &self.data_dir
+        {
+            let json = self.sessions_json(true);
+            if let Err(e) =
+                wandur_core::settings::write_atomic(&dir.join(session_restore::SESSIONS_FILE), json.as_bytes())
+            {
+                eprintln!("wandur: could not save {}: {e}", session_restore::SESSIONS_FILE);
+            }
+            self.saved_sessions = json;
+        }
+    }
+
+    /// Open one session of the last run, not connected: its tab, name, character and page as
+    /// they were.
+    fn reopen(&mut self, tab: &crate::session_restore::Reopen) -> SessionId {
+        use crate::session_restore::SavedView;
+        let mut options = self.tab_options(Some(&tab.endpoint), tab.world);
+        if !tab.saved.character.is_empty() {
+            options.character = tab.saved.character.clone();
+        }
+        self.apply_pack(&tab.endpoint, tab.world);
+        let id = self
+            .sessions
+            .reopen(tab.endpoint.clone(), &options, Arc::clone(&self.waker));
+        self.attach_macros(id);
+        self.attach_agent(id);
+        workspace::add_document(&mut self.dock, Tab::Session(id));
+        self.active_session = Some(id);
+        self.directory_active = false;
+        if let Some(entry) = self.sessions.get_mut(id) {
+            entry.tab.custom_name = tab.saved.name.clone().filter(|n| !n.trim().is_empty());
+            match tab.saved.view {
+                SavedView::Play => {}
+                SavedView::Map => entry.view.show_map(true),
+                SavedView::Diagnostics => entry.view.page = crate::terminal_view::Page::Diagnostics,
+            }
+            entry
+                .view
+                .set_split(tab.saved.split && tab.saved.view != SavedView::Diagnostics);
+            if entry.view.map_shown() {
+                self.full_maps.entry(id).or_insert_with(MapViewState::full);
+            }
+        }
+        id
+    }
+
+    /// Connect reopened sessions that are still open and not connected.
+    fn connect_reopened(&mut self, ids: &[SessionId]) {
+        for id in ids {
+            if let Some(e) = self.sessions.get_mut(*id) {
+                e.tab.connect();
+            }
+        }
+    }
+
+    /// A frame's look at Shift for reopened sessions waiting to connect (no system to ask).
+    fn run_shift_watch(&mut self, ctx: &egui::Context, now: Instant) {
+        let Some(watch) = &mut self.shift_watch else {
+            return;
+        };
+        let shift = ctx.input(|i| i.modifiers.shift);
+        match watch.frame(shift, now) {
+            None => {
+                if let Some(at) = watch.deadline() {
+                    ctx.request_repaint_after(at.saturating_duration_since(now));
+                }
+            }
+            Some(held) => {
+                let ids = std::mem::take(&mut watch.sessions);
+                self.shift_watch = None;
+                if held {
+                    self.restore_notice = Some(crate::session_restore::RestoreNotice {
+                        why: crate::session_restore::Why::Shift,
+                        sessions: ids,
+                    });
+                } else {
+                    self.connect_reopened(&ids);
+                }
+            }
+        }
+    }
+
+    /// The strip offering to reconnect reopened sessions that did not; it goes once none of
+    /// them is left open and not connected.
+    fn restore_strip(&mut self, ui: &mut Ui) {
+        use crate::session_restore::StripAction;
+        let Some(notice) = &mut self.restore_notice else {
+            return;
+        };
+        let sessions = &self.sessions;
+        notice
+            .sessions
+            .retain(|id| sessions.get(*id).is_some_and(|e| e.tab.is_closed()));
+        if notice.sessions.is_empty() {
+            self.restore_notice = None;
+            return;
+        }
+        match crate::session_restore::strip(ui, notice, &self.theme) {
+            None => {}
+            Some(StripAction::ReconnectAll) => {
+                let ids = std::mem::take(&mut notice.sessions);
+                self.restore_notice = None;
+                self.connect_reopened(&ids);
+            }
+            Some(StripAction::LeaveOffline) => self.restore_notice = None,
+        }
+    }
+
+    /// `sessions.json` as the open sessions are now.
+    fn sessions_json(&self, running: bool) -> String {
+        crate::session_restore::to_json(&crate::session_restore::capture(
+            self.sessions.iter(),
+            self.active_session,
+            &self.settings.worlds,
+            running,
+        ))
+    }
+
+    /// Save `sessions.json` if it changed (on the saver's thread).
+    fn save_sessions(&mut self, running: bool) {
+        let Some(saver) = &self.sessions_saver else {
+            return;
+        };
+        let json = self.sessions_json(running);
+        if json != self.saved_sessions {
+            saver.save(json.clone().into_bytes());
+            self.saved_sessions = json;
         }
     }
 
@@ -3429,6 +3659,7 @@ impl WandurApp {
             return;
         }
         self.layout_checked = Instant::now();
+        self.save_sessions(true);
         let json = layout::to_json_with_split(&self.dock, &self.auto, chosen_split(self.split_share));
         if json != self.saved_layout
             && let (Some(saver), Some(text)) = (&self.layout_saver, &json)
@@ -5416,6 +5647,7 @@ impl eframe::App for WandurApp {
         if let Some(deadline) = self.sessions.deadline() {
             ctx.request_repaint_after(deadline.saturating_duration_since(now).max(Duration::from_millis(1)));
         }
+        self.run_shift_watch(ctx, now);
         self.run_updates(ctx, now);
         self.run_official_maps(ctx);
         if self.directory.revision() != self.directory_status.revision {
@@ -5493,6 +5725,7 @@ impl eframe::App for WandurApp {
             self.run_command(&ctx, command);
         }
         self.update_strip(ui);
+        self.restore_strip(ui);
         self.notice_strip(ui);
         self.official_map_strip(ui);
         egui::Panel::bottom("status-bar")
@@ -5749,9 +5982,14 @@ impl eframe::App for WandurApp {
         if let Some(toast) = self.toast.take() {
             self.finish_toast(toast);
         }
-        // Write pending settings and the layout before the process ends.
+        // Write pending settings and the layout before the process ends, and the open sessions
+        // with this run marked as ended cleanly.
         self.save_layout(true);
+        self.save_sessions(false);
         if let Some(saver) = &mut self.layout_saver {
+            saver.flush();
+        }
+        if let Some(saver) = &mut self.sessions_saver {
             saver.flush();
         }
         if let Some(saver) = &mut self.saver {
@@ -10373,3 +10611,7 @@ mod map_import_tests;
 #[cfg(test)]
 #[path = "official_map/app/tests.rs"]
 mod official_map_tests;
+
+#[cfg(test)]
+#[path = "session_restore/app/tests.rs"]
+mod restore_tests;

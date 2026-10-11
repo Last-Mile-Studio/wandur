@@ -125,6 +125,9 @@ fn parse_endpoint(text: &str) -> Result<Endpoint, String> {
 
 fn main() -> eframe::Result {
     wandur_app::sysstat::mark_main_started();
+    // Shift held while Wandur starts reopens the last sessions without connecting. Asked first
+    // thing, where the system can say (macOS), so a quick press still counts.
+    let launch_shift = wandur_app::session_restore::system_shift();
     let cli = match parse_args() {
         Ok(cli) => cli,
         Err(e) => {
@@ -211,6 +214,9 @@ fn main() -> eframe::Result {
     let mut options = cli.options;
     // The real window puts its menus where the platform expects them (macOS: the menu bar).
     options.native_menu = true;
+    if options.launch_shift.is_none() {
+        options.launch_shift = launch_shift;
+    }
     // Lets the perf harness compare redraw caps without passing flags.
     if let Some(fps) = std::env::var("WANDUR_OUTPUT_FPS").ok().and_then(|v| v.parse().ok()) {
         options.output_fps = Some(fps);
