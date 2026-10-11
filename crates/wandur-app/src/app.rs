@@ -2082,6 +2082,8 @@ impl WandurApp {
                 self.settings_dialog = Some(dialog);
             }
             "directory" => workspace::open_panel(&mut self.dock, Tab::Directory),
+            // View > Session history in its own window.
+            "history" => self.actions.push(AppAction::OpenHistory),
             other => {
                 // An unpinned panel slid out, as if its strip tab was clicked.
                 if let Some(tab) = other.strip_prefix("unpinned:").and_then(Tab::from_name) {
@@ -3215,17 +3217,10 @@ impl WandurApp {
         }
     }
 
-    /// A docked panel's Float (out into a window by its leaf), Unpin or Close.
+    /// A docked panel's Unpin or Close (panels do not float: they stay in the main window).
     fn dock_command(&mut self, tab: Tab, command: panel_header::DockCommand) {
         let Some(path) = self.dock.find_tab(&tab) else { return };
         match command {
-            panel_header::DockCommand::Float => {
-                let Ok(leaf) = self.dock.leaf(path.node_path()) else {
-                    return;
-                };
-                let at = leaf.rect.translate(egui::vec2(24.0, 24.0));
-                self.dock.detach_tab(path, at);
-            }
             panel_header::DockCommand::AutoHide => self.actions.push(AppAction::Unpin(tab)),
             panel_header::DockCommand::Close => {
                 self.dock.remove_tab(path);
@@ -5786,13 +5781,7 @@ impl eframe::App for WandurApp {
             .show(ui, |ui| {
                 self.dock_rect = ui.max_rect();
                 let drop_target = self.drop.track(ui.ctx(), &self.dock, self.dock_rect, header_height);
-                if let Some((tab, _)) = self.drop.dragging {
-                    // egui_dock's floating window: at the pointer, 0.8 of the panel's size.
-                    let floating = ui.ctx().input(|i| i.pointer.latest_pos()).and_then(|at| {
-                        let path = self.dock.find_tab(&tab)?;
-                        let size = self.dock.leaf(path.node_path()).ok()?.rect.size() * 0.8;
-                        Some((egui::Rect::from_min_size(at, size), tab.label()))
-                    });
+                if self.drop.dragging.is_some() {
                     crate::dock_drop::paint(
                         ui.ctx(),
                         &self.theme,
@@ -5800,7 +5789,6 @@ impl eframe::App for WandurApp {
                         self.dock_rect,
                         header_height,
                         drop_target,
-                        floating,
                     );
                 }
                 // The shaded surface under tab bars the dock still draws (several panels in one
@@ -8342,6 +8330,61 @@ mod tests {
             (width - previewed).abs() <= 3.0,
             "docked {width}, previewed {previewed}"
         );
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Panels never float: a header dragged and released away from every guide leaves the
+    /// layout exactly as it was (no egui_dock window inside the main one), and the panel menus
+    /// offer no Float.
+    #[test]
+    fn a_drag_released_away_from_every_guide_changes_nothing() {
+        let dir = std::env::temp_dir().join(format!("wandur-app-nofloat-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let ctx = egui::Context::default();
+        let mut app = WandurApp::new(&ctx, offline_options(&dir));
+        app.run_command(&ctx, Command::OpenDemo);
+        for _ in 0..3 {
+            frame(&mut app, &ctx, vec![]);
+        }
+        let before = layout::to_json(&app.dock, &app.auto);
+        let header = app.scene_target(crate::scene::Target::Header(Tab::Channels)).unwrap();
+        let leaf = app.scene_target(crate::scene::Target::Session).unwrap();
+        // Between the session's guides, clear of every tile: where egui_dock used to float it.
+        let away = pos2(leaf.left() + leaf.width() * 0.2, leaf.top() + leaf.height() * 0.2);
+        assert!(
+            crate::dock_drop::compass(leaf)
+                .iter()
+                .all(|(_, t)| !t.expand(8.0).contains(away))
+        );
+        let start = pos2(header.left() + 60.0, header.center().y);
+        let button = |pos, pressed| Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(&mut app, &ctx, vec![Event::PointerMoved(start)]);
+        frame(&mut app, &ctx, vec![button(start, true)]);
+        for n in 1..=20 {
+            let at = start + (away - start) * (n as f32 / 20.0);
+            frame(&mut app, &ctx, vec![Event::PointerMoved(at)]);
+        }
+        assert!(
+            matches!(app.drop.dragging, Some((Tab::Channels, None))),
+            "{:?}",
+            app.drop.dragging
+        );
+        frame(&mut app, &ctx, vec![button(away, false)]);
+        for _ in 0..4 {
+            frame(&mut app, &ctx, vec![]);
+        }
+        assert_eq!(app.dock.iter_surfaces().count(), 1, "no floating window");
+        assert_eq!(layout::to_json(&app.dock, &app.auto), before);
+        // No Float in the panel menus.
+        let text = drawn_text(&mut app, &ctx);
+        assert!(!text.iter().any(|t| t == "Float"), "{text:?}");
         app.on_exit();
         drop(app);
         let _ = std::fs::remove_dir_all(&dir);

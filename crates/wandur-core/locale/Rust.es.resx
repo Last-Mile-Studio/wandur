@@ -254,7 +254,6 @@
   <data name="CsImportSkipCsharpReleases" xml:space="preserve"><value>se refiere a las versiones del cliente en C#</value></data>
   <data name="CsImportSkipNoCounterpart" xml:space="preserve"><value>este cliente no tiene equivalente (conocimiento de protocolos, la caché del directorio, marcas de scripts eliminados)</value></data>
   <data name="DockPanelMenu" xml:space="preserve"><value>Opciones del panel</value></data>
-  <data name="DockFloat" xml:space="preserve"><value>Flotante</value></data>
   <data name="MenuButton" xml:space="preserve"><value>Menú</value></data>
   <data name="ScriptPackReadOnlyNotice" xml:space="preserve"><value>Este script viene del paquete de scripts del mundo y es de solo lectura. Duplícalo para tener una copia editable.</value></data>
   <data name="ScriptPackEditPrompt" xml:space="preserve"><value>Este es un script de paquete. ¿Crear una copia editable?</value></data>

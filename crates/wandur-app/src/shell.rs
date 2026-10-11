@@ -265,6 +265,12 @@ impl TabViewer for Viewer<'_> {
         OnCloseResponse::Close
     }
 
+    /// Panels never float: egui_dock offers no Eject, and a drag released away from every guide
+    /// leaves the panel where it was (a window-edge guide still docks it along that edge).
+    fn allowed_in_windows(&self, _tab: &mut Tab) -> bool {
+        false
+    }
+
     fn scroll_bars(&self, _tab: &Tab) -> [bool; 2] {
         // Each tab manages its own scrolling (the terminal and the directory virtualize rows).
         [false, false]
@@ -348,15 +354,12 @@ pub fn sheet_strip_id(path: egui_dock::NodePath) -> egui::Id {
     egui::Id::new(("sheet-tabs", path.surface, path.node))
 }
 
-/// A tool panel's menu (a bottom tab's right click, a shared leaf's header): Float, Unpin when
-/// it can be, Close. Returns what was chosen.
+/// A tool panel's menu (a bottom tab's right click, a shared leaf's header): Unpin when it can
+/// be, Close. Returns what was chosen.
 pub fn panel_menu(ui: &mut Ui, tab: Tab) -> Option<crate::panel_header::DockCommand> {
     use crate::panel_header::DockCommand;
     let mut chosen = None;
     ui.set_min_width(140.0);
-    if ui.button(t(S::DockFloat)).clicked() {
-        chosen = Some(DockCommand::Float);
-    }
     if crate::autohide::can_hide(tab) && ui.button(t(S::AutoHide)).on_hover_text(t(S::AutoHideHint)).clicked() {
         chosen = Some(DockCommand::AutoHide);
     }

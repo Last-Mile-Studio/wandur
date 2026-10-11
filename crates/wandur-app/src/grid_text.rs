@@ -21,28 +21,45 @@ use egui::epaint::{Galley, Mesh, Vertex};
 use egui::text::{LayoutJob, TextFormat};
 use egui::{Color32, FontId, Pos2, Rect, Ui, Vec2, pos2};
 
-/// Notices when egui rebuilds its font atlas (text options changed, or the atlas filled up), which
-/// makes every galley laid out before it unusable: galleys kept across frames (the Channels rows,
-/// directory cards, the grid's glyph quads) must be dropped then. It asks for a one-character
-/// galley every frame; egui's galley cache returns the same one until it is rebuilt.
+/// Notices when egui rebuilds its font atlas (text options changed, the atlas filled up, or the
+/// fonts were replaced), which makes every galley laid out before it unusable: galleys kept
+/// across frames (the Channels rows, directory cards, the grid's glyph quads) must be dropped
+/// then.
+///
+/// It reads the atlas's fill ratio (it only grows until the atlas is rebuilt), the text options
+/// and the number of fonts. It used to compare a one-character galley's identity from frame to
+/// frame, but egui's galley cache keeps only what the last pass used, and with a second window
+/// open (Settings, Session history: a viewport whose pass runs between the main window's) that
+/// galley was new every frame, so every cache was dropped every frame.
 #[derive(Debug, Default)]
 pub struct AtlasWatch {
     sentinel: Option<Arc<Galley>>,
+    seen: Option<(egui::epaint::text::TextOptions, usize, f32)>,
 }
 
 impl AtlasWatch {
     /// True on the first call and whenever the atlas was rebuilt since the last call.
     pub fn changed(&mut self, ui: &Ui) -> bool {
-        let sentinel = ui.fonts_mut(|f| {
-            f.layout_job(LayoutJob::simple_singleline(
+        let (sentinel, options, fonts, fill) = ui.fonts_mut(|f| {
+            let sentinel = f.layout_job(LayoutJob::simple_singleline(
                 "M".into(),
                 FontId::monospace(10.0),
                 Color32::WHITE,
-            ))
+            ));
+            (
+                sentinel,
+                *f.options(),
+                f.definitions().font_data.len(),
+                f.font_atlas_fill_ratio(),
+            )
         });
-        let same = self.sentinel.as_ref().is_some_and(|s| Arc::ptr_eq(s, &sentinel));
         self.sentinel = Some(sentinel);
-        !same
+        let rebuilt = match self.seen {
+            Some((o, n, previous)) => o != options || n != fonts || fill < previous,
+            None => true,
+        };
+        self.seen = Some((options, fonts, fill));
+        rebuilt
     }
 
     pub fn template(&self) -> Option<&Arc<Galley>> {
@@ -237,5 +254,41 @@ impl GridText {
         {
             painter.galley(origin, Arc::clone(galley), Color32::WHITE);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AtlasWatch;
+
+    fn pass(ctx: &egui::Context, add: impl FnMut(&mut egui::Ui)) {
+        let mut add = add;
+        ctx.run_ui(egui::RawInput::default(), |ui| add(ui))
+            .textures_delta
+            .clear();
+    }
+
+    /// A pass that lays out nothing of ours (a second viewport's, which runs between the main
+    /// window's) is not an atlas rebuild; changed text options are.
+    #[test]
+    fn a_pass_in_between_is_not_an_atlas_rebuild() {
+        let ctx = egui::Context::default();
+        let mut watch = AtlasWatch::default();
+        let mut changed = Vec::new();
+        pass(&ctx, |ui| changed.push(watch.changed(ui)));
+        for _ in 0..3 {
+            pass(&ctx, |ui| {
+                ui.label("another window");
+            });
+            pass(&ctx, |ui| changed.push(watch.changed(ui)));
+        }
+        assert_eq!(changed, [true, false, false, false]);
+        ctx.global_style_mut(|s| s.visuals.text_options.font_hinting = !s.visuals.text_options.font_hinting);
+        pass(&ctx, |ui| changed.push(watch.changed(ui)));
+        assert_eq!(
+            changed.last(),
+            Some(&true),
+            "the atlas was rebuilt for new text options"
+        );
     }
 }

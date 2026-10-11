@@ -41,7 +41,7 @@ WANDUR_DIRECTORY_URL=http://127.0.0.1:4402 ./target/release/wandur 127.0.0.1:440
 
 Options: `wandur [HOST:PORT | tls://HOST:PORT]... [--data-dir DIR] [--scrollback ROWS]
 [--font-size POINTS] [--output-fps N] [--theme NAME] [--directory-url URL]
-[--show directory|settings|world:ID|unpinned:PANEL] [--window-size WxH] [--renderer wgpu|glow]
+[--show directory|settings|history|world:ID|unpinned:PANEL] [--window-size WxH] [--renderer wgpu|glow]
 [--scene NAME|list]` (`glow` needs `--features glow`). Settings, the layout, the open sessions
 (`sessions.json`, reopened at the next start as Settings > General, When Wandur starts, says;
 hold Shift while it starts to reopen them without connecting), the client database

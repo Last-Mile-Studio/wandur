@@ -14,7 +14,7 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 const USAGE: &str = "wandur [HOST:PORT | tls://HOST:PORT]... [--connect ADDRESS] [--data-dir DIR] \
 [--scrollback ROWS] [--font-size POINTS] [--output-fps N] [--theme NAME] [--skin Fleet|Armored|System] \
 [--directory-url URL] \
-[--show directory|settings|world:ID|unpinned:PANEL] [--window-size WxH] [--renderer wgpu|glow] \
+[--show directory|settings|history|world:ID|unpinned:PANEL] [--window-size WxH] [--renderer wgpu|glow] \
 [--scene NAME|list]
 wandur --import-csharp DIR|wandur.db [--data-dir DIR] [--dry-run] [--include-passwords]
 

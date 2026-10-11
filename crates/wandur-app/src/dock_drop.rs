@@ -9,8 +9,9 @@
 //! from the pointer, paints the tiles' faces and the preview under egui_dock's glyphs, and after
 //! the drop corrects the split so the new panel has the previewed extent in points (taking the
 //! dragged panel out of its old place can widen the target first). The window-edge guides are
-//! this module's own: egui_dock floats a panel released there, and the app then docks it along
-//! that edge of the main dock.
+//! this module's own: egui_dock does nothing with a panel released there (panels never float,
+//! `TabViewer::allowed_in_windows`), and the app then docks it along that edge of the main dock.
+//! A panel released away from every guide stays where it was.
 
 use egui::{Color32, CornerRadius, Id, LayerId, Order, Pos2, Rect, Stroke, StrokeKind, vec2};
 use egui_dock::{DockState, Node, NodeIndex, NodePath, Split, SurfaceIndex};
@@ -131,8 +132,8 @@ fn hovered_leaf(dock: &DockState<Tab>, pointer: Pos2, bar: f32) -> Option<(NodeP
         .map(|(path, leaf)| (path, leaf.rect))
 }
 
-/// Where a panel dragged from `source` lands if released at `pointer`, or `None` (it would
-/// float, or join a tab bar). `bar` is the tab bar height.
+/// Where a panel dragged from `source` lands if released at `pointer`, or `None` (it stays
+/// where it was, or joins a tab bar). `bar` is the tab bar height.
 pub fn target(dock: &DockState<Tab>, source: NodePath, area: Rect, pointer: Pos2, bar: f32) -> Option<Target> {
     if let Some((path, rect)) = hovered_leaf(dock, pointer, bar) {
         // egui_dock offers only the centre guide on the panel being dragged when it is alone.
@@ -203,7 +204,7 @@ pub fn style(style: &mut egui_dock::Style, theme: &Theme) {
 pub enum Pending {
     /// Give the panel this extent (points) along the split's axis.
     Size { tab: Tab, split: Split, extent: f32 },
-    /// Dock the floated panel along this edge.
+    /// Dock the dragged panel along this edge.
     Edge { tab: Tab, edge: WindowEdge },
 }
 
@@ -327,38 +328,9 @@ impl DropState {
 
 /// Paint the guide tiles' faces and the preview, under egui_dock's guide glyphs (a middle layer
 /// over the panels, below its overlay).
-#[allow(clippy::too_many_arguments)]
-pub fn paint(
-    ctx: &egui::Context,
-    theme: &Theme,
-    dock: &DockState<Tab>,
-    area: Rect,
-    bar: f32,
-    target: Option<Target>,
-    floating: Option<(Rect, &str)>,
-) {
+pub fn paint(ctx: &egui::Context, theme: &Theme, dock: &DockState<Tab>, area: Rect, bar: f32, target: Option<Target>) {
     let painter = ctx.layer_painter(LayerId::new(Order::Middle, Id::new("dock-drop-preview")));
     let accent = theme.accent;
-    if target.is_none()
-        && let Some((rect, title)) = floating
-    {
-        // Away from every guide the panel would float: the same translucent rectangle, sized
-        // like the floating window, with its title.
-        painter.rect_filled(rect, CornerRadius::same(4), accent.gamma_multiply(FILL_ALPHA));
-        painter.rect_stroke(
-            rect,
-            CornerRadius::same(4),
-            Stroke::new(2.0, accent.gamma_multiply(EDGE_ALPHA)),
-            StrokeKind::Inside,
-        );
-        painter.text(
-            rect.left_top() + vec2(10.0, 8.0),
-            egui::Align2::LEFT_TOP,
-            title,
-            egui::FontId::proportional(13.0),
-            theme.text,
-        );
-    }
     if let Some(target) = target {
         let rect = preview(target, area).shrink(1.0);
         painter.rect_filled(rect, CornerRadius::same(2), accent.gamma_multiply(FILL_ALPHA));
@@ -548,11 +520,10 @@ mod tests {
     }
 
     #[test]
-    fn an_edge_drop_docks_the_floated_panel_along_that_edge_at_a_quarter() {
+    fn an_edge_drop_docks_the_panel_along_that_edge_at_a_quarter() {
+        // egui_dock leaves a panel released on a window-edge guide where it was (panels never
+        // float); the app moves it.
         let mut dock = crate::workspace::default_layout();
-        // egui_dock floats a panel released away from its guides.
-        let path = dock.find_tab(&Tab::Channels).unwrap();
-        dock.detach_tab(path, Rect::from_min_size(egui::pos2(300.0, 300.0), vec2(200.0, 200.0)));
         let mut state = DropState {
             dragging: None,
             pending: Some(Pending::Edge {
@@ -563,8 +534,9 @@ mod tests {
         assert!(state.finish(&mut dock));
         let path = dock.find_tab(&Tab::Channels).unwrap();
         assert_eq!(path.surface, SurfaceIndex::main());
-        assert_eq!(dock.iter_surfaces().count(), 1, "the empty window is gone");
+        assert_eq!(dock.iter_surfaces().count(), 1);
         assert_eq!(path.node, NodeIndex::root().right());
+        assert_eq!(dock.iter_all_tabs().filter(|(_, t)| **t == Tab::Channels).count(), 1);
         match &dock.main_surface()[NodeIndex::root()] {
             Node::Vertical(split) => assert!((split.fraction - (1.0 - EDGE_SHARE)).abs() < 1e-6),
             other => panic!("{other:?}"),

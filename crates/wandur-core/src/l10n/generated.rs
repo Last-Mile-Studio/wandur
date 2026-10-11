@@ -2564,8 +2564,6 @@ pub enum S {
     CsImportSkipNoCounterpart,
     /// Panel options
     DockPanelMenu,
-    /// Float
-    DockFloat,
     /// Menu
     MenuButton,
     /// This script comes from the world's script pack and is read only. Duplicate it to make a...
@@ -3203,7 +3201,7 @@ pub enum S {
 }
 
 /// How many strings there are.
-pub const COUNT: usize = 1597;
+pub const COUNT: usize = 1596;
 
 impl S {
     /// Every key, in table order.
@@ -4487,7 +4485,6 @@ impl S {
         S::CsImportSkipCsharpReleases,
         S::CsImportSkipNoCounterpart,
         S::DockPanelMenu,
-        S::DockFloat,
         S::MenuButton,
         S::ScriptPackReadOnlyNotice,
         S::ScriptPackEditPrompt,
@@ -6089,7 +6086,6 @@ pub static NAMES: [&str; COUNT] = [
     "CsImportSkipCsharpReleases",
     "CsImportSkipNoCounterpart",
     "DockPanelMenu",
-    "DockFloat",
     "MenuButton",
     "ScriptPackReadOnlyNotice",
     "ScriptPackEditPrompt",
@@ -7692,7 +7688,6 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "it is about the C# client's releases",
         "this client has no counterpart (protocol knowledge, the directory cache, script tombstones)",
         "Panel options",
-        "Float",
         "Menu",
         "This script comes from the world's script pack and is read only. Duplicate it to make an editable copy.",
         "This is a pack script. Make an editable copy?",
@@ -9292,7 +9287,6 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "se refiere a las versiones del cliente en C#",
         "este cliente no tiene equivalente (conocimiento de protocolos, la caché del directorio, marcas de scripts eliminados)",
         "Opciones del panel",
-        "Flotante",
         "Menú",
         "Este script viene del paquete de scripts del mundo y es de solo lectura. Duplícalo para tener una copia editable.",
         "Este es un script de paquete. ¿Crear una copia editable?",
@@ -10892,7 +10886,6 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "cela concerne les versions du client C#",
         "ce client n’a pas d’équivalent (connaissance des protocoles, cache de l’annuaire, traces de scripts supprimés)",
         "Options du panneau",
-        "Flottant",
         "Menu",
         "Ce script vient du pack de scripts du monde et est en lecture seule. Dupliquez-le pour obtenir une copie modifiable.",
         "Ceci est un script de pack. Créer une copie modifiable ?",
@@ -12492,7 +12485,6 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "es betrifft die Versionen des C#-Clients",
         "dieser Client hat kein Gegenstück (Protokollwissen, Verzeichnis-Cache, Markierungen gelöschter Skripte)",
         "Bereichsoptionen",
-        "Lösen",
         "Menü",
         "Dieses Skript stammt aus dem Skriptpaket der Welt und ist schreibgeschützt. Duplizieren Sie es für eine bearbeitbare Kopie.",
         "Dies ist ein Paketskript. Eine bearbeitbare Kopie erstellen?",
@@ -14092,7 +14084,6 @@ pub static TABLES: [[&str; COUNT]; 5] = [
         "refere-se às versões do cliente em C#",
         "este cliente não tem equivalente (conhecimento de protocolos, o cache do diretório, marcas de scripts excluídos)",
         "Opções do painel",
-        "Flutuar",
         "Menu",
         "Este script vem do pacote de scripts do mundo e é somente leitura. Duplique-o para ter uma cópia editável.",
         "Este é um script de pacote. Criar uma cópia editável?",

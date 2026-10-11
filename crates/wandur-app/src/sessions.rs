@@ -67,7 +67,7 @@ pub enum AppAction {
     Unpin(crate::workspace::Tab),
     /// Put an auto-hidden panel back where it was.
     Pin(crate::workspace::Tab),
-    /// A docked panel's Float, Unpin or Close (a bottom tab's menu or middle click).
+    /// A docked panel's Unpin or Close (a bottom tab's menu or middle click).
     PanelCommand(crate::workspace::Tab, crate::panel_header::DockCommand),
     ResetLayout,
     RefreshDirectory,

@@ -254,7 +254,6 @@
   <data name="CsImportSkipCsharpReleases" xml:space="preserve"><value>es betrifft die Versionen des C#-Clients</value></data>
   <data name="CsImportSkipNoCounterpart" xml:space="preserve"><value>dieser Client hat kein Gegenstück (Protokollwissen, Verzeichnis-Cache, Markierungen gelöschter Skripte)</value></data>
   <data name="DockPanelMenu" xml:space="preserve"><value>Bereichsoptionen</value></data>
-  <data name="DockFloat" xml:space="preserve"><value>Lösen</value></data>
   <data name="MenuButton" xml:space="preserve"><value>Menü</value></data>
   <data name="ScriptPackReadOnlyNotice" xml:space="preserve"><value>Dieses Skript stammt aus dem Skriptpaket der Welt und ist schreibgeschützt. Duplizieren Sie es für eine bearbeitbare Kopie.</value></data>
   <data name="ScriptPackEditPrompt" xml:space="preserve"><value>Dies ist ein Paketskript. Eine bearbeitbare Kopie erstellen?</value></data>

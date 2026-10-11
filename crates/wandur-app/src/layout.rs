@@ -5,8 +5,8 @@
 //! egui_dock's own split calls, so any file that parses gives a valid dock, an unknown panel name
 //! is dropped, and a file that does not parse is moved aside (`layout.json.bad`) and the default
 //! layout is used. Session tabs are not in it: `sessions.json` keeps them
-//! ([`crate::session_restore`]). Panels that were in floating windows come back docked in the
-//! first leaf.
+//! ([`crate::session_restore`]). Panels do not float; a file from a build where they could
+//! (`floating`) gets those panels docked where the View menu would open them.
 //!
 //! Version 2 (Saved worlds became its own panel): a version 1 file gets Saved worlds under the
 //! Workspace (or at the left of the dock when the Workspace is not docked), as the default
@@ -50,8 +50,9 @@ pub enum SavedNode {
 pub struct LayoutFile {
     pub version: u32,
     pub root: SavedNode,
-    /// Panels that were in floating windows.
-    #[serde(default)]
+    /// Panels that were in egui_dock's floating windows (older builds; panels no longer float).
+    /// Read only: they come back docked where the View menu would open them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub floating: Vec<String>,
     /// Unpinned (auto-hidden) panels, with where to put them back.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -325,18 +326,19 @@ pub fn restore(file: LayoutFile) -> Option<DockState<Tab>> {
     let root = clean(file.root, &mut seen, 0)?;
     let mut dock = DockState::new(vec![Tab::Workspace]);
     build(dock.main_surface_mut(), NodeIndex::root(), root);
-    // Panels that floated come back at the end of the first leaf, without taking its focus.
-    if let Some((_, leaf)) = dock.iter_leaves_mut().next() {
-        let active = leaf.active;
-        for name in file.floating {
-            if let Some(tab) = Tab::from_name(&name)
-                && !seen.contains(&tab)
-            {
-                seen.push(tab);
-                leaf.tabs.push(tab);
-            }
+    // Panels that floated (an older build) come back docked where the View menu would open
+    // them, without moving the focus to them.
+    let focused = dock.focused_leaf();
+    for name in file.floating {
+        if let Some(tab) = Tab::from_name(&name)
+            && !seen.contains(&tab)
+        {
+            seen.push(tab);
+            workspace::open_panel(&mut dock, tab);
         }
-        leaf.active = active;
+    }
+    if let Some(path) = focused {
+        dock.set_focused_node_and_surface(path);
     }
     Some(dock)
 }
@@ -479,8 +481,10 @@ mod tests {
         let file = capture(&dock).unwrap();
         match file.root {
             SavedNode::Leaf { tabs, active } => {
+                // Channels, floating in that file, joined Map's leaf and shows, as View > Channels
+                // would have it.
                 assert_eq!(tabs, ["map", "directory", "channels"]);
-                assert_eq!(active, 1);
+                assert_eq!(active, 2);
             }
             other => panic!("splits with nothing left collapse: {other:?}"),
         }
@@ -615,16 +619,30 @@ mod tests {
     }
 
     #[test]
-    fn floating_panels_come_back_docked() {
-        let mut dock = workspace::default_layout();
-        let path = dock.find_tab(&Tab::Map).unwrap();
-        let map = dock.remove_tab(path).unwrap();
-        dock.add_window(vec![map]);
-        let file = capture(&dock).unwrap();
-        assert_eq!(file.floating, ["map"]);
-        let restored = restore(file).unwrap();
-        assert!(restored.find_tab(&Tab::Map).is_some());
-        assert_eq!(restored.iter_surfaces().count(), 1);
+    fn floating_panels_of_an_older_build_come_back_docked_where_view_opens_them() {
+        // Channels and Map were in egui_dock floating windows: Map opens beside Channels'
+        // place (to the right of the documents) and Channels joins it, as View would do.
+        let text = r#"{"version":2,"root":{"kind":"split","horizontal":true,"fraction":0.2,
+            "first":{"kind":"leaf","tabs":["workspace"]},
+            "second":{"kind":"leaf","tabs":["directory"]}},
+            "floating":["map","channels"]}"#;
+        let (restored, _) = parse(text).unwrap();
+        assert_eq!(restored.iter_surfaces().count(), 1, "no floating window");
+        let mut expected = parse(&text.replace(r#""map","channels""#, "")).unwrap().0;
+        workspace::open_panel(&mut expected, Tab::Map);
+        workspace::open_panel(&mut expected, Tab::Channels);
+        let (map, channels) = (
+            restored.find_tab(&Tab::Map).unwrap(),
+            restored.find_tab(&Tab::Channels).unwrap(),
+        );
+        assert!(map.surface.is_main() && channels.surface.is_main());
+        assert_eq!(map.node_path(), channels.node_path(), "together in the right column");
+        assert_eq!(
+            to_json(&restored, &AutoHide::default()),
+            to_json(&expected, &AutoHide::default())
+        );
+        // The next save has no `floating`.
+        assert!(!to_json(&restored, &AutoHide::default()).unwrap().contains("floating"));
     }
 
     /// The side-by-side share rides along in `layout.json` (an older file has none; a share out

@@ -62,7 +62,7 @@ pub enum ActionsPlace {
     Header,
     /// In a row of their own under a header too narrow for them.
     Row(HeaderLook),
-    /// As a plain row: the panel has no header (floating, slid out, or a document).
+    /// As a plain row: the panel has no header (slid out, or a document).
     #[default]
     Bar,
 }
@@ -195,8 +195,6 @@ pub struct HeaderLook {
 /// What the person asked of a header's own buttons.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DockCommand {
-    /// Out of the dock into a floating window.
-    Float,
     /// Unpin: onto its edge's strip.
     AutoHide,
     Close,
@@ -397,10 +395,6 @@ pub fn header(
                 );
                 egui::Popup::menu(&response).show(|ui| {
                     ui.set_min_width(140.0);
-                    if ui.button(t(S::DockFloat)).clicked() {
-                        out.command = Some(DockCommand::Float);
-                        ui.close();
-                    }
                     if can_hide && ui.button(t(S::AutoHide)).clicked() {
                         out.command = Some(DockCommand::AutoHide);
                         ui.close();

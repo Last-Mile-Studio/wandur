@@ -207,8 +207,8 @@ Header buttons are always interacted (focusable and named); hidden, they have no
 never take a click meant for the title, and the focused one shows the strip. The plan
 (`WandurApp::plan_headers`) is made before the dock from last frame's leaf widths, so a panel
 knows whether its actions are in the header or in a row of their own
-(`panel_header::actions_fit`, the C# eight-character rule). Panels sharing a leaf, floating
-windows and slid-out panels keep egui_dock's tabs or a plain action bar. The centre document
+(`panel_header::actions_fit`, the C# eight-character rule). Panels sharing a leaf and
+slid-out panels keep egui_dock's tabs or a plain action bar. The centre document
 leaves hide egui_dock's tab bar (`hidable_tab_bars`, a zero drag height); the app draws its own
 session tabs there instead (below). What would break this:
 egui_dock changing the tab's id scheme (used for accessibility names) or the meaning of
@@ -277,11 +277,25 @@ Dragging a panel (`dock_drop.rs`) works as in C# (Visual Studio): egui_dock deci
 panel and draws its guide glyphs, styled to the theme (accent glyphs, 34 point tiles, no
 whole-panel highlight); the app works out the same guide geometry from the pointer, paints the
 tiles' faces and a translucent accent rectangle of exactly where the panel will land (30% fill,
-50% edge) under them, and adds four window-edge guides that egui_dock does not have (a panel
-released there floats in egui_dock and the app docks it along that edge at a quarter of the
+50% edge) under them, and adds four window-edge guides that egui_dock does not have (egui_dock
+leaves a panel released there in place and the app docks it along that edge at a quarter of the
 dock). After a split drop the app sets the new split's fraction once it has been laid out, so the
 panel has the extent the preview showed even when taking it out of its old place widened the
 target first.
+
+Panels do not float (October 2026, after trying real windows on `spike/float-windows`): there is
+no Float in the panel menus, and the tab viewer's `allowed_in_windows` is false, so egui_dock
+offers no Eject and a drag released away from every guide leaves the panel where it was. A
+`layout.json` from a build where panels could float (`floating`) gets those panels docked where
+the View menu would open them.
+
+Second windows (Settings, Session history, the world editor) are immediate viewports whose pass
+runs between the main window's. egui's galley cache keeps only what the last pass used, so
+`AtlasWatch` (grid_text.rs) reads the font atlas's fill ratio, the text options and the font
+count to notice a rebuild; it used to compare a one-character galley's identity, which changed
+every frame while a second window was open and dropped the grid's glyph quads and the Channels
+rows every frame (1 MB/s flood with Session history open: 10.6 ms a frame before, 4.3 ms after;
+1.5 ms with no second window).
 
 ## Room descriptions from text (map/text-descriptions, October 2026)
 

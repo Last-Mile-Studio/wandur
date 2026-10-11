@@ -115,6 +115,8 @@ pub const FRAME_BUCKETS: [f64; 7] = [1.0, 2.0, 4.0, 8.0, 16.0, 33.0, 50.0];
 pub struct FrameTimes {
     pub counts: [u64; FRAME_BUCKETS.len() + 1],
     pub max_ms: f64,
+    /// The sum of every frame's time (for the mean).
+    pub total_ms: f64,
 }
 
 impl FrameTimes {
@@ -125,6 +127,7 @@ impl FrameTimes {
             .unwrap_or(FRAME_BUCKETS.len());
         self.counts[i] += 1;
         self.max_ms = self.max_ms.max(ms);
+        self.total_ms += ms;
     }
 
     /// Frames that took longer than `ms` (a bucket bound).
@@ -139,8 +142,9 @@ impl FrameTimes {
     fn json(&self) -> String {
         let counts: Vec<String> = self.counts.iter().map(u64::to_string).collect();
         format!(
-            r#""frameMsMax":{:.2},"framesOver16ms":{},"framesOver50ms":{},"frameHist":[{}]"#,
+            r#""frameMsMax":{:.2},"frameMsMean":{:.3},"framesOver16ms":{},"framesOver50ms":{},"frameHist":[{}]"#,
             self.max_ms,
+            self.total_ms / (self.counts.iter().sum::<u64>().max(1) as f64),
             self.over(16.0),
             self.over(50.0),
             counts.join(",")
