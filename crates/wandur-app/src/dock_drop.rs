@@ -13,7 +13,7 @@
 //! `TabViewer::allowed_in_windows`), and the app then docks it along that edge of the main dock.
 //! A panel released away from every guide stays where it was.
 
-use egui::{Color32, CornerRadius, Id, LayerId, Order, Pos2, Rect, Stroke, StrokeKind, vec2};
+use egui::{Color32, CornerRadius, Id, LayerId, Order, Pos2, Rect, Stroke, StrokeKind, Vec2, vec2};
 use egui_dock::{DockState, Node, NodeIndex, NodePath, Split, SurfaceIndex};
 
 use crate::theme::{Theme, mix};
@@ -130,6 +130,16 @@ fn hovered_leaf(dock: &DockState<Tab>, pointer: Pos2, bar: f32) -> Option<(NodeP
             pointer.y >= leaf.rect.top() + bar
         })
         .map(|(path, leaf)| (path, leaf.rect))
+}
+
+/// Whether the pointer is on a leaf's tab bar, where egui_dock adds the dragged panel as a tab.
+pub fn over_tab_bar(dock: &DockState<Tab>, pointer: Pos2, bar: f32) -> bool {
+    dock.iter_leaves().any(|(path, leaf)| {
+        path.surface == SurfaceIndex::main()
+            && !leaf.tab_bar_hidden
+            && leaf.rect.contains(pointer)
+            && pointer.y < leaf.rect.top() + bar
+    })
 }
 
 /// Where a panel dragged from `source` lands if released at `pointer`, or `None` (it stays
@@ -383,6 +393,190 @@ pub fn paint(ctx: &egui::Context, theme: &Theme, dock: &DockState<Tab>, area: Re
     }
 }
 
+// ---- the drag card ----
+
+/// The card's size: the title's room plus the grip and the margins, at least this wide.
+pub const CARD_MIN_WIDTH: f32 = 140.0;
+pub const CARD_MAX_WIDTH: f32 = 240.0;
+pub const CARD_HEIGHT: f32 = 34.0;
+/// How far below and right of the pointer (and of the guide under it) the card sits.
+pub const CARD_GAP: Vec2 = vec2(14.0, 18.0);
+/// Its opacity while it leads, and while a guide's landing preview leads instead.
+pub const CARD_OPACITY: f32 = 0.92;
+pub const CARD_OPACITY_ON_GUIDE: f32 = 0.72;
+
+/// What the drag card says about the drop.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CardState {
+    /// Over a guide: the landing preview shows where the panel goes; the card steps back.
+    OnGuide,
+    /// Over no guide: a release puts the panel back where it was (muted, with a return glyph).
+    Returns,
+}
+
+/// The guide tile the pointer is on for `target`.
+pub fn target_tile(target: Target, area: Rect) -> Rect {
+    match target {
+        Target::Leaf { rect, split, .. } => compass(rect)
+            .into_iter()
+            .find(|(s, _)| *s == split)
+            .map_or(Rect::NOTHING, |(_, t)| t),
+        Target::Edge(edge) => edge_tiles(area)
+            .into_iter()
+            .find(|(e, _)| *e == edge)
+            .map_or(Rect::NOTHING, |(_, t)| t),
+    }
+}
+
+/// Every guide tile shown for the pointer at `pointer` (the hovered panel's cross, as painted,
+/// and the window-edge guides): the card keeps clear of them.
+pub fn guide_tiles(dock: &DockState<Tab>, area: Rect, pointer: Pos2, bar: f32) -> Vec<Rect> {
+    let mut tiles: Vec<Rect> = edge_tiles(area).into_iter().map(|(_, t)| t).collect();
+    if let Some((_, rect)) = hovered_leaf(dock, pointer, bar) {
+        tiles.extend(compass(rect).into_iter().map(|(_, t)| t.expand(3.0)));
+    }
+    tiles
+}
+
+/// Where the card of `size` goes for the pointer at `pointer`, `tile` being the guide under it:
+/// below and right of both, else below left, above right or above left, the first that stays
+/// on `screen` and covers none of the guides (`avoid`); failing that the first on screen, and
+/// failing that below right, pushed inside `screen`.
+pub fn card_rect(pointer: Pos2, tile: Option<Rect>, avoid: &[Rect], size: Vec2, screen: Rect) -> Rect {
+    let at = Rect::from_min_max(pointer, pointer);
+    let (anchor, gap) = match tile.filter(|t| t.is_positive()) {
+        Some(t) => (t.expand(3.0).union(at), vec2(6.0, 6.0)),
+        None => (at, CARD_GAP),
+    };
+    let margin = 4.0;
+    let inside = screen.shrink(margin);
+    let right = anchor.right() + gap.x;
+    let left = anchor.left() - gap.x - size.x;
+    let below = anchor.bottom() + gap.y;
+    let above = anchor.top() - gap.y - size.y;
+    let candidates = [
+        egui::pos2(right, below),
+        egui::pos2(left, below),
+        egui::pos2(right, above),
+        egui::pos2(left, above),
+    ]
+    .map(|min| Rect::from_min_size(min, size));
+    let on_screen = |r: &Rect| inside.contains_rect(*r);
+    let clear = |r: &Rect| !avoid.iter().any(|t| t.intersects(*r));
+    candidates
+        .iter()
+        .find(|r| on_screen(r) && clear(r))
+        .or_else(|| candidates.iter().find(|r| on_screen(r)))
+        .copied()
+        .unwrap_or_else(|| {
+            let x = right.clamp(inside.left(), (inside.right() - size.x).max(inside.left()));
+            let y = below.clamp(inside.top(), (inside.bottom() - size.y).max(inside.top()));
+            Rect::from_min_size(egui::pos2(x, y), size)
+        })
+}
+
+/// The drag card: a small rounded card at the pointer in the panel header's look (its surface,
+/// grip and title), with a soft shadow, standing for the panel being dragged. Over a guide it
+/// steps back for the landing preview; over no guide it is muted and shows a return glyph, as
+/// a release there leaves the panel where it was. Returns where it was painted.
+#[allow(clippy::too_many_arguments)]
+pub fn paint_card(
+    ctx: &egui::Context,
+    theme: &Theme,
+    look: &crate::panel_header::HeaderLook,
+    title: &str,
+    pointer: Pos2,
+    tile: Option<Rect>,
+    avoid: &[Rect],
+    state: CardState,
+) -> Rect {
+    let font = egui::FontId::proportional(look.title_size.min(13.5));
+    let galley = ctx.fonts_mut(|f| f.layout_no_wrap(title.to_string(), font.clone(), Color32::WHITE));
+    let returns = state == CardState::Returns;
+    let glyph_room = if returns { 26.0 } else { 0.0 };
+    let width = (12.0 + 10.0 + 10.0 + galley.size().x + 14.0 + glyph_room).clamp(CARD_MIN_WIDTH, CARD_MAX_WIDTH);
+    let size = vec2(width, CARD_HEIGHT);
+    let rect = card_rect(pointer, tile, avoid, size, ctx.content_rect());
+    let mut painter = ctx.layer_painter(LayerId::new(Order::Tooltip, Id::new("dock-drag-card")));
+    painter.set_opacity(if returns || tile.is_none() {
+        CARD_OPACITY
+    } else {
+        CARD_OPACITY_ON_GUIDE
+    });
+    let radius = CornerRadius::same(6);
+    painter.add(
+        egui::epaint::Shadow {
+            offset: [0, 3],
+            blur: 12,
+            spread: 0,
+            color: Color32::from_black_alpha(if crate::theme::is_light(theme.panel) { 46 } else { 110 }),
+        }
+        .as_shape(rect, radius),
+    );
+    let surface = look.fill.middle();
+    let (fill, text, grip) = if returns {
+        // Muted: the surface toward the panel, the title in the muted text colour.
+        (
+            mix(surface, theme.panel, 0.5),
+            readable(theme.muted, mix(surface, theme.panel, 0.5)),
+            theme.muted,
+        )
+    } else {
+        (surface, look.title_color, look.grip_color)
+    };
+    painter.rect_filled(rect, radius, fill);
+    let edge = look.line.unwrap_or(theme.border);
+    painter.rect_stroke(rect, radius, Stroke::new(1.0, edge), StrokeKind::Inside);
+    if !returns {
+        // A thin accent along the top: this is the panel in hand.
+        let top = Rect::from_min_size(rect.min + vec2(6.0, 0.0), vec2(rect.width() - 12.0, 2.0));
+        painter.rect_filled(top, CornerRadius::same(1), theme.accent);
+    }
+    // The grip: two columns of three dots, as on the header.
+    let cy = rect.center().y;
+    for col in 0..2 {
+        for row in -1..=1 {
+            let c = egui::pos2(rect.left() + 13.0 + col as f32 * 5.0, cy + row as f32 * 5.5);
+            painter.rect_filled(Rect::from_center_size(c, vec2(2.2, 2.2)), 0.6, grip);
+        }
+    }
+    let title_left = rect.left() + 30.0;
+    let title_right = rect.right() - 12.0 - glyph_room;
+    let mut job = egui::text::LayoutJob::simple_singleline(title.to_string(), font, text);
+    job.wrap = egui::text::TextWrapping::truncate_at_width((title_right - title_left).max(0.0));
+    let galley = ctx.fonts_mut(|f| f.layout_job(job));
+    painter.galley(egui::pos2(title_left, cy - galley.size().y / 2.0), galley, text);
+    if returns {
+        // Back where it was: the return key's arrow (down, then back to the left).
+        let at = Rect::from_center_size(egui::pos2(rect.right() - 20.0, cy), vec2(16.0, 16.0));
+        let stroke = Stroke::new(1.5, text);
+        let p = |x: f32, y: f32| at.min + vec2(x, y);
+        painter.add(egui::Shape::line(
+            vec![p(13.0, 3.0), p(13.0, 10.0), p(3.5, 10.0)],
+            stroke,
+        ));
+        painter.add(egui::Shape::line(vec![p(6.5, 7.0), p(3.5, 10.0), p(6.5, 13.0)], stroke));
+    }
+    rect
+}
+
+/// `color`, or the panel's text colour when `color` is too faint on `on`.
+fn readable(color: Color32, on: Color32) -> Color32 {
+    if crate::theme::contrast(color, on) >= 3.0 {
+        color
+    } else {
+        mix(
+            color,
+            if crate::theme::contrast(Color32::WHITE, on) > crate::theme::contrast(Color32::BLACK, on) {
+                Color32::WHITE
+            } else {
+                Color32::BLACK
+            },
+            0.4,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -541,5 +735,36 @@ mod tests {
             Node::Vertical(split) => assert!((split.fraction - (1.0 - EDGE_SHARE)).abs() < 1e-6),
             other => panic!("{other:?}"),
         }
+    }
+
+    /// The card sits below and right of the pointer, or past the guide it is on, never over a
+    /// guide, and flips left or up near the window's edges, staying inside it.
+    #[test]
+    fn the_drag_card_keeps_clear_of_the_guides_and_inside_the_window() {
+        let screen = Rect::from_min_size(egui::pos2(0.0, 0.0), vec2(1300.0, 820.0));
+        let size = vec2(160.0, CARD_HEIGHT);
+        // No guide: just below and right of the pointer.
+        let p = egui::pos2(400.0, 300.0);
+        let r = card_rect(p, None, &[], size, screen);
+        assert_eq!(r.min, p + CARD_GAP);
+        // On a panel's left guide: past that tile, covering none of the cross.
+        let leaf = Rect::from_min_size(egui::pos2(240.0, 60.0), vec2(760.0, 720.0));
+        let tiles = compass(leaf);
+        let avoid: Vec<Rect> = tiles.iter().map(|(_, t)| t.expand(3.0)).collect();
+        for (_, tile) in &tiles {
+            let r = card_rect(tile.center(), Some(*tile), &avoid, size, screen);
+            assert!(avoid.iter().all(|t| !t.intersects(r)), "{tile:?} -> {r:?}");
+            assert!(screen.contains_rect(r));
+        }
+        // At the bottom right corner: flipped above and to the left, inside the window.
+        let corner = egui::pos2(1290.0, 810.0);
+        let r = card_rect(corner, None, &[], size, screen);
+        assert!(screen.shrink(4.0).contains_rect(r), "{r:?}");
+        assert!(r.right() < corner.x && r.bottom() < corner.y);
+        // The bottom edge guide: the card goes above it.
+        let area = screen.shrink(8.0);
+        let bottom = target_tile(Target::Edge(WindowEdge::Bottom), area);
+        let r = card_rect(bottom.center(), Some(bottom), &[bottom], size, screen);
+        assert!(!r.intersects(bottom) && r.bottom() <= bottom.top());
     }
 }

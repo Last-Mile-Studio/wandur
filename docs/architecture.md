@@ -283,6 +283,16 @@ dock). After a split drop the app sets the new split's fraction once it has been
 panel has the extent the preview showed even when taking it out of its old place widened the
 target first.
 
+The panel in hand is a drag card (`dock_drop::paint_card`, October 2026), not egui_dock's dragged
+tab (its title is drawn transparent while it is dragged): a small rounded card in the panel
+header's look (surface, grip dots, title, an accent line on top) with a soft shadow, 92% opaque.
+It sits below and right of the pointer, or past the guide tile under it, at the first of four
+corners that stays in the window and covers no guide (`card_rect`). Over a guide (or a tab bar)
+it steps back to 72% so the landing preview leads; over no guide it turns muted with a return
+arrow, as a release there leaves the panel where it was. Header drags and bottom-tab drags are
+both egui_dock tab drags, so both get it. A mini panel (the card plus a faint body) was tried
+and dropped: twice the size over the content and the guides, saying nothing more.
+
 Panels do not float (October 2026, after trying real windows on `spike/float-windows`): there is
 no Float in the panel menus, and the tab viewer's `allowed_in_windows` is false, so egui_dock
 offers no Eject and a drag released away from every guide leaves the panel where it was. A

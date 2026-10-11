@@ -413,6 +413,8 @@ pub struct WandurApp {
     pub toast: Option<crate::toast::Toast>,
     /// A panel drag in progress and a drop to finish (the C# drop preview and sizing).
     drop: crate::dock_drop::DropState,
+    /// The drag card painted this frame (a panel being dragged), for tests.
+    drag_card: Option<egui::Rect>,
     /// Strip tabs drawn this frame, for the overlay's pointer tracking.
     strip_tabs: Vec<(Tab, egui::Rect)>,
     sessions: Sessions,
@@ -923,6 +925,7 @@ impl WandurApp {
             sheets: HashMap::new(),
             toast: None,
             drop: Default::default(),
+            drag_card: None,
             strip_tabs: Vec::new(),
             sessions: Sessions::default(),
             fonts: TermFonts::new(settings.font_size),
@@ -5766,6 +5769,7 @@ impl eframe::App for WandurApp {
                     sheets: &self.sheets,
                     strips: &strips,
                     look: &look,
+                    dragging: self.drop.dragging.map(|(t, _)| t),
                 }
             };
         }
@@ -5781,7 +5785,8 @@ impl eframe::App for WandurApp {
             .show(ui, |ui| {
                 self.dock_rect = ui.max_rect();
                 let drop_target = self.drop.track(ui.ctx(), &self.dock, self.dock_rect, header_height);
-                if self.drop.dragging.is_some() {
+                self.drag_card = None;
+                if let Some((tab, _)) = self.drop.dragging {
                     crate::dock_drop::paint(
                         ui.ctx(),
                         &self.theme,
@@ -5790,6 +5795,32 @@ impl eframe::App for WandurApp {
                         header_height,
                         drop_target,
                     );
+                    // The panel in hand: a card at the pointer (egui_dock's own dragged tab,
+                    // its bare title, is invisible).
+                    if let Some(pointer) = ui.ctx().input(|i| i.pointer.latest_pos()) {
+                        let joins = crate::dock_drop::over_tab_bar(&self.dock, pointer, header_height);
+                        let state = if drop_target.is_some() || joins {
+                            crate::dock_drop::CardState::OnGuide
+                        } else {
+                            crate::dock_drop::CardState::Returns
+                        };
+                        let tile = drop_target.map(|t| crate::dock_drop::target_tile(t, self.dock_rect));
+                        let title = match tab {
+                            Tab::Session(id) => self.sessions.get(id).map_or(tab.label(), |e| e.tab.title()),
+                            _ => tab.label(),
+                        };
+                        let avoid = crate::dock_drop::guide_tiles(&self.dock, self.dock_rect, pointer, header_height);
+                        self.drag_card = Some(crate::dock_drop::paint_card(
+                            ui.ctx(),
+                            &self.theme,
+                            &look,
+                            title,
+                            pointer,
+                            tile,
+                            &avoid,
+                            state,
+                        ));
+                    }
                 }
                 // The shaded surface under tab bars the dock still draws (several panels in one
                 // leaf), where each leaf's tab bar was last frame (the dock paints it transparent).
@@ -7642,6 +7673,47 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// Every piece of text drawn in a frame that can be seen (not transparent).
+    fn visible_text(app: &mut WandurApp, ctx: &egui::Context) -> Vec<String> {
+        fn walk(shape: &egui::Shape, out: &mut Vec<String>) {
+            match shape {
+                egui::Shape::Text(text) => {
+                    let seen = |c: egui::Color32| {
+                        if c == egui::Color32::PLACEHOLDER {
+                            text.fallback_color.a() > 0
+                        } else {
+                            c.a() > 0
+                        }
+                    };
+                    let colour = text
+                        .override_text_color
+                        .map(|c| c.a() > 0)
+                        .unwrap_or_else(|| text.galley.job.sections.iter().any(|s| seen(s.format.color)));
+                    if text.opacity_factor > 0.0 && colour {
+                        out.push(text.galley.text().to_string());
+                    }
+                }
+                egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, out)),
+                _ => {}
+            }
+        }
+        let mut eframe_frame = eframe::Frame::_new_kittest();
+        let input = RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(pos2(0.0, 0.0), vec2(1200.0, 800.0))),
+            ..Default::default()
+        };
+        let mut out = ctx.run_ui(input, |ui| {
+            app.logic(ui.ctx(), &mut eframe_frame);
+            app.ui(ui, &mut eframe_frame);
+        });
+        out.textures_delta.clear();
+        let mut texts = Vec::new();
+        for clipped in &out.shapes {
+            walk(&clipped.shape, &mut texts);
+        }
+        texts
+    }
+
     /// Every piece of text drawn in a frame.
     fn drawn_text(app: &mut WandurApp, ctx: &egui::Context) -> Vec<String> {
         fn walk(shape: &egui::Shape, out: &mut Vec<String>) {
@@ -8376,6 +8448,15 @@ mod tests {
             "{:?}",
             app.drop.dragging
         );
+        // The drag card stands for the panel: below and right of the pointer, clear of every
+        // guide, and egui_dock's own dragged title is not seen (only the header's and the
+        // card's "Channels" show).
+        let shown = visible_text(&mut app, &ctx);
+        assert_eq!(shown.iter().filter(|t| *t == "Channels").count(), 2, "{shown:?}");
+        let card = app.drag_card.expect("a drag card");
+        assert!(card.left() > away.x && card.top() > away.y, "{card:?} for {away:?}");
+        let tiles = crate::dock_drop::guide_tiles(&app.dock, app.dock_rect, away, app.chrome.skin.dock_header_height);
+        assert!(tiles.iter().all(|t| !t.intersects(card)));
         frame(&mut app, &ctx, vec![button(away, false)]);
         for _ in 0..4 {
             frame(&mut app, &ctx, vec![]);

@@ -94,6 +94,7 @@ The short version:
 | Panel headers: grip and title positions, title size, line colours, which skins hide the options, pin and close buttons | `app.rs`, `header_look` (one `HeaderLook` per skin); drawing in `panel_header.rs` (`header`, `action_row`, `RIGHT_MARGIN`, `DOCK_PITCH`, `MINIMUM_TITLE_CHARACTERS`) |
 | A panel's header actions | `saved_worlds_panel::header_actions`, `map_view::header_actions` (the mini map's in the dock header, the full map's in a bar over its canvas) |
 | Drop preview: tile size, fill and edge opacity, the window-edge share | `dock_drop.rs`, the constants at the top (`TILE`, `FILL_ALPHA`, `EDGE_ALPHA`, `EDGE_SHARE`) and `paint` |
+| The drag card (the panel in hand): size, gap from the pointer, opacity, on a guide and over none | `dock_drop.rs`, `CARD_MIN_WIDTH`, `CARD_MAX_WIDTH`, `CARD_HEIGHT`, `CARD_GAP`, `CARD_OPACITY`, `CARD_OPACITY_ON_GUIDE`, `card_rect`, `paint_card`; the scenes `ui-drop-preview`, `ui-drop-preview-edge`, `ui-drop-preview-nowhere` |
 | The menu button and its dropdown | `menus.rs` (`button_entries`, `MenuButton`), placed in `app.rs` (`draw_menu_button` and its callers); the macOS menu bar in `native_menu.rs` |
 | Pin and auto-hide strips | `autohide.rs` (state) and `app.rs` (drawing) |
 | Saved layout | `layout.json` in the data directory (version 2; version 1 files get Saved worlds under the Workspace); a preset chosen in View > Layout is saved there at once; delete it, or View > Restore Panels, to get the new-install layout again |

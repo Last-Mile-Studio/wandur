@@ -162,6 +162,9 @@ pub enum Gesture {
     DragToGuide(crate::workspace::Tab, Option<egui_dock::Split>),
     /// The same onto a window-edge guide.
     DragToEdge(crate::workspace::Tab, crate::dock_drop::WindowEdge),
+    /// The same to a place in the session panel clear of every guide (a release there leaves
+    /// the panel where it was).
+    DragToNowhere(crate::workspace::Tab),
     /// Open the toolbar's world picker, then click its address field (the popup stays open).
     PickerField,
 }
@@ -175,6 +178,7 @@ pub fn gesture(scene: &Scene) -> Gesture {
         "ui-world-picker" => Gesture::PickerField,
         "ui-drop-preview" => Gesture::DragToGuide(Tab::Channels, Some(egui_dock::Split::Left)),
         "ui-drop-preview-edge" => Gesture::DragToEdge(Tab::Channels, crate::dock_drop::WindowEdge::Bottom),
+        "ui-drop-preview-nowhere" => Gesture::DragToNowhere(Tab::Channels),
         _ => Gesture::None,
     }
 }
@@ -698,6 +702,15 @@ pub const SCENES: &[Scene] = &[
         scene(
             "ui-drop-preview-edge",
             "Channels dragged to the window's bottom edge guide (System, Linen)",
+            "Linen",
+            Show::Session,
+        ),
+        "System",
+    ),
+    skinned(
+        scene(
+            "ui-drop-preview-nowhere",
+            "Channels dragged over no guide: the drag card shows it goes back (System, Linen)",
             "Linen",
             Show::Session,
         ),
@@ -2896,7 +2909,7 @@ fn play(
             click(Target::Picker, app);
             click(Target::PickerField, app);
         }
-        Gesture::DragToGuide(..) | Gesture::DragToEdge(..) => {
+        Gesture::DragToGuide(..) | Gesture::DragToEdge(..) | Gesture::DragToNowhere(..) => {
             let (tab, end) = match gesture {
                 Gesture::DragToGuide(tab, split) => {
                     let Some(leaf) = app.scene_target(Target::Session) else {
@@ -2917,6 +2930,15 @@ fn play(
                         return;
                     };
                     (tab, tile.center())
+                }
+                Gesture::DragToNowhere(tab) => {
+                    let Some(leaf) = app.scene_target(Target::Session) else {
+                        return;
+                    };
+                    (
+                        tab,
+                        pos2(leaf.left() + leaf.width() * 0.3, leaf.top() + leaf.height() * 0.3),
+                    )
                 }
                 _ => return,
             };

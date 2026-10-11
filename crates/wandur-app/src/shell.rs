@@ -62,6 +62,9 @@ pub struct Viewer<'a> {
     /// Tool panels sharing a leaf of the main dock, by each of them: the header shows the shown
     /// one, and their tabs run along the leaf's bottom.
     pub sheets: &'a HashMap<Tab, Sheet>,
+    /// The tab egui_dock is dragging: its own dragged tab draws the title at the pointer, which
+    /// the app's drag card replaces, so the title is invisible then.
+    pub dragging: Option<Tab>,
 }
 
 /// A tool panel whose header the app draws: the header's width last frame (the dock's tab is
@@ -128,6 +131,10 @@ impl TabViewer for Viewer<'_> {
     }
 
     fn title(&mut self, tab: &mut Tab) -> WidgetText {
+        if self.dragging == Some(*tab) {
+            // The same width (the dragged tab keeps its size), never seen: the card shows it.
+            return RichText::new(tab.label()).color(egui::Color32::TRANSPARENT).into();
+        }
         if self.sheets.contains_key(tab) {
             // The header and the bottom tabs name it; the dock's own tab stays empty and narrow,
             // so the invisible tab bar never overflows into a scroll bar.
