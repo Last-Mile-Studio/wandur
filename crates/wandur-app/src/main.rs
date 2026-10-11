@@ -20,7 +20,8 @@ wandur --import-csharp DIR|wandur.db [--data-dir DIR] [--dry-run] [--include-pas
 
 --scene NAME sets up a named screen in memory (nothing is saved). With WANDUR_SCREENSHOT=PATH.png
 it is rendered headless at --window-size (default 1300x820, the C# reference size) and saved, then
-the app exits; without it the scene opens in a window. --scene list prints the names.
+the app exits; without it the scene opens in a window. --scene list prints the names. --theme and
+--skin replace the scene's own.
 
 --import-csharp brings the C# Wandur client's data (its data folder or its wandur.db, read only)
 into this client's data directory, prints counts per kind and why anything was skipped, and

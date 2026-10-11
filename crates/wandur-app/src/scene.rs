@@ -2067,8 +2067,10 @@ pub fn configure(scene: &Scene, options: &mut Options) {
             options.history_store = Some(std::sync::Arc::new(wandur_core::history::SqliteHistoryStore::new(db)));
         }
     }
-    options.theme = Some(scene.theme.into());
-    options.skin = Some(scene.skin.into());
+    // A theme or skin given on the command line wins (the site's screenshots retake scenes in
+    // one theme).
+    options.theme.get_or_insert_with(|| scene.theme.into());
+    options.skin.get_or_insert_with(|| scene.skin.into());
     // reading-channels-<points>: the right column (Map over Channels) that wide.
     if let Some(width) = scene
         .name
@@ -3092,5 +3094,19 @@ mod tests {
         configure(find("session-play").unwrap(), &mut options);
         assert_eq!(options.connect.len(), 1);
         assert!(options.worlds.unwrap()[0].is_at(&options.connect[0]));
+    }
+
+    #[test]
+    fn a_theme_on_the_command_line_wins_over_the_scenes() {
+        let scene = find("main-fleet-dark").unwrap();
+        let mut options = Options::default();
+        configure(scene, &mut options);
+        assert_eq!(options.theme.as_deref(), Some(scene.theme));
+        let mut options = Options {
+            theme: Some("midnight".into()),
+            ..Options::default()
+        };
+        configure(scene, &mut options);
+        assert_eq!(options.theme.as_deref(), Some("midnight"));
     }
 }
