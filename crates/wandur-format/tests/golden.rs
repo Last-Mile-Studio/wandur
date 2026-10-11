@@ -4,6 +4,12 @@
 #![cfg(feature = "javascript")]
 
 use std::path::PathBuf;
+use std::time::Duration;
+
+/// Correctness checks take as long as they need: a busy machine is not a wrong result.
+fn format(source: &str) -> Result<String, wandur_format::Skipped> {
+    wandur_format::javascript_within(source, Duration::MAX)
+}
 
 fn dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/golden")
@@ -21,18 +27,14 @@ fn scripts_format_to_their_golden_outputs() {
     assert!(names.len() >= 6, "{names:?}");
     for input in names {
         let source = std::fs::read_to_string(&input).unwrap();
-        let formatted = wandur_format::javascript(&source).unwrap_or_else(|e| panic!("{input:?}: {e:?}"));
+        let formatted = format(&source).unwrap_or_else(|e| panic!("{input:?}: {e:?}"));
         let golden = input.with_extension("formatted.js");
         if bless {
             std::fs::write(&golden, &formatted).unwrap();
         }
         let expected = std::fs::read_to_string(&golden).unwrap_or_else(|_| panic!("{golden:?} is missing"));
         assert_eq!(formatted, expected, "{input:?}");
-        assert_eq!(
-            wandur_format::javascript(&formatted).unwrap(),
-            formatted,
-            "{input:?} formats to itself"
-        );
+        assert_eq!(format(&formatted).unwrap(), formatted, "{input:?} formats to itself");
     }
 }
 
@@ -40,10 +42,11 @@ fn scripts_format_to_their_golden_outputs() {
 #[test]
 fn typical_scripts_format_quickly() {
     let source = std::fs::read_to_string(dir().join("pack-dense.js")).unwrap();
-    wandur_format::javascript(&source).unwrap();
+    // The first run builds the options and touches the formatter's code (slow on a cold disk).
+    format(&source).unwrap();
     let started = std::time::Instant::now();
     for _ in 0..20 {
-        wandur_format::javascript(&source).unwrap();
+        format(&source).unwrap();
     }
     let each = started.elapsed() / 20;
     // Generous for a debug build on a busy machine; release takes about 0.2 ms.

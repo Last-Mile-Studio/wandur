@@ -8,8 +8,9 @@
 //!
 //! Nothing here runs at start: the formatter's options are built and its code first touched on
 //! the first script shown ([`is_loaded`]). Results are cached by source for the session
-//! ([`shown_javascript`]). A source that does not parse, is larger than [`MAX_SOURCE`] or takes
-//! longer than [`BUDGET`] to format is shown as stored.
+//! ([`shown_javascript`]). A source that does not parse or is larger than [`MAX_SOURCE`] is shown
+//! as stored. The cache keeps a result however long it took: the time is already spent, and a
+//! slow first run (a cold start) must not leave the script unformatted for the session.
 
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
@@ -18,7 +19,8 @@ use std::time::{Duration, Instant};
 
 /// Sources longer than this (bytes) are shown as stored.
 pub const MAX_SOURCE: usize = 64 * 1024;
-/// A format that takes longer than this is dropped and the source shown as stored.
+/// A direct [`javascript`] format that takes longer than this is dropped (the cache keeps every
+/// result).
 pub const BUDGET: Duration = Duration::from_millis(50);
 /// Spaces per indentation level.
 pub const INDENT_WIDTH: u8 = 2;
@@ -134,7 +136,7 @@ impl Cache {
             return shown.clone();
         }
         self.runs += 1;
-        let shown: Option<Arc<str>> = javascript(source).ok().map(Arc::from);
+        let shown: Option<Arc<str>> = javascript_within(source, Duration::MAX).ok().map(Arc::from);
         let size = source.len() + shown.as_ref().map_or(0, |s| s.len());
         if self.bytes + size > MAX_CACHE_BYTES {
             self.entries.clear();
@@ -201,8 +203,14 @@ mod tests {
 
     #[test]
     fn the_trailing_newline_follows_the_source() {
-        assert_eq!(javascript("mud.echo( 1 )").unwrap(), "mud.echo(1);");
-        assert_eq!(javascript("mud.echo( 1 )\n").unwrap(), "mud.echo(1);\n");
+        assert_eq!(
+            javascript_within("mud.echo( 1 )", Duration::MAX).unwrap(),
+            "mud.echo(1);"
+        );
+        assert_eq!(
+            javascript_within("mud.echo( 1 )\n", Duration::MAX).unwrap(),
+            "mud.echo(1);\n"
+        );
     }
 
     #[test]

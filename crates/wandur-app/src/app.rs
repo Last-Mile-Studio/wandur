@@ -9269,7 +9269,8 @@ mod tests {
             &mut harness,
             vec![dense.clone(), broken.clone(), lua.clone(), pack.clone()],
         );
-        let formatted = wandur_format::javascript(crate::scene::FERRY_WATCH_DENSE).unwrap();
+        let formatted =
+            wandur_format::javascript_within(crate::scene::FERRY_WATCH_DENSE, std::time::Duration::MAX).unwrap();
         assert!(formatted.lines().count() > 20, "{formatted}");
         for (entry, expected) in [
             (&dense, formatted.as_str()),
@@ -9329,7 +9330,7 @@ mod tests {
         let world_id = open_scripts(&mut harness, vec![dense.clone()]);
         select_script(&mut harness, &dense.name);
         let after = type_in_editor(&mut harness, "/*mine*/");
-        let formatted = wandur_format::javascript(&dense.source).unwrap();
+        let formatted = wandur_format::javascript_within(&dense.source, std::time::Duration::MAX).unwrap();
         assert_eq!(
             after.replacen("/*mine*/", "", 1),
             formatted,
