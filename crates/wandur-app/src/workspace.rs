@@ -194,6 +194,25 @@ pub fn preset_layout(preset: Preset) -> (DockState<Tab>, crate::autohide::AutoHi
     (dock, auto)
 }
 
+/// Put `tabs` in one leaf of the main dock, in this order: the first one's (the others' leaves
+/// close up).
+pub fn stack(dock: &mut DockState<Tab>, tabs: &[Tab]) {
+    let Some((&first, rest)) = tabs.split_first() else {
+        return;
+    };
+    for &tab in rest {
+        let Some(path) = dock.find_tab(&tab) else { continue };
+        if dock.remove_tab(path).is_none() {
+            continue;
+        }
+        if let Some(target) = dock.find_tab(&first)
+            && let Ok(leaf) = dock.leaf_mut(target.node_path())
+        {
+            leaf.append_tab(tab);
+        }
+    }
+}
+
 /// Make a tab active in its leaf and focus that leaf. Returns false if the tab is not open.
 pub fn focus_tab(dock: &mut DockState<Tab>, tab: Tab) -> bool {
     match dock.find_tab(&tab) {

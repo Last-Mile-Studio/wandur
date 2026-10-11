@@ -215,19 +215,23 @@ pub struct DropState {
     pub pending: Option<Pending>,
 }
 
-/// The tab egui_dock is dragging now (its tab ids are its `DockArea` id, then surface, node and
-/// tab index).
+/// The id of egui_dock's tab number `index` in the leaf at `path` (its `DockArea` id, then
+/// surface, node and tab index). Dragging that id drags the tab.
+pub fn tab_id(path: NodePath, index: usize) -> Id {
+    Id::new("egui_dock::DockArea")
+        .with((path.surface, "surface"))
+        .with((path.node, "node"))
+        .with((index, "tab"))
+}
+
+/// The tab egui_dock is dragging now.
 pub fn dragged(ctx: &egui::Context, dock: &DockState<Tab>) -> Option<(Tab, NodePath)> {
     let id = ctx.dragged_id()?;
-    let base = Id::new("egui_dock::DockArea");
     dock.iter_leaves().find_map(|(path, leaf)| {
-        leaf.tabs.iter().enumerate().find_map(|(index, tab)| {
-            let tab_id = base
-                .with((path.surface, "surface"))
-                .with((path.node, "node"))
-                .with((index, "tab"));
-            (tab_id == id).then_some((*tab, path))
-        })
+        leaf.tabs
+            .iter()
+            .enumerate()
+            .find_map(|(index, tab)| (tab_id(path, index) == id).then_some((*tab, path)))
     })
 }
 

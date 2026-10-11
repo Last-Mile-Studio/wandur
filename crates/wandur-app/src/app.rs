@@ -128,6 +128,9 @@ pub struct Options {
     pub lua_scripts: Option<bool>,
     /// Start with this View > Layout preset instead of the saved layout (scenes).
     pub layout_preset: Option<workspace::Preset>,
+    /// Put these panels in one leaf, in this order, the first leaf's place kept, and show the
+    /// second item (scenes: panels sharing a leaf).
+    pub stack_panels: Option<(Vec<Tab>, Tab)>,
     /// Change settings for this run (scenes), without saving them.
     pub adjust_settings: Option<fn(&mut wandur_core::settings::Settings)>,
     /// Draw in this language for this run, on this thread only (scenes and tests).
@@ -391,8 +394,11 @@ pub struct WandurApp {
     dock_rect: egui::Rect,
     /// The toolbar world picker and, while its popup is open, the address field in it (for scenes).
     picker_rects: (egui::Rect, egui::Rect),
-    /// Tool panels docked alone in their leaf, whose headers this app draws (last frame's).
+    /// Tool panels with a header this app draws: docked alone in their leaf, or shown in a leaf
+    /// they share (last frame's).
     heads: HashMap<Tab, shell::Head>,
+    /// Tool panels sharing a leaf, by each of them: their tabs run along the leaf's bottom.
+    sheets: HashMap<Tab, shell::Sheet>,
     /// The undo toast in the main window (a delete of map rooms or exits, or a saved world).
     pub toast: Option<crate::toast::Toast>,
     /// A panel drag in progress and a drop to finish (the C# drop preview and sizing).
@@ -599,6 +605,12 @@ fn name_dock(ctx: &egui::Context, dock: &DockState<Tab>, viewer: &mut Viewer<'_>
             if ctx.read_response(id).is_none() {
                 continue;
             }
+            if viewer.sheets.contains_key(tab) {
+                // Panels sharing a leaf are named by their tabs along its bottom; their dock tabs
+                // lie invisible under the header.
+                ctx.accesskit_node_builder(id, |node| node.set_hidden());
+                continue;
+            }
             let title = viewer.title(&mut tab.clone()).text().to_string();
             let active = leaf.active.0 == index;
             // A tab being dragged is its own control while the drag lasts.
@@ -785,6 +797,10 @@ impl WandurApp {
         if let Some(preset) = options.layout_preset {
             (dock, auto) = workspace::preset_layout(preset);
         }
+        if let Some((tabs, shown)) = &options.stack_panels {
+            workspace::stack(&mut dock, tabs);
+            workspace::focus_tab(&mut dock, *shown);
+        }
         let saved_split = dir
             .as_deref()
             .and_then(layout::load_split_share)
@@ -883,6 +899,7 @@ impl WandurApp {
             dock_rect: egui::Rect::NOTHING,
             picker_rects: (egui::Rect::NOTHING, egui::Rect::NOTHING),
             heads: HashMap::new(),
+            sheets: HashMap::new(),
             toast: None,
             drop: Default::default(),
             strip_tabs: Vec::new(),
@@ -2836,15 +2853,27 @@ impl WandurApp {
         }
     }
 
-    /// Which tool panels get a header this frame (alone in their leaf of the main dock), and
-    /// whether their actions fit in it or drop to a row (from last frame's widths).
+    /// Which tool panels get a header this frame (alone in their leaf of the main dock, or the
+    /// shown one of several sharing a leaf, whose tabs then run along its bottom), and whether
+    /// their actions fit in it or drop to a row (from last frame's widths).
     fn plan_headers(&mut self, ui: &Ui, look: &panel_header::HeaderLook) {
         let mut heads = HashMap::new();
+        let mut sheets = HashMap::new();
         for (path, leaf) in self.dock.iter_leaves() {
-            if !path.surface.is_main() || leaf.tabs.len() != 1 || leaf.tabs[0].is_document() {
+            if !path.surface.is_main() || leaf.tabs.is_empty() || leaf.tabs.iter().any(|t| t.is_document()) {
                 continue;
             }
-            let tab = leaf.tabs[0];
+            let tab = leaf.tabs[leaf.active.0.min(leaf.tabs.len() - 1)];
+            if leaf.tabs.len() > 1 {
+                let sheet = shell::Sheet {
+                    tabs: leaf.tabs.clone(),
+                    active: leaf.active.0.min(leaf.tabs.len() - 1),
+                    path,
+                };
+                for t in &leaf.tabs {
+                    sheets.insert(*t, sheet.clone());
+                }
+            }
             let width = if leaf.rect.is_positive() {
                 leaf.rect.width()
             } else {
@@ -2867,6 +2896,7 @@ impl WandurApp {
             heads.insert(tab, shell::Head { width, place });
         }
         self.heads = heads;
+        self.sheets = sheets;
     }
 
     /// Paint each planned header over its panel's (invisible) dock tab and run what was clicked.
@@ -2883,11 +2913,34 @@ impl WandurApp {
             let Ok(leaf) = self.dock.leaf(path.node_path()) else {
                 continue;
             };
-            if !leaf.rect.is_positive() || leaf.tabs.len() != 1 {
+            if !leaf.rect.is_positive() || leaf.tabs.get(leaf.active.0) != Some(&tab) {
                 continue;
             }
+            let shared = leaf.tabs.len() > 1;
             let leaf_rect = leaf.rect;
             let rect = egui::Rect::from_min_size(leaf_rect.min, egui::vec2(leaf_rect.width(), look.height));
+            if shared {
+                // Several panels share the leaf: the header is the shown one's, and it drags that
+                // panel (handed to its dock tab, which lies under the header with the others').
+                // Under the header's buttons, which come after it.
+                let grab = ui.interact(
+                    rect,
+                    egui::Id::new(("shared-header", tab)),
+                    egui::Sense::click_and_drag(),
+                );
+                crate::a11y::control(&grab, egui::accesskit::Role::TitleBar, tab.label());
+                if grab.drag_started() {
+                    ui.ctx()
+                        .set_dragged_id(crate::dock_drop::tab_id(path.node_path(), leaf.active.0));
+                } else if grab.clicked() {
+                    self.dock.set_focused_node_and_surface(path.node_path());
+                }
+                grab.context_menu(|ui| {
+                    if let Some(command) = shell::panel_menu(ui, tab) {
+                        self.actions.push(AppAction::PanelCommand(tab, command));
+                    }
+                });
+            }
             let actions = self.header_actions(tab);
             let out = panel_header::header(
                 ui,
@@ -2916,17 +2969,8 @@ impl WandurApp {
                 }
                 ui.ctx().request_repaint();
             }
-            match out.command {
-                Some(panel_header::DockCommand::Float) => {
-                    let at = leaf_rect.translate(egui::vec2(24.0, 24.0));
-                    self.dock.detach_tab(path, at);
-                }
-                Some(panel_header::DockCommand::AutoHide) => self.actions.push(AppAction::Unpin(tab)),
-                Some(panel_header::DockCommand::Close) => {
-                    self.dock.remove_tab(path);
-                    self.save_layout(true);
-                }
-                None => {}
+            if let Some(command) = out.command {
+                self.dock_command(tab, command);
             }
         }
         // The whole header drags, but only the grip shows the move cursor (as C#).
@@ -2938,6 +2982,25 @@ impl WandurApp {
             } else {
                 egui::CursorIcon::Default
             });
+        }
+    }
+
+    /// A docked panel's Float (out into a window by its leaf), Unpin or Close.
+    fn dock_command(&mut self, tab: Tab, command: panel_header::DockCommand) {
+        let Some(path) = self.dock.find_tab(&tab) else { return };
+        match command {
+            panel_header::DockCommand::Float => {
+                let Ok(leaf) = self.dock.leaf(path.node_path()) else {
+                    return;
+                };
+                let at = leaf.rect.translate(egui::vec2(24.0, 24.0));
+                self.dock.detach_tab(path, at);
+            }
+            panel_header::DockCommand::AutoHide => self.actions.push(AppAction::Unpin(tab)),
+            panel_header::DockCommand::Close => {
+                self.dock.remove_tab(path);
+                self.save_layout(true);
+            }
         }
     }
 
@@ -3557,6 +3620,7 @@ impl WandurApp {
                         self.save_layout(true);
                     }
                 }
+                AppAction::PanelCommand(tab, command) => self.dock_command(tab, command),
                 AppAction::Pin(tab) => {
                     if self.auto.pin(&mut self.dock, tab) {
                         self.save_layout(true);
@@ -5471,6 +5535,7 @@ impl eframe::App for WandurApp {
                     now: unix_now() as i64,
                     stats: self.panel_stats.as_mut(),
                     heads: &self.heads,
+                    sheets: &self.sheets,
                     strips: &strips,
                     look: &look,
                 }
@@ -5510,7 +5575,8 @@ impl eframe::App for WandurApp {
                 for (path, leaf) in self.dock.iter_leaves() {
                     if leaf.rect.is_positive()
                         && !leaf.tab_bar_hidden
-                        && !(path.surface.is_main() && leaf.tabs.len() == 1 && self.heads.contains_key(&leaf.tabs[0]))
+                        && !(path.surface.is_main()
+                            && leaf.tabs.get(leaf.active.0).is_some_and(|t| self.heads.contains_key(t)))
                     {
                         let header =
                             egui::Rect::from_min_size(leaf.rect.min, egui::vec2(leaf.rect.width(), header_height));
@@ -8038,6 +8104,206 @@ mod tests {
             (width - previewed).abs() <= 3.0,
             "docked {width}, previewed {previewed}"
         );
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Map and Channels sharing a leaf (the demo, Map over Channels stacked into one): the
+    /// header stays on top and names the shown panel, their tabs run along the leaf's bottom. A
+    /// click on a bottom tab shows that panel and the header follows; a middle click closes one,
+    /// leaving the other alone in the leaf with its plain header.
+    fn stacked_demo(name: &str) -> (std::path::PathBuf, egui::Context, WandurApp) {
+        let dir = std::env::temp_dir().join(format!("wandur-app-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let ctx = egui::Context::default();
+        let mut app = WandurApp::new(&ctx, offline_options(&dir));
+        app.run_command(&ctx, Command::OpenDemo);
+        workspace::stack(&mut app.dock, &[Tab::Map, Tab::Channels]);
+        workspace::focus_tab(&mut app.dock, Tab::Channels);
+        for _ in 0..3 {
+            frame(&mut app, &ctx, vec![]);
+        }
+        (dir, ctx, app)
+    }
+
+    fn bottom_tabs(app: &WandurApp, ctx: &egui::Context) -> Vec<egui::Rect> {
+        let path = app.dock.find_tab(&Tab::Map).unwrap().node_path();
+        crate::sheet_tabs::tab_rects(ctx, shell::sheet_strip_id(path))
+    }
+
+    #[test]
+    fn a_bottom_tab_shows_its_panel_and_the_header_follows() {
+        let (dir, ctx, mut app) = stacked_demo("sheet-click");
+        assert!(app.heads.contains_key(&Tab::Channels) && !app.heads.contains_key(&Tab::Map));
+        assert_eq!(app.sheets[&Tab::Map].tabs, [Tab::Map, Tab::Channels]);
+        let path = app.dock.find_tab(&Tab::Map).unwrap().node_path();
+        let leaf = app.dock.leaf(path).unwrap().rect;
+        let tabs = bottom_tabs(&app, &ctx);
+        assert_eq!(tabs.len(), 2);
+        for tab in &tabs {
+            assert!(
+                tab.bottom() <= leaf.bottom() + 0.5 && tab.top() >= leaf.bottom() - shell::SHEET_STRIP_HEIGHT - 0.5,
+                "along the leaf's bottom: {tab:?} in {leaf:?}"
+            );
+        }
+        assert!(tabs[0].right() <= tabs[1].left() + 0.5, "Map, then Channels: {tabs:?}");
+        // The header is still on top of the leaf: its tab bar keeps the header's height.
+        let header = app.scene_target(crate::scene::Target::Header(Tab::Channels)).unwrap();
+        assert_eq!(header.top(), leaf.top());
+
+        for events in click(tabs[0].center()) {
+            frame(&mut app, &ctx, events);
+        }
+        frame(&mut app, &ctx, vec![]);
+        let leaf = app.dock.leaf(path).unwrap();
+        assert_eq!(leaf.tabs[leaf.active.0], Tab::Map, "the Map is shown");
+        assert!(app.heads.contains_key(&Tab::Map) && !app.heads.contains_key(&Tab::Channels));
+
+        // A middle click on Channels closes it; the Map is alone again, with no bottom tabs.
+        let tabs = bottom_tabs(&app, &ctx);
+        let at = tabs[1].center();
+        let middle = |pressed| Event::PointerButton {
+            pos: at,
+            button: PointerButton::Middle,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(&mut app, &ctx, vec![Event::PointerMoved(at), middle(true)]);
+        frame(&mut app, &ctx, vec![middle(false)]);
+        frame(&mut app, &ctx, vec![]);
+        assert!(app.dock.find_tab(&Tab::Channels).is_none(), "Channels closed");
+        assert!(app.sheets.is_empty() && app.heads.contains_key(&Tab::Map));
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Dragging a bottom tab takes that panel out of the shared leaf as its dock tab would: onto
+    /// the session's left guide it docks beside the session, and the panel left behind keeps the
+    /// leaf alone.
+    #[test]
+    fn dragging_a_bottom_tab_docks_that_panel_elsewhere() {
+        let (dir, ctx, mut app) = stacked_demo("sheet-drag");
+        let tabs = bottom_tabs(&app, &ctx);
+        let leaf = app.scene_target(crate::scene::Target::Session).unwrap();
+        let tile = crate::dock_drop::compass(leaf)
+            .into_iter()
+            .find(|(s, _)| *s == Some(egui_dock::Split::Left))
+            .unwrap()
+            .1;
+        // The Map's tab, while Channels is shown.
+        let start = tabs[0].center();
+        let button = |pos, pressed| Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(&mut app, &ctx, vec![Event::PointerMoved(start)]);
+        frame(&mut app, &ctx, vec![button(start, true)]);
+        for n in 1..=20 {
+            let at = start + (tile.center() - start) * (n as f32 / 20.0);
+            frame(&mut app, &ctx, vec![Event::PointerMoved(at)]);
+        }
+        assert!(
+            matches!(app.drop.dragging, Some((Tab::Map, Some(_)))),
+            "the Map is dragged onto a guide: {:?}",
+            app.drop.dragging
+        );
+        frame(&mut app, &ctx, vec![button(tile.center(), false)]);
+        for _ in 0..4 {
+            frame(&mut app, &ctx, vec![]);
+        }
+        let map = app.dock.find_tab(&Tab::Map).unwrap();
+        let session = app.dock.find_tab_from(|t| matches!(t, Tab::Session(_))).unwrap();
+        assert_eq!(map.node.parent(), session.node.parent(), "split beside the session");
+        let channels = app.dock.find_tab(&Tab::Channels).unwrap();
+        assert_ne!(channels.node, map.node, "Channels stays where it was");
+        assert!(app.sheets.is_empty(), "no leaf is shared any more");
+        assert!(app.heads.contains_key(&Tab::Map) && app.heads.contains_key(&Tab::Channels));
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The header of a shared leaf drags the shown panel; its options menu items come from a
+    /// right click on the header and on the bottom tabs alike.
+    #[test]
+    fn a_shared_leafs_header_drags_the_shown_panel() {
+        let (dir, ctx, mut app) = stacked_demo("sheet-header-drag");
+        let header = app.scene_target(crate::scene::Target::Header(Tab::Channels)).unwrap();
+        let leaf = app.scene_target(crate::scene::Target::Session).unwrap();
+        let tile = crate::dock_drop::compass(leaf)
+            .into_iter()
+            .find(|(s, _)| *s == Some(egui_dock::Split::Left))
+            .unwrap()
+            .1;
+        let start = pos2(header.left() + 60.0, header.center().y);
+        let button = |pos, pressed| Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(&mut app, &ctx, vec![Event::PointerMoved(start)]);
+        frame(&mut app, &ctx, vec![button(start, true)]);
+        for n in 1..=20 {
+            let at = start + (tile.center() - start) * (n as f32 / 20.0);
+            frame(&mut app, &ctx, vec![Event::PointerMoved(at)]);
+        }
+        assert!(
+            matches!(app.drop.dragging, Some((Tab::Channels, Some(_)))),
+            "{:?}",
+            app.drop.dragging
+        );
+        frame(&mut app, &ctx, vec![button(tile.center(), false)]);
+        for _ in 0..4 {
+            frame(&mut app, &ctx, vec![]);
+        }
+        let channels = app.dock.find_tab(&Tab::Channels).unwrap();
+        let session = app.dock.find_tab_from(|t| matches!(t, Tab::Session(_))).unwrap();
+        assert_eq!(
+            channels.node.parent(),
+            session.node.parent(),
+            "split beside the session"
+        );
+        assert!(app.dock.find_tab(&Tab::Map).is_some_and(|m| m.node != channels.node));
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The session's view tabs (Play, Map, Diagnostics) under the command box switch its page.
+    #[test]
+    fn the_view_tabs_under_the_command_box_switch_the_page() {
+        use crate::terminal_view::Page;
+        let (dir, ctx, mut app) = stacked_demo("view-tabs");
+        let id = app.sessions.iter().next().unwrap().tab.id;
+        let page = |app: &WandurApp| app.sessions.get(id).unwrap().view.page;
+        assert_eq!(page(&app), Page::Play);
+        for (n, want) in [(1, Page::Map), (2, Page::Diagnostics), (0, Page::Play)] {
+            let tabs = crate::sheet_tabs::tab_rects(&ctx, crate::terminal_view::view_tabs_id(id));
+            assert_eq!(tabs.len(), 3);
+            for events in click(tabs[n].center()) {
+                frame(&mut app, &ctx, events);
+            }
+            frame(&mut app, &ctx, vec![]);
+            assert_eq!(page(&app), want, "tab {n}");
+        }
+        // From the keyboard: the Map tab focused, Enter shows it.
+        ctx.memory_mut(|m| m.request_focus(crate::sheet_tabs::tab_id(crate::terminal_view::view_tabs_id(id), 1)));
+        frame(&mut app, &ctx, vec![]);
+        let enter = Event::Key {
+            key: egui::Key::Enter,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: Default::default(),
+        };
+        frame(&mut app, &ctx, vec![enter]);
+        frame(&mut app, &ctx, vec![]);
+        assert_eq!(page(&app), Page::Map, "Enter on the focused tab");
         app.on_exit();
         drop(app);
         let _ = std::fs::remove_dir_all(&dir);

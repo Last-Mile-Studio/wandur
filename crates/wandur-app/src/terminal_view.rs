@@ -27,6 +27,7 @@ use wandur_term::{BLINK, DisplayRow, SelectionKind, TermSize, Terminal, WrapOpti
 use crate::fonts::{FallbackFonts, bold_family};
 use crate::grid_text::{self, GridText};
 use crate::session_tab::{SessionTab, Status};
+use crate::sheet_tabs;
 use crate::theme::Theme;
 use crate::widgets::Icon;
 
@@ -1549,6 +1550,11 @@ fn style_tip(ui: &mut Ui, theme: &Theme) -> Option<bool> {
     answer
 }
 
+/// The id of a session's view tabs (tests find the tabs through it).
+pub fn view_tabs_id(session: crate::session_tab::SessionId) -> egui::Id {
+    egui::Id::new(("view-tabs", session))
+}
+
 /// Height of the session footer.
 const FOOTER_HEIGHT: f32 = 28.0;
 
@@ -1565,7 +1571,7 @@ fn footer(
 ) {
     let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), FOOTER_HEIGHT), egui::Sense::hover());
     ui.painter()
-        .hline(rect.x_range(), rect.top(), egui::Stroke::new(1.0, theme.border));
+        .hline(rect.x_range(), rect.top() + 0.5, egui::Stroke::new(1.0, theme.border));
     let inner = rect.shrink2(egui::vec2(12.0, 1.0));
     ui.scope_builder(
         egui::UiBuilder::new()
@@ -1574,14 +1580,49 @@ fn footer(
         |ui| {
             ui.spacing_mut().item_spacing.x = 3.0;
             let split = view.split && view.page != Page::Diagnostics;
-            if footer_tab(ui, t(S::SessionPlay), view.page == Page::Play || split, true, theme).clicked() {
+            // The views as sheet tabs hanging from the content above: the shown one takes its
+            // colour (the transcript's surface, Diagnostics' paper).
+            let (content, content_text) = if view.page == Page::Diagnostics {
+                (crate::diagnostics_view::editor_fill(theme), theme.text)
+            } else {
+                (theme.terminal, theme.terminal_text)
+            };
+            let palette = sheet_tabs::Palette::new(theme, theme.panel, theme.text, content, content_text);
+            let sheets = [
+                sheet_tabs::Sheet {
+                    label: t(S::SessionPlay),
+                    selected: view.page == Page::Play || split,
+                    tint: None,
+                },
+                sheet_tabs::Sheet {
+                    label: t(S::Map),
+                    selected: view.page == Page::Map || split,
+                    tint: None,
+                },
+                sheet_tabs::Sheet {
+                    label: t(S::DiagnosticsTab),
+                    selected: view.page == Page::Diagnostics,
+                    tint: None,
+                },
+            ];
+            let shown = sheet_tabs::show(
+                ui,
+                view_tabs_id(tab.id),
+                rect,
+                inner.left(),
+                &sheets,
+                &egui::FontId::proportional(12.0),
+                &palette,
+            );
+            ui.add_space(shown.width);
+            if shown.responses[0].clicked() {
                 view.show_map(false);
                 tab.focus_input = true;
             }
-            if footer_tab(ui, t(S::Map), view.page == Page::Map || split, true, theme).clicked() {
+            if shown.responses[1].clicked() {
                 view.show_map(true);
             }
-            if footer_tab(ui, t(S::DiagnosticsTab), view.page == Page::Diagnostics, true, theme).clicked() {
+            if shown.responses[2].clicked() {
                 view.page = Page::Diagnostics;
             }
             let (rect, _) = ui.allocate_exact_size(egui::vec2(24.0, 24.0), egui::Sense::hover());
@@ -1778,38 +1819,6 @@ pub fn footer_hint(private: bool, suggesting: bool) -> &'static str {
     } else {
         S::CommandHistoryEnterSend
     })
-}
-
-/// One of the footer's view tabs.
-fn footer_tab(ui: &mut Ui, text: &str, selected: bool, enabled: bool, theme: &Theme) -> egui::Response {
-    let font = egui::FontId::proportional(12.0);
-    let color = if !enabled {
-        theme.disabled_text()
-    } else if selected {
-        theme.text
-    } else {
-        theme.muted
-    };
-    let galley = ui.painter().layout_no_wrap(text.to_string(), font, color);
-    let size = egui::vec2(galley.size().x + 20.0, 24.0);
-    let sense = if enabled {
-        egui::Sense::click()
-    } else {
-        egui::Sense::hover()
-    };
-    let (rect, response) = ui.allocate_exact_size(size, sense);
-    crate::a11y::toggle(&response, egui::accesskit::Role::Tab, text, selected);
-    if selected {
-        ui.painter().rect_filled(rect, 3.0, theme.hover_fill());
-        ui.painter().hline(
-            rect.shrink2(egui::vec2(6.0, 0.0)).x_range(),
-            rect.bottom() - 1.0,
-            egui::Stroke::new(2.0, theme.accent),
-        );
-    }
-    ui.painter().galley(rect.center() - galley.size() / 2.0, galley, color);
-    response.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, enabled, selected, text));
-    response
 }
 
 /// A compact footer button; `checked` draws it pressed (a toggle that is on).

@@ -364,6 +364,45 @@ pub const SCENES: &[Scene] = &[
         "Armored",
         TabsScene::ToastRooms,
     ),
+    scene(
+        "sheet-tabs-fleet-dark",
+        "Channels and Saved worlds sharing a leaf: their tabs along its bottom (Fleet, Slate)",
+        "Slate",
+        Show::Session,
+    ),
+    scene(
+        "sheet-tabs-fleet-hull",
+        "Channels and Saved worlds sharing a leaf: their tabs along its bottom (Fleet, Hull)",
+        "Hull",
+        Show::Session,
+    ),
+    skinned(
+        scene(
+            "sheet-tabs-system-light",
+            "Channels and Saved worlds sharing a leaf: their tabs along its bottom (System, Linen)",
+            "Linen",
+            Show::Session,
+        ),
+        "System",
+    ),
+    skinned(
+        scene(
+            "sheet-tabs-three-system",
+            "Map, Channels and Saved worlds sharing a leaf, Map shown (System, Linen)",
+            "Linen",
+            Show::Session,
+        ),
+        "System",
+    ),
+    skinned(
+        scene(
+            "sheet-tabs-three-armored",
+            "Map, Channels and Saved worlds sharing a leaf, Map shown (Armored, Midnight)",
+            "Midnight",
+            Show::Session,
+        ),
+        "Armored",
+    ),
     skinned(
         scene(
             "reading-layout-focus-limit",
@@ -2035,6 +2074,17 @@ pub fn configure(scene: &Scene, options: &mut Options) {
             Some("right") => Preset::Right,
             Some("focus") => Preset::Focus,
             _ => Preset::Both,
+        });
+    }
+    // sheet-tabs-*: Panels on the left with panels sharing a leaf (two under the Map, or all
+    // three).
+    if scene.name.starts_with("sheet-tabs-") {
+        use crate::workspace::{Preset, Tab};
+        options.layout_preset = Some(Preset::Left);
+        options.stack_panels = Some(if scene.name.contains("-three-") {
+            (vec![Tab::Map, Tab::Channels, Tab::SavedWorlds], Tab::Map)
+        } else {
+            (vec![Tab::SavedWorlds, Tab::Channels], Tab::Channels)
         });
     }
     if scene.name.ends_with("-limit") {

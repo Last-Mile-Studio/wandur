@@ -2,7 +2,7 @@
 //!
 //! Module map: [`app`] (frame loop, settings, actions), [`shell`] (tab routing, status bar),
 //! [`workspace`], [`layout`] and [`autohide`] (dock tabs, default layout, saved layout, pinned and auto-hidden panels), [`sessions`] and
-//! [`session_tab`] (session state), [`session_tabs`] (the tabs over the document area), [`toast`] (the undo toast), [`terminal_view`] (grid drawing, selection, input line),
+//! [`session_tab`] (session state), [`session_tabs`] (the tabs over the document area), [`sheet_tabs`] (the tabs under a session and along a leaf of panels), [`toast`] (the undo toast), [`terminal_view`] (grid drawing, selection, input line),
 //! [`workspace_panel`] (Find a MUD, open sessions), [`saved_worlds_panel`] and [`panel_header`] (the Saved worlds panel, panel actions and headers), [`world_form`],
 //! [`directory_view`] and [`world_page`] (the world directory), [`artwork`] (bounded, cancellable
 //! picture loading), [`channels_view`] and [`mark_channel`] (the Channels panel and the teaching dialog), [`map_view`], [`diagnostics_view`] and [`vitals_view`] (the Diagnostics page and the vitals strip), [`settings_dialog`], [`about_window`] (Help > About Wandur), [`menus`], [`dialogs`], [`csharp_import`] (File > Import from Wandur (C#)... and `--import-csharp`), [`update_notice`] (the update check's strip and schedule), [`theme`], [`widgets`],
@@ -55,6 +55,7 @@ pub mod session_tab;
 pub mod session_tabs;
 pub mod sessions;
 pub mod settings_dialog;
+pub mod sheet_tabs;
 pub mod shell;
 pub mod skin;
 pub mod sysstat;

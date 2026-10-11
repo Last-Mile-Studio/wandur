@@ -59,6 +59,9 @@ pub struct Viewer<'a> {
     pub strips: &'a [Vec<Tab>],
     /// The panel headers' look, which the session tabs follow.
     pub look: &'a crate::panel_header::HeaderLook,
+    /// Tool panels sharing a leaf of the main dock, by each of them: the header shows the shown
+    /// one, and their tabs run along the leaf's bottom.
+    pub sheets: &'a HashMap<Tab, Sheet>,
 }
 
 /// A tool panel whose header the app draws: the header's width last frame (the dock's tab is
@@ -67,6 +70,34 @@ pub struct Viewer<'a> {
 pub struct Head {
     pub width: f32,
     pub place: crate::panel_header::ActionsPlace,
+}
+
+/// A leaf of the main dock holding several tool panels: its tabs (in the dock's order), the shown
+/// one, and where it is (egui_dock's own tab bar stays there, invisible, under the header, so a
+/// drag from a bottom tab is handed to its tab there).
+#[derive(Clone, Debug)]
+pub struct Sheet {
+    pub tabs: Vec<Tab>,
+    pub active: usize,
+    pub path: egui_dock::NodePath,
+}
+
+/// The height of the tabs along the bottom of a leaf of tool panels.
+pub const SHEET_STRIP_HEIGHT: f32 = 28.0;
+
+/// The colour of the content at the bottom of a tool panel (its tab takes it), and the text on
+/// it: the Map's canvas, Channels' reply bar on the transcript's surface, the panel otherwise.
+pub fn sheet_content(tab: Tab, theme: &Theme) -> (egui::Color32, egui::Color32) {
+    let content = match tab {
+        Tab::Map => theme.map_background,
+        Tab::Channels => theme.terminal,
+        _ => theme.panel,
+    };
+    let text = [theme.text, theme.terminal_text]
+        .into_iter()
+        .max_by(|a, b| crate::theme::contrast(*a, content).total_cmp(&crate::theme::contrast(*b, content)))
+        .unwrap_or(theme.text);
+    (content, text)
 }
 
 impl Viewer<'_> {
@@ -97,6 +128,11 @@ impl TabViewer for Viewer<'_> {
     }
 
     fn title(&mut self, tab: &mut Tab) -> WidgetText {
+        if self.sheets.contains_key(tab) {
+            // The header and the bottom tabs name it; the dock's own tab stays empty and narrow,
+            // so the invisible tab bar never overflows into a scroll bar.
+            return "".into();
+        }
         if self.heads.contains_key(tab) {
             // Its header shows the title; the dock's own tab under it stays plain (invisible).
             return tab.label().into();
@@ -156,6 +192,21 @@ impl TabViewer for Viewer<'_> {
                     self.panel_ui(ui, tab);
                 });
             }
+            _ if self.sheets.contains_key(tab) => {
+                // The panel, then the leaf's tabs along its bottom (the body's edge, past the
+                // dock's margin round the panel).
+                let full = ui.max_rect();
+                let clip = ui.clip_rect();
+                let strip =
+                    egui::Rect::from_min_max(egui::pos2(clip.left(), clip.bottom() - SHEET_STRIP_HEIGHT), clip.max);
+                let rest = egui::Rect::from_min_max(full.min, egui::pos2(full.right(), strip.top()));
+                let rest_clip = rest.intersect(clip);
+                ui.scope_builder(egui::UiBuilder::new().max_rect(rest), |ui| {
+                    ui.set_clip_rect(rest_clip);
+                    self.panel_ui(ui, tab);
+                });
+                self.sheet_strip(ui, *tab, strip);
+            }
             _ => self.panel_ui(ui, tab),
         }
         if let (Some(stats), Some((t0, a0))) = (self.stats.as_deref_mut(), started) {
@@ -167,16 +218,22 @@ impl TabViewer for Viewer<'_> {
     }
 
     fn is_closeable(&self, tab: &Tab) -> bool {
-        // A headed panel's close button is in the header the app draws.
-        !self.heads.contains_key(tab)
+        // A headed panel's close button is in the header the app draws (and on its bottom tab).
+        !self.heads.contains_key(tab) && !self.sheets.contains_key(tab)
     }
 
     fn tab_style_override(&self, tab: &Tab, global: &egui_dock::TabStyle) -> Option<egui_dock::TabStyle> {
-        let head = self.heads.get(tab)?;
-        // The dock's tab spans the whole header, invisible: it stays the drag handle (and the
-        // click that focuses the panel) under the header the app paints over it.
         let mut style = global.clone();
-        style.minimum_width = Some((head.width - 1.0).max(0.0));
+        if self.sheets.contains_key(tab) {
+            // Panels sharing a leaf: their dock tabs stay, invisible and narrow, under the
+            // header (a drag from a bottom tab is handed to its dock tab).
+            style.minimum_width = None;
+        } else {
+            // The dock's tab spans the whole header, invisible: it stays the drag handle (and
+            // the click that focuses the panel) under the header the app paints over it.
+            let head = self.heads.get(tab)?;
+            style.minimum_width = Some((head.width - 1.0).max(0.0));
+        }
         style.hline_below_active_tab_name = false;
         for state in [
             &mut style.active,
@@ -212,6 +269,104 @@ impl TabViewer for Viewer<'_> {
         // Each tab manages its own scrolling (the terminal and the directory virtualize rows).
         [false, false]
     }
+}
+
+impl Viewer<'_> {
+    /// The tabs of the panels sharing `shown`'s leaf, along its bottom in `rect`: a click shows
+    /// one, a middle click closes it, a drag takes it out of the leaf as its dock tab would, and
+    /// a right click offers what the header's options do.
+    fn sheet_strip(&mut self, ui: &mut Ui, shown: Tab, rect: egui::Rect) {
+        use crate::panel_header::DockCommand;
+        use crate::sheet_tabs;
+        let Some(sheet) = self.sheets.get(&shown) else { return };
+        let look = self.look;
+        let theme = self.theme;
+        let mut painter = ui.painter().clone();
+        painter.set_clip_rect(rect);
+        crate::skin::gradient_on(&painter, rect, &look.fill);
+        let line = look.line.unwrap_or(theme.border);
+        painter.hline(rect.x_range(), rect.top() + 0.5, egui::Stroke::new(1.0, line));
+        let (content, content_text) = sheet_content(shown, theme);
+        let mut palette = sheet_tabs::Palette::new(theme, look.fill.middle(), look.title_color, content, content_text);
+        palette.line = line;
+        let labels: Vec<String> = sheet.tabs.iter().map(|tab| self.sheet_label(*tab)).collect();
+        let sheets: Vec<sheet_tabs::Sheet<'_>> = sheet
+            .tabs
+            .iter()
+            .zip(&labels)
+            .enumerate()
+            .map(|(i, (tab, label))| sheet_tabs::Sheet {
+                label,
+                selected: i == sheet.active,
+                tint: (*tab == Tab::Channels && label.as_str() != tab.label()).then_some(theme.accent),
+            })
+            .collect();
+        let shown_tabs = sheet_tabs::show(
+            ui,
+            sheet_strip_id(sheet.path),
+            rect,
+            rect.left() + 8.0,
+            &sheets,
+            &egui::FontId::proportional(12.0),
+            &palette,
+        );
+        for (i, response) in shown_tabs.responses.iter().enumerate() {
+            let tab = sheet.tabs[i];
+            if response.drag_started() {
+                // egui_dock moves a panel by its own tab: hand it the drag.
+                ui.ctx().set_dragged_id(crate::dock_drop::tab_id(sheet.path, i));
+            } else if response.middle_clicked() {
+                self.actions.push(AppAction::PanelCommand(tab, DockCommand::Close));
+            } else if response.clicked() {
+                self.actions.push(AppAction::OpenPanel(tab));
+            }
+            response.context_menu(|ui| {
+                if let Some(command) = panel_menu(ui, tab) {
+                    self.actions.push(AppAction::PanelCommand(tab, command));
+                }
+            });
+        }
+    }
+
+    /// A bottom tab's label: the panel's name, Channels with its unread count.
+    fn sheet_label(&self, tab: Tab) -> String {
+        if tab == Tab::Channels {
+            let unread = self
+                .active_session
+                .and_then(|id| self.sessions.get(id))
+                .map_or(0, |e| e.tab.channels.log.unread_total());
+            if unread > 0 {
+                return format!("{}  {unread}", t(S::Channels));
+            }
+        }
+        tab.label().to_string()
+    }
+}
+
+/// The id of the bottom tabs of the leaf at `path` (tests find the tabs through it).
+pub fn sheet_strip_id(path: egui_dock::NodePath) -> egui::Id {
+    egui::Id::new(("sheet-tabs", path.surface, path.node))
+}
+
+/// A tool panel's menu (a bottom tab's right click, a shared leaf's header): Float, Unpin when
+/// it can be, Close. Returns what was chosen.
+pub fn panel_menu(ui: &mut Ui, tab: Tab) -> Option<crate::panel_header::DockCommand> {
+    use crate::panel_header::DockCommand;
+    let mut chosen = None;
+    ui.set_min_width(140.0);
+    if ui.button(t(S::DockFloat)).clicked() {
+        chosen = Some(DockCommand::Float);
+    }
+    if crate::autohide::can_hide(tab) && ui.button(t(S::AutoHide)).on_hover_text(t(S::AutoHideHint)).clicked() {
+        chosen = Some(DockCommand::AutoHide);
+    }
+    if ui.button(t(S::DockClosePanel)).clicked() {
+        chosen = Some(DockCommand::Close);
+    }
+    if chosen.is_some() {
+        ui.close();
+    }
+    chosen
 }
 
 /// The session tabs' items for a document leaf's tabs: titles (sessions of one world under the
