@@ -1324,6 +1324,18 @@ pub const SCENES: &[Scene] = &[
         Show::Session,
     ),
     scene(
+        "view-map-fleet-dark",
+        "The session's Map page, its footer where Play has it (Fleet, Slate)",
+        "Slate",
+        Show::Session,
+    ),
+    scene(
+        "view-diagnostics-fleet-dark",
+        "The session's Diagnostics page, its footer where Play has it (Fleet, Slate)",
+        "Slate",
+        Show::SessionDiagnostics(DiagTab::Messages),
+    ),
+    scene(
         "full-map-edit-fleet",
         "The Map page with Edit on: the inspector beside the canvas (Fleet, Hull)",
         "Hull",
@@ -2510,7 +2522,9 @@ pub fn configure(scene: &Scene, options: &mut Options) {
                 _ => None,
             };
             options.session_view = match scene.name {
-                "full-map-map-system" | "full-map-map-fleet" => Some(crate::app::SessionViewScene::Map),
+                "full-map-map-system" | "full-map-map-fleet" | "view-map-fleet-dark" => {
+                    Some(crate::app::SessionViewScene::Map)
+                }
                 "full-map-split-system" | "full-map-split-fleet" => Some(crate::app::SessionViewScene::Split),
                 "full-map-mini-system" | "full-map-mini-fleet" => Some(crate::app::SessionViewScene::MiniMenu),
                 _ => None,

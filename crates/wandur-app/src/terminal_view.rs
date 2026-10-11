@@ -104,6 +104,8 @@ pub struct TerminalViewState {
     pub tail_rect: Option<Rect>,
     /// Where the link bar's Open and Cancel buttons were drawn (tests).
     pub link_buttons: Option<(Rect, Rect)>,
+    /// Where the footer was drawn last frame (tests check it stays put across the views).
+    pub footer_rect: Option<Rect>,
     /// Play or Diagnostics (the footer's view tabs).
     pub page: Page,
     pub diagnostics: crate::diagnostics_view::DiagnosticsViewState,
@@ -1234,9 +1236,12 @@ pub fn show(
     status_line(ui, tab, theme, &mut actions);
     ui.add_space(2.0);
     let width = ui.available_width();
+    // The footer sits on the session's bottom edge whatever the view, and each view fills the
+    // room down to it, so switching views moves nothing there.
+    let footer_top = footer_rect(ui).top();
     if view.page == Page::Diagnostics {
         // Diagnostics takes the whole content area; the command input belongs to Play.
-        let height = (ui.available_height() - FOOTER_HEIGHT).max(40.0);
+        let height = (footer_top - ui.cursor().top()).max(40.0);
         ui.allocate_ui(egui::vec2(width, height), |ui| {
             ui.set_min_size(ui.available_size());
             crate::diagnostics_view::show(ui, &mut tab.protocol, &mut view.diagnostics, theme);
@@ -1247,7 +1252,7 @@ pub fn show(
     if view.map_shown() {
         // The map's area: the Map page with the output strip under it, or Play and Map side by
         // side. The shell draws the map in `map_rect`.
-        let height = (ui.available_height() - FOOTER_HEIGHT - ui.spacing().item_spacing.y).max(60.0);
+        let height = (footer_top - ui.cursor().top()).max(60.0);
         let (body, _) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::hover());
         let mut suggestion = false;
         if view.split {
@@ -1437,7 +1442,10 @@ fn play_body(
     let vitals_height = crate::vitals_view::height(&view.vitals, width);
     let tip_height = if tab.style_tip_shown() { STYLE_TIP_HEIGHT } else { 0.0 };
     let composer_height = COMPOSER_HEIGHT + reserve + vitals_height + tip_height;
-    let terminal_height = (ui.available_height() - composer_height).max(40.0);
+    // Room for the gaps between the rows too; the composer is then put exactly on `reserve`
+    // above the bottom (on the footer's top edge), whatever came between.
+    let gaps = 3.0 * ui.spacing().item_spacing.y;
+    let terminal_height = (ui.available_height() - composer_height - gaps).max(40.0);
     let mut output = TerminalOutput::default();
     // The session rail beside the transcript; the vitals strip and the composer span both.
     let rail_shows = crate::panel_view::sync(&mut tab.panels, &mut view.rail);
@@ -1482,6 +1490,11 @@ fn play_body(
     crate::vitals_view::show(ui, &view.vitals, theme);
     if tab.style_tip_shown() {
         actions.command_style_tip = style_tip(ui, theme);
+    }
+    let composer_top = ui.max_rect().bottom() - reserve - COMPOSER_HEIGHT;
+    let pad = composer_top - ui.cursor().top();
+    if pad > 0.0 {
+        ui.add_space(pad);
     }
     composer(
         ui,
@@ -1558,6 +1571,12 @@ pub fn view_tabs_id(session: crate::session_tab::SessionId) -> egui::Id {
 /// Height of the session footer.
 const FOOTER_HEIGHT: f32 = 28.0;
 
+/// Where the footer goes: along the bottom of the session's area.
+fn footer_rect(ui: &Ui) -> Rect {
+    let area = ui.max_rect();
+    Rect::from_min_max(egui::pos2(area.left(), area.bottom() - FOOTER_HEIGHT), area.max)
+}
+
 /// The session footer, as the C# one under the command box: the Play and Diagnostics views,
 /// Scripts (t09) and this session's Macros switch on the left; the command hint and the Private
 /// input padlock on the right.
@@ -1569,7 +1588,8 @@ fn footer(
     suggesting: bool,
     actions: &mut ViewActions,
 ) {
-    let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), FOOTER_HEIGHT), egui::Sense::hover());
+    let rect = footer_rect(ui);
+    view.footer_rect = Some(rect);
     ui.painter()
         .hline(rect.x_range(), rect.top() + 0.5, egui::Stroke::new(1.0, theme.border));
     let inner = rect.shrink2(egui::vec2(12.0, 1.0));

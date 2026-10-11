@@ -8309,6 +8309,47 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// Switching between Play, Map and Diagnostics (and Play and Map side by side) moves nothing
+    /// at the session's bottom: the footer and its view tabs stay where they were.
+    #[test]
+    fn the_footer_and_its_tabs_stay_put_across_the_views() {
+        use crate::terminal_view::Page;
+        let (dir, ctx, mut app) = stacked_demo("view-tabs-still");
+        let id = app.sessions.iter().next().unwrap().tab.id;
+        let mut seen = Vec::new();
+        for (page, split) in [
+            (Page::Play, false),
+            (Page::Map, false),
+            (Page::Diagnostics, false),
+            (Page::Play, true),
+            (Page::Play, false),
+        ] {
+            let view = &mut app.sessions.get_mut(id).unwrap().view;
+            view.page = page;
+            view.split = split;
+            for _ in 0..3 {
+                frame(&mut app, &ctx, vec![]);
+            }
+            let footer = app.sessions.get(id).unwrap().view.footer_rect;
+            // Where the tabs take the pointer shifts with the shown one (it takes the overlaps);
+            // the strip they make, top, bottom and both ends, must not.
+            let tabs = crate::sheet_tabs::tab_rects(&ctx, crate::terminal_view::view_tabs_id(id));
+            assert_eq!(tabs.len(), 3);
+            let strip = tabs.iter().fold(egui::Rect::NOTHING, |a, r| a.union(*r));
+            assert!(tabs.iter().all(|r| r.y_range() == strip.y_range()), "{tabs:?}");
+            seen.push((page, split, footer, strip));
+        }
+        let (_, _, footer, tabs) = &seen[0];
+        assert!(footer.is_some_and(|r| r.is_positive()), "{footer:?}");
+        for (page, split, f, t) in &seen[1..] {
+            assert_eq!(f, footer, "the footer under {page:?} (split {split})");
+            assert_eq!(t, tabs, "the view tabs under {page:?} (split {split})");
+        }
+        app.on_exit();
+        drop(app);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn the_system_caption_shows_the_window_title_and_the_drawn_skins_their_plate() {
         let dir = std::env::temp_dir().join(format!("wandur-app-caption-{}", std::process::id()));
