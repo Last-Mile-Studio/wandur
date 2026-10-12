@@ -9,9 +9,10 @@ use std::time::SystemTime;
 use rusqlite::functions::FunctionFlags;
 use rusqlite::{Connection, Row, ToSql, params};
 
+use super::recall::{Collector, RecallRequest};
 use super::{
-    EntryKind, HistoryEntry, HistoryError, HistoryFilter, HistoryHit, HistorySession, HistoryStore, MAX_PAGE,
-    MAX_QUERY, from_micros, to_micros,
+    EntryKind, HistoryCommand, HistoryEntry, HistoryError, HistoryFilter, HistoryHit, HistorySession, HistoryStore,
+    MAX_PAGE, MAX_QUERY, from_micros, to_micros,
 };
 use crate::db::Database;
 
@@ -92,13 +93,22 @@ impl SqliteHistoryStore {
 
 impl HistoryStore for SqliteHistoryStore {
     fn append(&self, session: &HistorySession, entries: &[HistoryEntry]) -> Result<(), HistoryError> {
+        self.append_batch(session, entries, &[])
+    }
+
+    fn append_batch(
+        &self,
+        session: &HistorySession,
+        entries: &[HistoryEntry],
+        commands: &[HistoryCommand],
+    ) -> Result<(), HistoryError> {
         validate_id(&session.id)?;
         validate_id(&session.world_key)?;
         if session.ended_at.is_some_and(|end| end < session.started_at) {
             return Err(HistoryError::Invalid("session"));
         }
         // The whole batch is checked before anything is written.
-        if entries.iter().any(|e| e.sequence < 0) {
+        if entries.iter().any(|e| e.sequence < 0) || commands.iter().any(|c| c.sequence < 0) {
             return Err(HistoryError::Invalid("entries"));
         }
         self.write(false, |c| {
@@ -158,6 +168,13 @@ impl HistoryStore for SqliteHistoryStore {
                 "INSERT INTO history_entries_fts(rowid, text) SELECT id, text FROM history_entries WHERE id > ?1",
                 [before],
             )?;
+            let mut typed = c.prepare_cached(
+                "INSERT INTO history_commands(session, sequence, at, text) VALUES(?1, ?2, ?3, ?4)
+                 ON CONFLICT(session, sequence) DO NOTHING",
+            )?;
+            for command in commands {
+                typed.execute(params![key, command.sequence, to_micros(command.at), command.text])?;
+            }
             Ok(())
         })
     }
@@ -259,12 +276,63 @@ impl HistoryStore for SqliteHistoryStore {
         let before = to_micros(before);
         self.write(true, |c| {
             c.execute("DELETE FROM history_entries WHERE at < ?1", [before])?;
+            c.execute("DELETE FROM history_commands WHERE at < ?1", [before])?;
             c.execute(
                 "DELETE FROM history_sessions WHERE COALESCE(ended_at, started_at) < ?1
                  AND NOT EXISTS(SELECT 1 FROM history_entries WHERE session = history_sessions.key)",
                 [before],
             )?;
             Ok(())
+        })
+    }
+
+    fn recall(&self, request: &RecallRequest) -> Result<Vec<String>, HistoryError> {
+        validate_id(&request.endpoint_key)?;
+        if request.limit == 0 {
+            return Ok(Vec::new());
+        }
+        let key = crate::db::worlds::canonical_endpoint_key(&request.endpoint_key)
+            .unwrap_or_else(|_| request.endpoint_key.clone());
+        let character = request.character.trim().to_lowercase();
+        let since = request.since.map_or(i64::MIN, to_micros);
+        self.read(|c| {
+            // Every address of the saved world the endpoint belongs to (an edited address keeps
+            // its world); an address of no world is its own key.
+            let mut keys = vec![key.clone()];
+            if let Some(world) = crate::db::worlds::find_world_key(c, &key).ok().flatten() {
+                for other in crate::db::worlds::endpoints_of(c, &world)? {
+                    if !keys.contains(&other) {
+                        keys.push(other);
+                    }
+                }
+            }
+            let marks = vec!["?"; keys.len()].join(", ");
+            let mut sessions = c.prepare(&format!(
+                "SELECT key, id, character_name FROM history_sessions WHERE world_key IN ({marks})
+                 ORDER BY started_at DESC, id"
+            ))?;
+            let sessions = sessions
+                .query_map(rusqlite::params_from_iter(keys.iter()), |r| {
+                    Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            // Read after the listing: a session of this tab listed above is already named here.
+            let own = request.own.lock().unwrap_or_else(|e| e.into_inner()).clone();
+            let mut entries =
+                c.prepare("SELECT text FROM history_commands WHERE session = ?1 AND at >= ?2 ORDER BY sequence DESC")?;
+            let mut collector = Collector::new(request.limit);
+            for (session, id, name) in sessions {
+                if name.trim().to_lowercase() != character || own.contains(&id) {
+                    continue;
+                }
+                let mut rows = entries.query(params![session, since])?;
+                while let Some(row) = rows.next()? {
+                    if collector.offer(row.get(0)?) {
+                        return Ok(collector.finish());
+                    }
+                }
+            }
+            Ok(collector.finish())
         })
     }
 }
@@ -1056,5 +1124,144 @@ mod tests {
         assert_eq!(triggers, 2);
         drop(c);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // Command recall (the input line's Up and Down history at a session's start).
+
+    fn typed(sequence: i64, text: &str) -> HistoryCommand {
+        HistoryCommand {
+            sequence,
+            at: noon() + Duration::from_micros(sequence as u64),
+            text: text.into(),
+        }
+    }
+
+    fn sent(sequence: i64, text: &str) -> HistoryEntry {
+        HistoryEntry {
+            kind: EntryKind::Sent,
+            ..entry(sequence, text)
+        }
+    }
+
+    fn recall_request(endpoint: &str, character: &str, limit: usize) -> RecallRequest {
+        RecallRequest {
+            endpoint_key: endpoint.into(),
+            character: character.into(),
+            own: Default::default(),
+            since: None,
+            limit,
+        }
+    }
+
+    fn recall(f: &Fixture, endpoint: &str, character: &str, limit: usize) -> Vec<String> {
+        f.store.recall(&recall_request(endpoint, character, limit)).unwrap()
+    }
+
+    const HARBOR: &str = "fixture.example:4000";
+
+    #[test]
+    fn recall_reads_typed_lines_of_the_same_world_and_character_newest_last() {
+        let f = Fixture::new("recall");
+        let mut older = session("a1");
+        older.started_at = days(-2);
+        let two_days_ago = |c: HistoryCommand| HistoryCommand { at: days(-2), ..c };
+        f.store
+            .append_batch(
+                &older,
+                &[sent(1, "north"), entry(2, "A road.")],
+                &[typed(1, "north"), typed(2, "look"), typed(3, "look")].map(two_days_ago),
+            )
+            .unwrap();
+        f.store
+            .append_batch(
+                &session("a2"),
+                // What went to the world is not what is recalled: only the typed lines.
+                &[sent(1, "say 1"), sent(2, "say 1"), sent(3, "kill orc"), sent(4, "east")],
+                &[
+                    typed(1, "look"),
+                    typed(2, "/2 say 1"),
+                    typed(3, "say my password is [redacted]"),
+                    typed(4, "   "),
+                    typed(5, "k orc"),
+                ],
+            )
+            .unwrap();
+        // Another character, and another world.
+        let mut other = session("b1");
+        other.character_name = "Tobin".into();
+        f.store.append_batch(&other, &[], &[typed(1, "kill rat")]).unwrap();
+        let mut elsewhere = session("c1");
+        elsewhere.world_key = "elsewhere.example:4000".into();
+        f.store.append_batch(&elsewhere, &[], &[typed(1, "quaff")]).unwrap();
+
+        assert_eq!(recall(&f, HARBOR, "mira", 500), ["north", "look", "/2 say 1", "k orc"]);
+        assert_eq!(recall(&f, HARBOR, "Tobin", 500), ["kill rat"]);
+        assert!(recall(&f, HARBOR, "", 500).is_empty());
+        // The limit keeps the newest.
+        assert_eq!(recall(&f, HARBOR, "Mira", 2), ["/2 say 1", "k orc"]);
+        // The tab's own sessions are left out.
+        let request = recall_request(HARBOR, "Mira", 500);
+        request.own.lock().unwrap().push("a2".into());
+        assert_eq!(f.store.recall(&request).unwrap(), ["north", "look"]);
+        // Retention: nothing before the cutoff, and pruning removes typed lines too.
+        let mut request = recall_request(HARBOR, "Mira", 500);
+        request.since = Some(days(-1));
+        assert_eq!(f.store.recall(&request).unwrap(), ["look", "/2 say 1", "k orc"]);
+        f.store.prune(days(-1)).unwrap();
+        assert_eq!(recall(&f, HARBOR, "Mira", 500), ["look", "/2 say 1", "k orc"]);
+        // Typed lines stay out of search and the transcript.
+        assert!(
+            f.store
+                .search("orc", &all(), 0, 10)
+                .unwrap()
+                .iter()
+                .all(|h| h.entry.text != "k orc")
+        );
+        assert_eq!(f.store.entries("a2", 0, 100).unwrap().len(), 4);
+        // Deleted sessions restore nothing.
+        f.store.delete("a2").unwrap();
+        assert!(recall(&f, HARBOR, "Mira", 500).is_empty());
+        assert_eq!(
+            f.scalar::<i64>(
+                "SELECT COUNT(*) FROM history_commands WHERE session NOT IN (SELECT key FROM history_sessions)"
+            ),
+            0
+        );
+    }
+
+    #[test]
+    fn sessions_with_sent_lines_only_restore_nothing() {
+        // As a database from before typed lines were kept, or the C# client's history.
+        let f = Fixture::new("recall-old");
+        f.store
+            .append(&session("old"), &[sent(1, "look"), sent(2, "north")])
+            .unwrap();
+        assert!(recall(&f, HARBOR, "Mira", 500).is_empty());
+    }
+
+    #[test]
+    fn recall_covers_every_address_of_a_saved_world() {
+        let f = Fixture::new("recall-world");
+        f.store
+            .database()
+            .write(|tx| {
+                let id = crate::db::worlds::resolve_world(tx, "old.example", 4000, None)?;
+                crate::db::worlds::resolve_world(tx, "new.example", 4000, Some(&id))?;
+                Ok(())
+            })
+            .unwrap();
+        let mut before = session("w1");
+        before.world_key = "old.example:4000".into();
+        before.started_at = days(-1);
+        f.store.append_batch(&before, &[], &[typed(1, "wield sword")]).unwrap();
+        let mut after = session("w2");
+        after.world_key = "new.example:4000".into();
+        f.store.append_batch(&after, &[], &[typed(1, "look")]).unwrap();
+        assert_eq!(recall(&f, "NEW.example:4000", "Mira", 500), ["wield sword", "look"]);
+        // An address of no saved world is its own key.
+        let mut loose = session("w3");
+        loose.world_key = "loose.example:23".into();
+        f.store.append_batch(&loose, &[], &[typed(1, "who")]).unwrap();
+        assert_eq!(recall(&f, "loose.example:23", "Mira", 500), ["who"]);
     }
 }

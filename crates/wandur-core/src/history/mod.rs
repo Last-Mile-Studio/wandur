@@ -7,10 +7,12 @@
 //!   and sent commands into entries under the privacy rules and writes them in batches.
 //! - [`store`]: the SQLite tables (sessions, entries, an external-content FTS5 index) with
 //!   literal word and phrase search, filters, paging, delete and retention.
+//! - [`recall`]: the sent commands a new session's Up and Down history starts with.
 //!
 //! Nothing here runs on the UI thread except handing text to the recorder's queue.
 
 pub mod lines;
+pub mod recall;
 pub mod recorder;
 pub mod store;
 
@@ -96,6 +98,16 @@ pub struct HistoryEntry {
     pub text: String,
 }
 
+/// A command line as the person typed it (before aliases, `;` and the client's `/` commands),
+/// kept for the input line's Up and Down in later sessions. Never part of the transcript or
+/// search.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HistoryCommand {
+    pub sequence: i64,
+    pub at: SystemTime,
+    pub text: String,
+}
+
 /// A search result: the entry and its session.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HistoryHit {
@@ -149,6 +161,17 @@ pub trait HistoryStore: Send + Sync {
     /// Add entries to a session (creating or updating its row). A sequence already stored is
     /// kept as it was; a deleted session is never brought back.
     fn append(&self, session: &HistorySession, entries: &[HistoryEntry]) -> Result<(), HistoryError>;
+    /// [`Self::append`] with the typed command lines of the same stretch, written together. A
+    /// store without command recall keeps the entries only.
+    fn append_batch(
+        &self,
+        session: &HistorySession,
+        entries: &[HistoryEntry],
+        commands: &[HistoryCommand],
+    ) -> Result<(), HistoryError> {
+        let _ = commands;
+        self.append(session, entries)
+    }
     /// Sessions, newest start first; dates filter the start time.
     fn sessions(
         &self,
@@ -171,6 +194,13 @@ pub trait HistoryStore: Send + Sync {
     fn delete(&self, session_id: &str) -> Result<(), HistoryError>;
     /// Remove entries older than `before`, and sessions left empty that ended before it.
     fn prune(&self, before: SystemTime) -> Result<(), HistoryError>;
+    /// The command lines typed in earlier sessions of the same world and character, for the
+    /// input line's Up and Down: oldest first, newest last, at most `request.limit`, under the rules of
+    /// [`recall`]. A store that cannot answer it restores nothing.
+    fn recall(&self, request: &recall::RecallRequest) -> Result<Vec<String>, HistoryError> {
+        let _ = request;
+        Ok(Vec::new())
+    }
 }
 
 /// Microseconds since 1970 (negative before it).

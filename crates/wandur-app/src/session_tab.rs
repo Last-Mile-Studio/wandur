@@ -332,7 +332,18 @@ pub struct SessionTab {
     pub input: String,
     history: Vec<String>,
     history_pos: Option<usize>,
+    /// How many of `history`'s first commands came back from earlier sessions.
+    restored: usize,
+    /// The read of earlier sessions' commands for Up and Down, while it runs.
+    recall: Option<Receiver<Vec<String>>>,
+    /// The character (lowercase) the last such read was for.
+    recall_for: Option<String>,
+    /// This tab's own history sessions, which that read leaves out.
+    own_sessions: wandur_core::history::recall::OwnSessions,
     draft: String,
+    /// The line Escape or Ctrl+C last cleared from the box, until a line is sent: the newest
+    /// place in Up and Down (one past `history`), never recorded as typed.
+    cleared: Option<String>,
     prompts: PromptTracker,
     pub last_prompt: Option<Prompt>,
     pub prompt_count: u64,
@@ -661,7 +672,12 @@ impl SessionTab {
             input: String::new(),
             history: Vec::new(),
             history_pos: None,
+            restored: 0,
+            recall: None,
+            recall_for: None,
+            own_sessions: Default::default(),
             draft: String::new(),
+            cleared: None,
             prompts: PromptTracker::new(options.prompt_quiet),
             last_prompt: None,
             prompt_count: 0,
@@ -717,6 +733,7 @@ impl SessionTab {
             agent_commands_sent: 0,
         };
         tab.follow_lines();
+        tab.start_recall();
         tab
     }
 
@@ -1165,6 +1182,7 @@ impl SessionTab {
     }
 
     fn pump_link(&mut self, now: Instant) -> usize {
+        self.follow_recall();
         let Link::Net(conn) = &mut self.link else {
             self.follow_history();
             self.follow_map(now);
@@ -1426,6 +1444,8 @@ impl SessionTab {
         {
             self.character = name;
             self.label = label(&self.name, &self.character);
+            // The commands of this character's earlier sessions, not the saved username's.
+            self.start_recall();
         }
     }
 
@@ -1889,6 +1909,7 @@ impl SessionTab {
                     self.remember(line);
                     self.history_pos = None;
                     self.draft.clear();
+                    self.cleared = None;
                     if let Some(Step::Help(topic)) = steps.into_iter().next() {
                         self.print_help(topic);
                     }
@@ -1900,6 +1921,7 @@ impl SessionTab {
                     self.remember(line);
                     self.history_pos = None;
                     self.draft.clear();
+                    self.cleared = None;
                     self.queued_total = steps.iter().filter(|s| matches!(s, Step::Send(_))).count();
                     self.queued_sent = 0;
                     self.queued = steps.into();
@@ -2055,6 +2077,7 @@ impl SessionTab {
             self.send_from_macros(&mut commands);
             self.history_pos = None;
             self.draft.clear();
+            self.cleared = None;
             self.terminal.scroll_to_bottom();
             return Ok(());
         }
@@ -2070,6 +2093,7 @@ impl SessionTab {
             }
             self.history_pos = None;
             self.draft.clear();
+            self.cleared = None;
             self.terminal.scroll_to_bottom();
             return Ok(());
         }
@@ -2109,6 +2133,7 @@ impl SessionTab {
         }
         self.history_pos = None;
         self.draft.clear();
+        self.cleared = None;
         self.flush_demo();
         self.terminal.scroll_to_bottom();
         Ok(())
@@ -2120,12 +2145,15 @@ impl SessionTab {
             self.completions.learn_line(&line);
             self.completions.flush();
         }
-        if !line.trim().is_empty() && self.history.last() != Some(&line) {
-            self.history.push(line);
-            if self.history.len() > HISTORY_LIMIT {
-                self.history.remove(0);
-            }
+        let kept = !line.trim().is_empty() && self.history.last() != Some(&line);
+        let hidden = self.protocol_gate().blocked();
+        if kept && let Some(recorder) = &mut self.recorder {
+            // As typed, for Up and Down in later sessions (never while private or logging in).
+            recorder.set_secrets(self.protocol.secrets());
+            recorder.typed(&line, hidden);
         }
+        let dropped = wandur_core::history::recall::push_command(&mut self.history, line, HISTORY_LIMIT);
+        self.restored = self.restored.saturating_sub(dropped);
     }
 
     /// The commands kept for Up and Down, oldest first.
@@ -2133,33 +2161,70 @@ impl SessionTab {
         &self.history
     }
 
-    /// Older command (Up). Keeps the unsent draft to restore later.
+    /// Older command (Up). Keeps the unsent draft to restore later. A line Escape or Ctrl+C
+    /// cleared comes first, so one Up brings it back.
     pub fn history_back(&mut self) {
-        if self.private_input() || self.history.is_empty() {
+        self.follow_recall();
+        let top = self.recall_len();
+        if self.private_input() || top == 0 {
             return;
         }
         let pos = match self.history_pos {
             None => {
                 self.draft = std::mem::take(&mut self.input);
-                self.history.len() - 1
+                top - 1
             }
             Some(0) => 0,
             Some(p) => p - 1,
         };
         self.history_pos = Some(pos);
-        self.input = self.history[pos].clone();
+        self.input = self.recall_entry(pos).to_string();
     }
 
     /// Newer command (Down); past the newest, the draft comes back.
     pub fn history_forward(&mut self) {
         let Some(pos) = self.history_pos else { return };
-        if pos + 1 < self.history.len() {
+        if pos + 1 < self.recall_len() {
             self.history_pos = Some(pos + 1);
-            self.input = self.history[pos + 1].clone();
+            self.input = self.recall_entry(pos + 1).to_string();
         } else {
             self.history_pos = None;
             self.input = std::mem::take(&mut self.draft);
         }
+    }
+
+    /// The places Up and Down go through: the history, then a cleared line.
+    fn recall_len(&self) -> usize {
+        self.history.len() + usize::from(self.cleared.is_some())
+    }
+
+    fn recall_entry(&self, pos: usize) -> &str {
+        match self.history.get(pos) {
+            Some(line) => line,
+            None => self.cleared.as_deref().unwrap_or_default(),
+        }
+    }
+
+    /// Empty the command box (Escape, or Ctrl+C), keeping what was typed as the newest place in
+    /// Up and Down until a line is sent. It was never sent, so it is not recorded or learned.
+    /// While browsing, an unedited recalled command is still in the history, so the draft from
+    /// before Up is the one kept. Private input is cleared and kept nowhere.
+    pub fn clear_input(&mut self) {
+        let browsing = self.history_pos.take();
+        let shown = std::mem::take(&mut self.input);
+        if self.private_input() {
+            return;
+        }
+        let draft = std::mem::take(&mut self.draft);
+        let kept = match browsing {
+            Some(pos) if self.recall_entry(pos) == shown => draft,
+            _ => shown,
+        };
+        if kept.trim().is_empty() {
+            return;
+        }
+        // The same as the newest command: Up already brings it back.
+        self.cleared = (self.history.last() != Some(&kept)).then_some(kept);
     }
 
     pub fn disconnect(&mut self) {
@@ -2262,6 +2327,9 @@ impl SessionTab {
             // Turning it on while connected starts a new history session (no backfill).
             self.begin_history();
         }
+        if enabled {
+            self.start_recall();
+        }
         if let (Some(recorder), Some(days)) = (&mut self.recorder, retention) {
             recorder.update_retention(days);
         }
@@ -2293,13 +2361,13 @@ impl SessionTab {
         if self.recorder.is_some() || !config.enabled {
             return;
         }
-        let world_key = if self.is_demo() {
-            "demo".to_string()
-        } else {
-            wandur_core::db::worlds::endpoint_key(&self.endpoint.host, self.endpoint.port)
-                .unwrap_or_else(|_| self.endpoint.to_string())
-        };
+        let world_key = self.history_world_key();
         let session = HistorySession::start(&world_key, self.world_name(), &self.character, (config.clock)());
+        // Before the recorder can write it, so a recall read never takes this run's commands.
+        self.own_sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(session.id.clone());
         let show_notice = config.show_notice;
         match HistoryRecorder::start(
             Arc::clone(&config.store),
@@ -2327,6 +2395,88 @@ impl SessionTab {
                 self.recorder_drains.push(handle);
             }
         }
+    }
+
+    /// The key this session's history sessions are recorded under: the canonical endpoint.
+    fn history_world_key(&self) -> String {
+        if self.is_demo() {
+            return "demo".to_string();
+        }
+        wandur_core::db::worlds::endpoint_key(&self.endpoint.host, self.endpoint.port)
+            .unwrap_or_else(|_| self.endpoint.to_string())
+    }
+
+    /// Read the commands earlier sessions of this world and character sent, for Up and Down,
+    /// on a thread of its own (the store may wait for the disk). Only with session history on,
+    /// once per character; never for the demo.
+    fn start_recall(&mut self) {
+        let Some(config) = &self.history_config else { return };
+        if !config.enabled || self.is_demo() {
+            return;
+        }
+        let character = self.character.to_lowercase();
+        if self.recall_for.as_ref() == Some(&character) {
+            return;
+        }
+        let request = wandur_core::history::recall::RecallRequest {
+            endpoint_key: self.history_world_key(),
+            character: self.character.clone(),
+            own: Arc::clone(&self.own_sessions),
+            since: wandur_core::history::retention_cutoff(config.retention_days, (config.clock)()),
+            limit: HISTORY_LIMIT,
+        };
+        let store = Arc::clone(&config.store);
+        let (tx, rx) = std::sync::mpsc::channel();
+        let id = self.id;
+        let spawned = std::thread::Builder::new()
+            .name(format!("wandur-recall-{id}"))
+            .spawn(move || {
+                // A store that cannot read restores nothing; the session plays on.
+                let _ = tx.send(store.recall(&request).unwrap_or_default());
+            });
+        if spawned.is_ok() {
+            self.recall_for = Some(character);
+            self.recall = Some(rx);
+        }
+    }
+
+    /// Take the recall read once it is done: its commands go before the ones typed this run,
+    /// replacing what an earlier read (for another character) restored.
+    fn follow_recall(&mut self) {
+        let Some(recall) = &self.recall else { return };
+        let lines = match recall.try_recv() {
+            Ok(lines) => lines,
+            Err(TryRecvError::Empty) => return,
+            Err(TryRecvError::Disconnected) => Vec::new(),
+        };
+        self.recall = None;
+        // Turned off meanwhile: nothing comes back.
+        if !self.history_config.as_ref().is_some_and(|c| c.enabled) {
+            return;
+        }
+        let before = self.restored.min(self.history.len());
+        let old_len = self.history.len();
+        let typed = self.history.split_off(before);
+        let (history, restored) = wandur_core::history::recall::merge(lines, typed, HISTORY_LIMIT);
+        self.history = history;
+        self.restored = restored;
+        if let Some(pos) = self.history_pos {
+            if pos >= old_len {
+                // On the cleared line, still the newest place.
+                self.history_pos = Some(self.history.len());
+            } else if pos >= before {
+                self.history_pos = Some(pos - before + restored);
+            } else {
+                // It showed a command the new read replaced: back to the draft.
+                self.history_pos = None;
+                self.input = std::mem::take(&mut self.draft);
+            }
+        }
+    }
+
+    /// The recall read is still running (tests).
+    pub fn recall_pending(&self) -> bool {
+        self.recall.is_some()
     }
 
     /// Server text as applied: recorded, or a private marker while input is private or a login
@@ -2742,6 +2892,75 @@ mod tests {
         tab.history_forward();
         assert_eq!(tab.input, "dra");
         assert!(tab.terminal.transcript().contains("north"));
+    }
+
+    /// A cleared line is the newest place in Up and Down until a line is sent: one Up brings it
+    /// back exactly, after a new draft too; an unedited recalled command gives back the draft
+    /// from before Up instead; private input is kept nowhere.
+    #[test]
+    fn a_cleared_line_comes_back_with_one_up_until_a_line_is_sent() {
+        let (mut tab, _server) = local_tab();
+        pump_until(&mut tab, SessionTab::is_connected);
+        tab.input = "north".into();
+        tab.submit();
+        tab.input = "  kill  droid ".into();
+        tab.clear_input();
+        assert_eq!(tab.input, "");
+        assert_eq!(tab.history(), ["north"], "not a command");
+        tab.history_back();
+        assert_eq!(tab.input, "  kill  droid ", "exactly as typed");
+        tab.history_back();
+        assert_eq!(tab.input, "north");
+        tab.history_forward();
+        assert_eq!(tab.input, "  kill  droid ");
+        tab.history_forward();
+        assert_eq!(tab.input, "");
+
+        // A new draft keeps its place below it.
+        tab.input = "lo".into();
+        tab.history_back();
+        assert_eq!(tab.input, "  kill  droid ");
+        tab.history_forward();
+        assert_eq!(tab.input, "lo");
+
+        // Clearing an unedited recalled command keeps the draft from before Up.
+        tab.history_back();
+        tab.history_back();
+        assert_eq!(tab.input, "north");
+        tab.clear_input();
+        tab.history_back();
+        assert_eq!(tab.input, "lo");
+        tab.clear_input();
+        assert_eq!(tab.input, "");
+
+        // The same as the newest command: Up already brings it back, once.
+        tab.input = "north".into();
+        tab.clear_input();
+        tab.history_back();
+        assert_eq!(tab.input, "north");
+        tab.history_forward();
+        assert_eq!(tab.input, "");
+
+        // Private input is emptied and kept nowhere.
+        tab.input = "kill droid".into();
+        tab.clear_input();
+        tab.set_manual_private(true);
+        tab.input = "hunter2".into();
+        tab.clear_input();
+        assert_eq!(tab.input, "");
+        tab.set_manual_private(false);
+        tab.history_back();
+        assert_eq!(tab.input, "kill droid");
+        tab.history_forward();
+
+        // Once a line is sent, Up starts at it.
+        tab.input = "look".into();
+        tab.submit();
+        tab.history_back();
+        assert_eq!(tab.input, "look");
+        tab.history_back();
+        assert_eq!(tab.input, "north");
+        assert_eq!(tab.history(), ["north", "look"]);
     }
 
     #[test]
@@ -4251,6 +4470,414 @@ mod tests {
         assert_eq!(search(&store, "again"), ["Recorded again."]);
         use wandur_core::history::HistoryStore as _;
         assert_eq!(store.sessions(&Default::default(), 0, 10).unwrap().len(), 2);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // Command recall: Up and Down start with the commands earlier sessions of the same world and
+    // character sent, read from session history.
+
+    fn recall_store(dir: &std::path::Path) -> Arc<wandur_core::history::SqliteHistoryStore> {
+        let (db, _) = wandur_core::db::Database::open(dir).unwrap();
+        Arc::new(wandur_core::history::SqliteHistoryStore::new(db))
+    }
+
+    fn recall_options(store: Arc<dyn HistoryStore>, character: &str, enabled: bool) -> TabOptions {
+        TabOptions {
+            scrollback: 100,
+            name: "Copper Harbor".into(),
+            character: character.into(),
+            history: Some(HistoryConfig {
+                store,
+                enabled,
+                retention_days: 30,
+                show_notice: false,
+                clock: wandur_core::history::system_clock(),
+            }),
+            ..TabOptions::default()
+        }
+    }
+
+    /// An earlier session of `127.0.0.1:port` and `character` where `commands` were typed.
+    fn seed_commands(store: &wandur_core::history::SqliteHistoryStore, port: u16, character: &str, commands: &[&str]) {
+        use wandur_core::history::HistoryCommand;
+        let now = std::time::SystemTime::now() - Duration::from_secs(60);
+        let session = HistorySession::start(&format!("127.0.0.1:{port}"), "Copper Harbor", character, now);
+        let typed: Vec<HistoryCommand> = commands
+            .iter()
+            .enumerate()
+            .map(|(i, text)| HistoryCommand {
+                sequence: i as i64 + 1,
+                at: now + Duration::from_micros(i as u64),
+                text: text.to_string(),
+            })
+            .collect();
+        store.append_batch(&session, &[], &typed).unwrap();
+    }
+
+    fn reopened(port: u16, options: &TabOptions) -> SessionTab {
+        let mut tab = SessionTab::offline(1, Endpoint::new("127.0.0.1", port), options, Arc::new(|| {}));
+        pump_until(&mut tab, |t| !t.recall_pending());
+        tab
+    }
+
+    #[test]
+    fn a_reopened_or_new_session_starts_with_its_world_and_characters_commands() {
+        let dir = history_dir("recall-open");
+        let store = recall_store(&dir);
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        seed_commands(&store, port, "Mira", &["north", "look", "look", "kill rat"]);
+        seed_commands(&store, port, "Tobin", &["quaff potion"]);
+        seed_commands(&store, port + 1, "Mira", &["other world"]);
+        let options = recall_options(store.clone(), "Mira", true);
+
+        // Reopened at start (offline until it connects).
+        let tab = reopened(port, &options);
+        assert_eq!(tab.history(), ["north", "look", "kill rat"]);
+
+        // A new session of the same world and character.
+        let mut tab = SessionTab::open(2, Endpoint::new("127.0.0.1", port), &options, Arc::new(|| {}));
+        let (_server, _) = listener.accept().unwrap();
+        pump_until(&mut tab, |t| !t.recall_pending());
+        assert_eq!(tab.history(), ["north", "look", "kill rat"]);
+        tab.history_back();
+        assert_eq!(tab.input, "kill rat");
+
+        // Another character, or another world.
+        let tobin = reopened(port, &recall_options(store.clone(), "tobin", true));
+        assert_eq!(tobin.history(), ["quaff potion"]);
+        let unknown = reopened(port, &recall_options(store.clone(), "Nobody", true));
+        assert!(unknown.history().is_empty());
+        let elsewhere = reopened(port + 2, &options);
+        assert!(elsewhere.history().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn with_session_history_off_nothing_is_restored() {
+        let dir = history_dir("recall-off");
+        let store = recall_store(&dir);
+        seed_commands(&store, 4999, "Mira", &["look"]);
+        let tab = reopened(4999, &recall_options(store.clone(), "Mira", false));
+        assert!(!tab.recall_pending(), "no read at all");
+        assert!(tab.history().is_empty());
+        let mut none = TabOptions {
+            character: "Mira".into(),
+            ..TabOptions::default()
+        };
+        none.history = None;
+        assert!(reopened(4999, &none).history().is_empty());
+        // Turned on later: the read runs then.
+        let mut tab = reopened(4999, &recall_options(store.clone(), "Mira", false));
+        tab.set_history(recall_options(store.clone(), "Mira", true).history);
+        pump_until(&mut tab, |t| !t.recall_pending());
+        assert_eq!(tab.history(), ["look"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn restored_history_keeps_the_newest_commands_up_to_the_limit() {
+        let dir = history_dir("recall-limit");
+        let store = recall_store(&dir);
+        let commands: Vec<String> = (0..HISTORY_LIMIT + 50).map(|i| format!("say {i}")).collect();
+        let mut with_repeats: Vec<&str> = Vec::new();
+        for c in &commands {
+            with_repeats.push(c);
+            with_repeats.push(c);
+        }
+        seed_commands(&store, 4998, "Mira", &with_repeats);
+        let tab = reopened(4998, &recall_options(store.clone(), "Mira", true));
+        assert_eq!(tab.history(), &commands[50..]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn private_input_and_login_lines_never_come_back() {
+        let dir = history_dir("recall-private");
+        let store = recall_store(&dir);
+        let vault = Arc::new(wandur_core::login::MemoryVault::new());
+        vault.write("login-key", "p@ss-test-only").unwrap();
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let mut options = recall_options(store.clone(), "mira", true);
+        options.login = Some(LoginConfig {
+            username: "mira".into(),
+            key: "login-key".into(),
+            username_prompt: wandur_core::login::DEFAULT_USERNAME_PROMPT.into(),
+            password_prompt: wandur_core::login::DEFAULT_PASSWORD_PROMPT.into(),
+            vault: Arc::clone(&vault) as Arc<dyn PasswordVault>,
+        });
+        let mut tab = SessionTab::open(1, Endpoint::new("127.0.0.1", port), &options, Arc::new(|| {}));
+        let (mut server, _) = listener.accept().unwrap();
+        pump_until(&mut tab, |t| t.is_connected() && t.login.is_some() && t.is_recording());
+        // Auto-login: the username and the password.
+        server.write_all(b"Username: ").unwrap();
+        pump_until(&mut tab, |t| t.login_sends == 1);
+        server.write_all(b"\r\nPassword: ").unwrap();
+        pump_until(&mut tab, |t| t.login_sends == 2);
+        assert_eq!(read_lines(&mut server, 2), ["mira", "p@ss-test-only"]);
+        server.write_all(b"\r\nWelcome.\r\n").unwrap();
+        pump_until(&mut tab, |t| {
+            t.terminal.transcript().contains("Welcome.") && !t.login_running()
+        });
+        tab.input = "look".into();
+        tab.submit();
+        // The server turns echo off: a typed secret.
+        server.write_all(b"Vault code: ").unwrap();
+        server.write_all(&[255, 251, 1]).unwrap();
+        pump_until(&mut tab, |t| t.server_echo);
+        tab.input = "hunter2".into();
+        tab.submit();
+        server.write_all(&[255, 252, 1]).unwrap();
+        pump_until(&mut tab, |t| !t.server_echo);
+        // Private input turned on by hand.
+        tab.set_manual_private(true);
+        tab.input = "whisper secret".into();
+        tab.submit();
+        tab.set_manual_private(false);
+        // A public line naming the saved password is masked, so it is not restored either.
+        tab.input = "say p@ss-test-only".into();
+        tab.submit();
+        tab.input = "score".into();
+        tab.submit();
+        assert_eq!(read_lines(&mut server, 5).len(), 5);
+        flush(&mut tab);
+        tab.disconnect();
+        for handle in tab.take_history_drains() {
+            handle.join().unwrap();
+        }
+        assert!(search(&store, "score").contains(&"score".to_string()), "recorded");
+
+        let next = reopened(port, &recall_options(store.clone(), "Mira", true));
+        assert_eq!(next.history(), ["look", "score"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn only_lines_the_person_typed_come_back_as_typed() {
+        let dir = history_dir("recall-typed");
+        let store = recall_store(&dir);
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let options = recall_options(store.clone(), "Mira", true);
+        let mut tab = SessionTab::open(1, Endpoint::new("127.0.0.1", port), &options, Arc::new(|| {}));
+        let (mut server, _) = listener.accept().unwrap();
+        tab.set_macros(Some("w".into()), macro_library(), Instant::now());
+        pump_until(&mut tab, |t| {
+            t.is_connected() && t.macros.is_active() && t.is_recording()
+        });
+        // A trigger, a shortcut key, a map walk step, the agent and a channel reply send
+        // commands nobody typed.
+        server.write_all(b"Your lantern gutters and dims.\r\n").unwrap();
+        pump_until(&mut tab, |t| t.macro_commands_sent == 1);
+        assert!(tab.press_key("F2", Instant::now()));
+        tab.send_walk_step("north".into());
+        assert!(tab.send_line_from("score", Origin::Agent));
+        assert!(tab.send_command("tell bob hi"));
+        // Typed: the client's repeat and chain, and an alias.
+        tab.input = "/2 say 1;wave".into();
+        tab.submit();
+        pump_until(&mut tab, |t| t.queue_progress().is_none());
+        tab.input = "ford".into();
+        tab.submit();
+        let sent = read_lines(&mut server, 10);
+        assert_eq!(
+            sent,
+            [
+                "fill lantern",
+                "look",
+                "north",
+                "score",
+                "tell bob hi",
+                "say 1",
+                "say 1",
+                "wave",
+                "east",
+                "east"
+            ]
+        );
+        flush(&mut tab);
+        tab.disconnect();
+        for handle in tab.take_history_drains() {
+            handle.join().unwrap();
+        }
+        assert_eq!(
+            search(&store, "lantern"),
+            ["fill lantern", "Your lantern gutters and dims."]
+        );
+
+        let next = reopened(port, &options);
+        assert_eq!(next.history(), ["/2 say 1;wave", "ford"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A cleared line was never sent: it is not recorded as typed, so a later session never
+    /// recalls it.
+    #[test]
+    fn a_cleared_line_is_never_recorded_as_typed() {
+        let dir = history_dir("recall-cleared");
+        let store = recall_store(&dir);
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let options = recall_options(store.clone(), "Mira", true);
+        let mut tab = SessionTab::open(1, Endpoint::new("127.0.0.1", port), &options, Arc::new(|| {}));
+        let (mut server, _) = listener.accept().unwrap();
+        pump_until(&mut tab, |t| t.is_connected() && t.is_recording());
+        tab.input = "kill rat".into();
+        tab.submit();
+        tab.input = "say a long unsent thought".into();
+        tab.clear_input();
+        tab.history_back();
+        assert_eq!(tab.input, "say a long unsent thought");
+        tab.clear_input();
+        assert_eq!(read_lines(&mut server, 1), ["kill rat"]);
+        flush(&mut tab);
+        tab.disconnect();
+        for handle in tab.take_history_drains() {
+            handle.join().unwrap();
+        }
+        assert!(search(&store, "unsent").is_empty(), "nothing in the transcript either");
+
+        let next = reopened(port, &options);
+        assert_eq!(next.history(), ["kill rat"]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A store whose recall waits until the test lets it answer.
+    struct SlowRecall {
+        inner: Arc<wandur_core::history::SqliteHistoryStore>,
+        gate: std::sync::Mutex<bool>,
+        open: std::sync::Condvar,
+    }
+
+    impl SlowRecall {
+        fn release(&self) {
+            *self.gate.lock().unwrap() = true;
+            self.open.notify_all();
+        }
+    }
+
+    impl HistoryStore for SlowRecall {
+        fn append(
+            &self,
+            session: &HistorySession,
+            entries: &[wandur_core::history::HistoryEntry],
+        ) -> Result<(), wandur_core::history::HistoryError> {
+            self.inner.append(session, entries)
+        }
+        fn append_batch(
+            &self,
+            session: &HistorySession,
+            entries: &[wandur_core::history::HistoryEntry],
+            commands: &[wandur_core::history::HistoryCommand],
+        ) -> Result<(), wandur_core::history::HistoryError> {
+            self.inner.append_batch(session, entries, commands)
+        }
+        fn sessions(
+            &self,
+            filter: &wandur_core::history::HistoryFilter,
+            offset: usize,
+            limit: usize,
+        ) -> Result<Vec<HistorySession>, wandur_core::history::HistoryError> {
+            self.inner.sessions(filter, offset, limit)
+        }
+        fn search(
+            &self,
+            query: &str,
+            filter: &wandur_core::history::HistoryFilter,
+            offset: usize,
+            limit: usize,
+        ) -> Result<Vec<wandur_core::history::HistoryHit>, wandur_core::history::HistoryError> {
+            self.inner.search(query, filter, offset, limit)
+        }
+        fn entries(
+            &self,
+            session_id: &str,
+            from: i64,
+            limit: usize,
+        ) -> Result<Vec<wandur_core::history::HistoryEntry>, wandur_core::history::HistoryError> {
+            self.inner.entries(session_id, from, limit)
+        }
+        fn delete(&self, session_id: &str) -> Result<(), wandur_core::history::HistoryError> {
+            self.inner.delete(session_id)
+        }
+        fn prune(&self, before: std::time::SystemTime) -> Result<(), wandur_core::history::HistoryError> {
+            self.inner.prune(before)
+        }
+        fn recall(
+            &self,
+            request: &wandur_core::history::recall::RecallRequest,
+        ) -> Result<Vec<String>, wandur_core::history::HistoryError> {
+            let mut open = self.gate.lock().unwrap();
+            while !*open {
+                open = self.open.wait(open).unwrap();
+            }
+            drop(open);
+            self.inner.recall(request)
+        }
+    }
+
+    #[test]
+    fn a_late_recall_goes_before_the_commands_typed_meanwhile() {
+        let dir = history_dir("recall-late");
+        let inner = recall_store(&dir);
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        seed_commands(&inner, port, "Mira", &["north", "look"]);
+        let store = Arc::new(SlowRecall {
+            inner: inner.clone(),
+            gate: std::sync::Mutex::new(false),
+            open: std::sync::Condvar::new(),
+        });
+        let options = recall_options(store.clone(), "Mira", true);
+        let mut tab = SessionTab::open(1, Endpoint::new("127.0.0.1", port), &options, Arc::new(|| {}));
+        let (mut server, _) = listener.accept().unwrap();
+        pump_until(&mut tab, |t| t.is_connected() && t.is_recording());
+        // The command line does not wait for the read.
+        for command in ["look", "east", "say hi"] {
+            tab.input = command.into();
+            tab.submit();
+        }
+        assert_eq!(read_lines(&mut server, 3).len(), 3);
+        // This run's own commands reach the store before the read answers: not read back.
+        flush(&mut tab);
+        assert!(tab.recall_pending());
+        assert_eq!(tab.history(), ["look", "east", "say hi"]);
+        // Mid-navigation, the draft and the place in the history survive the merge.
+        tab.input = "draft".into();
+        tab.history_back();
+        assert_eq!(tab.input, "say hi");
+        store.release();
+        pump_until(&mut tab, |t| !t.recall_pending());
+        assert_eq!(tab.history(), ["north", "look", "east", "say hi"]);
+        tab.history_back();
+        assert_eq!(tab.input, "east");
+        tab.history_back();
+        assert_eq!(tab.input, "look");
+        tab.history_back();
+        assert_eq!(tab.input, "north");
+        for _ in 0..4 {
+            tab.history_forward();
+        }
+        assert_eq!(tab.input, "draft");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_reported_character_reads_that_characters_commands_instead() {
+        let dir = history_dir("recall-character");
+        let store = recall_store(&dir);
+        seed_commands(&store, 4997, "bob", &["login stuff"]);
+        seed_commands(&store, 4997, "Robert", &["kill rat", "loot"]);
+        let mut tab = reopened(4997, &recall_options(store.clone(), "bob", true));
+        // Kept as a sent command would be (this tab is not connected).
+        tab.remember("typed".into());
+        assert_eq!(tab.history(), ["login stuff", "typed"]);
+        // The world names the character (as a protocol mapping would).
+        tab.character = "Robert".into();
+        tab.start_recall();
+        pump_until(&mut tab, |t| !t.recall_pending());
+        assert_eq!(tab.history(), ["kill rat", "loot", "typed"]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

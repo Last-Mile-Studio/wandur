@@ -2199,6 +2199,18 @@ fn input_line(
         help::plan(&tab.input, caret, syntax, view.command_help.cycle_filter())
     };
     let focused = ui.memory(|m| m.has_focus(id));
+    // Emptying the box keeps the line as the newest place for Up (`SessionTab::clear_input`).
+    let clear_box = |ui: &Ui, tab: &mut SessionTab| {
+        tab.clear_input();
+        set_caret(ui, 0);
+    };
+    // Ctrl+C empties the box. On macOS that is the Control key (Cmd+C stays Copy), whatever else
+    // shows, as in Terminal; elsewhere Ctrl+C is Copy, and it empties the box only when nothing is
+    // selected to copy (below), as in Windows Terminal.
+    let mac = ui.ctx().os() == egui::os::OperatingSystem::Mac;
+    if focused && mac && ui.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, Key::C)) {
+        clear_box(ui, tab);
+    }
     let mut plan = plan_now(ui, tab, view);
     let list_open = |plan: &help::Plan, tab: &SessionTab, view: &TerminalViewState| {
         focused && !plan.entries.is_empty() && view.command_help.allowed(&tab.input)
@@ -2300,9 +2312,33 @@ fn input_line(
             suggestion = None;
         }
     }
+    // Last, with nothing above left to put away, Escape empties a typed line (the box keeps
+    // focus); on an empty box it lets the box go, as before.
+    if focused && !tab.input.is_empty() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape)) {
+        clear_box(ui, tab);
+        suggestion = None;
+    }
+    // Ctrl+C with nothing selected in the box (private text is never copied) or the transcript.
+    // Copy from the Edit menu holds no Ctrl and never empties it.
+    let box_selected = |ui: &Ui| {
+        !private
+            && egui::TextEdit::load_state(ui.ctx(), id)
+                .and_then(|s| s.cursor.char_range())
+                .is_some_and(|r| !r.is_empty())
+    };
+    let ctrl_copy = !mac && ui.input(|i| i.modifiers.ctrl && i.events.iter().any(|e| matches!(e, egui::Event::Copy)));
+    if focused && ctrl_copy && !box_selected(ui) && tab.terminal.selection_text().is_none() {
+        clear_box(ui, tab);
+        suggestion = None;
+    }
     let showing = suggestion.is_some();
     let field = crate::theme::mix(theme.terminal, theme.terminal_text, 0.06);
-    let keeps_escape = showing || listing || hinting || tab.style_tip_shown() || tab.queue_progress().is_some();
+    let keeps_escape = showing
+        || listing
+        || hinting
+        || tab.style_tip_shown()
+        || tab.queue_progress().is_some()
+        || !tab.input.is_empty();
     let pasted = ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Paste(_))));
     // The draft's wrong parts in red, from the same check the hints use.
     let mut layouter = |ui: &Ui, buffer: &dyn egui::TextBuffer, _wrap: f32| {
@@ -2325,8 +2361,8 @@ fn input_line(
         .desired_width(width)
         .margin(egui::Margin::symmetric(10, 8))
         // While a ghost or the list shows, Tab and Escape belong to them rather than to focus
-        // movement, and Escape also belongs to the style tip, signature help and a running line
-        // (or egui would take focus away before they see it).
+        // movement, and Escape also belongs to the style tip, signature help, a running line and
+        // a typed line to empty (or egui would take focus away before they see it).
         .event_filter(egui::EventFilter {
             tab: showing || listing,
             escape: keeps_escape,
@@ -2364,8 +2400,9 @@ fn input_line(
         );
     }
     view.ghost = suggestion;
-    // Copy: the terminal selection, unless the input line has its own selected text.
-    let input_selected = output.cursor_range.is_some_and(|r| !r.is_empty());
+    // Copy: the terminal selection, unless the input line has its own selected text (private
+    // text has none to copy).
+    let input_selected = !private && output.cursor_range.is_some_and(|r| !r.is_empty());
     let copy = ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Copy)));
     if copy
         && !input_selected
@@ -3118,6 +3155,15 @@ mod tests {
             rig
         }
 
+        /// A frame with `modifiers` held, let go in the frame after.
+        fn frame_held(&mut self, events: Vec<egui::Event>, modifiers: egui::Modifiers) -> egui::FullOutput {
+            let mut held = vec![egui::Event::ModifiersChanged(modifiers)];
+            held.extend(events);
+            let out = self.frame(held);
+            self.frame(vec![egui::Event::ModifiersChanged(egui::Modifiers::NONE)]);
+            out
+        }
+
         fn frame(&mut self, events: Vec<egui::Event>) -> egui::FullOutput {
             let input = egui::RawInput {
                 screen_rect: Some(Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(900.0, 550.0))),
@@ -3334,6 +3380,160 @@ mod tests {
             rig.shown().wrong.is_empty() && rig.shown().message.is_none(),
             "unfinished is not wrong"
         );
+    }
+
+    impl BoxRig {
+        fn box_focused(&self) -> bool {
+            let id = egui::Id::new(("wandur-input", self.tab.id));
+            self.ctx.memory(|m| m.has_focus(id))
+        }
+
+        /// Ctrl+C as egui hears it: on macOS a key with Control, elsewhere Copy with Ctrl held.
+        fn ctrl_c(&mut self) -> egui::FullOutput {
+            if self.ctx.os() == egui::os::OperatingSystem::Mac {
+                let mut events = key(Key::C);
+                for event in &mut events {
+                    if let egui::Event::Key { modifiers, .. } = event {
+                        *modifiers = egui::Modifiers::CTRL;
+                    }
+                }
+                self.frame_held(events, egui::Modifiers::CTRL)
+            } else {
+                self.frame_held(vec![egui::Event::Copy], egui::Modifiers::CTRL)
+            }
+        }
+
+        /// A line from the world in the transcript, all of it selected.
+        fn select_transcript(&mut self) {
+            use crate::session_tab::test_support::pump_until;
+            use std::io::Write;
+            self.server.write_all(b"A womprat scurries past.\r\n").unwrap();
+            pump_until(&mut self.tab, |t| t.terminal.transcript().contains("womprat"));
+            self.tab.terminal.select_all();
+            assert!(self.tab.terminal.selection_text().is_some());
+        }
+    }
+
+    fn copied(out: &egui::FullOutput) -> Option<&str> {
+        out.platform_output.commands.iter().find_map(|c| match c {
+            egui::OutputCommand::CopyText(text) => Some(text.as_str()),
+            _ => None,
+        })
+    }
+
+    /// Escape empties a typed line only after the jobs before it (stop a running line, put a
+    /// ghost away), keeps the focus, and lets the box go when it is empty; one Up brings the
+    /// line back.
+    #[test]
+    fn escape_empties_the_line_last_and_then_lets_the_box_go() {
+        let mut rig = BoxRig::new("Hull");
+        rig.tab.input = "/5 look".into();
+        rig.tab.submit();
+        assert!(rig.tab.queue_progress().is_some());
+        rig.type_text("kill droid");
+        rig.key(Key::Escape);
+        assert_eq!(rig.tab.queue_progress(), None, "the running line stops first");
+        assert_eq!(rig.tab.input, "kill droid", "and the line stays");
+        rig.key(Key::Escape);
+        assert_eq!(rig.tab.input, "", "then Escape empties it");
+        assert!(rig.box_focused(), "and the box keeps focus");
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.tab.input, "kill droid", "one Up brings it back");
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.tab.input, "/5 look");
+        rig.key(Key::ArrowDown);
+        rig.key(Key::ArrowDown);
+        assert_eq!(rig.tab.input, "");
+
+        // A ghost goes away before the line does.
+        assert!(rig.tab.run_command("look womprat"));
+        assert!(rig.tab.completions.settle(std::time::Duration::from_secs(5)));
+        rig.type_text("look");
+        assert_eq!(rig.view.ghost.as_deref(), Some(" womprat"));
+        rig.key(Key::Escape);
+        assert_eq!((rig.view.ghost.as_deref(), rig.tab.input.as_str()), (None, "look"));
+        rig.key(Key::Escape);
+        assert_eq!(rig.tab.input, "");
+        assert!(rig.box_focused());
+
+        // Escape on the empty box lets it go, as before.
+        rig.key(Key::Escape);
+        assert!(!rig.box_focused(), "an empty box gives up focus");
+    }
+
+    /// macOS: Control+C empties the box whatever is selected (Cmd+C stays Copy).
+    #[test]
+    fn control_c_on_macos_empties_the_box() {
+        let mut rig = BoxRig::new("Hull");
+        rig.ctx.set_os(egui::os::OperatingSystem::Mac);
+        rig.select_transcript();
+        rig.type_text("kill droid");
+        let out = rig.ctrl_c();
+        assert_eq!(rig.tab.input, "");
+        assert_eq!(copied(&out), None, "nothing copied");
+        assert!(rig.box_focused());
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.tab.input, "kill droid");
+
+        // Cmd+C is Copy: the transcript's selection, and the line stays.
+        let out = rig.frame_held(vec![egui::Event::Copy], egui::Modifiers::COMMAND);
+        assert_eq!(rig.tab.input, "kill droid");
+        assert!(copied(&out).is_some_and(|c| c.contains("womprat")));
+    }
+
+    /// Windows and Linux: Ctrl+C copies a selection in the box or the transcript and empties the
+    /// box only when nothing is selected; Copy from the Edit menu never empties it.
+    #[test]
+    fn ctrl_c_elsewhere_copies_a_selection_or_empties_the_box() {
+        let mut rig = BoxRig::new("Hull");
+        rig.ctx.set_os(egui::os::OperatingSystem::Windows);
+        rig.select_transcript();
+        rig.type_text("kill droid");
+        let out = rig.ctrl_c();
+        assert_eq!(rig.tab.input, "kill droid", "the transcript's selection is copied");
+        assert!(copied(&out).is_some_and(|c| c.contains("womprat")));
+
+        // The box's own selection wins.
+        let id = egui::Id::new(("wandur-input", rig.tab.id));
+        let mut state = egui::TextEdit::load_state(&rig.ctx, id).unwrap();
+        state.cursor.set_char_range(Some(egui::text::CCursorRange::two(
+            egui::text::CCursor::new(0),
+            egui::text::CCursor::new(4),
+        )));
+        state.store(&rig.ctx, id);
+        let out = rig.ctrl_c();
+        assert_eq!(rig.tab.input, "kill droid");
+        assert_eq!(copied(&out), Some("kill"));
+
+        // Nothing selected anywhere: Ctrl+C empties the box, Up brings it back.
+        rig.tab.terminal.select_clear();
+        rig.tab.caret_to_end = true;
+        rig.frame(vec![]);
+        let out = rig.frame_held(vec![egui::Event::Copy], egui::Modifiers::NONE);
+        assert_eq!(rig.tab.input, "kill droid", "Edit > Copy holds no Ctrl");
+        assert_eq!(copied(&out), None);
+        let out = rig.ctrl_c();
+        assert_eq!(rig.tab.input, "");
+        assert_eq!(copied(&out), None);
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.tab.input, "kill droid");
+
+        // Private input is emptied, copied nowhere and kept nowhere.
+        rig.clear();
+        rig.tab.set_manual_private(true);
+        rig.type_text("hunter2");
+        let mut state = egui::TextEdit::load_state(&rig.ctx, id).unwrap();
+        state.cursor.set_char_range(Some(egui::text::CCursorRange::two(
+            egui::text::CCursor::new(0),
+            egui::text::CCursor::new(7),
+        )));
+        state.store(&rig.ctx, id);
+        let out = rig.ctrl_c();
+        assert_eq!(rig.tab.input, "");
+        assert_eq!(copied(&out), None);
+        rig.tab.set_manual_private(false);
+        rig.key(Key::ArrowUp);
+        assert_eq!(rig.tab.input, "kill droid", "the secret never reached Up");
     }
 
     /// The box is a combo box for screen readers while the list is open: expanded, pointing at

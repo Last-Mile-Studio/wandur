@@ -39,6 +39,10 @@ pub use apply::{ImportOptions, Outcome, Progress, import, import_into_dir};
 /// The newest C# schema this importer reads: 7 on the C# main branch, 8 and 9 on the Mudlet
 /// import branch (each script's import record, language and layer).
 pub const MAX_SCHEMA: u32 = 9;
+
+/// Tables every C# client database has (this client's own has no `client_settings` or
+/// `profiles`).
+const CSHARP_TABLES: [&str; 5] = ["worlds", "endpoints", "client_settings", "profiles", "scripts"];
 /// The C# database's file name.
 pub const DB_FILE: &str = "wandur.db";
 /// The C# client's data directory name under the platform's application data directory.
@@ -384,6 +388,11 @@ impl CsharpSource {
                 .query_row("PRAGMA user_version", [], |r| r.get(0))
                 .map_err(|_| ImportError::NotWandur)?;
             if version > MAX_SCHEMA {
+                // This client's own file (its schema numbers run on their own) is no C# one.
+                let tables = table_names(&conn).map_err(|_| ImportError::NotWandur)?;
+                if !CSHARP_TABLES.iter().all(|t| tables.iter().any(|n| n == t)) {
+                    return Err(ImportError::NotWandur);
+                }
                 return Err(ImportError::TooNew { found: version });
             }
             let _ = conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()));
@@ -410,8 +419,7 @@ impl CsharpSource {
             return Err(ImportError::TooNew { found: schema });
         }
         let tables = table_names(&conn).map_err(unreadable)?;
-        let required = ["worlds", "endpoints", "client_settings", "profiles", "scripts"];
-        if schema == 0 || !required.iter().all(|t| tables.iter().any(|n| n == t)) {
+        if schema == 0 || !CSHARP_TABLES.iter().all(|t| tables.iter().any(|n| n == t)) {
             return Err(ImportError::NotWandur);
         }
         let script_columns = column_names(&conn, "scripts").map_err(unreadable)?;

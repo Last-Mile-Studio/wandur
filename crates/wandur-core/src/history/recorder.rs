@@ -14,6 +14,8 @@
 //!   secret, and the start of the next line that ends one.
 //! - A line that reached the 4,096-character cap is dropped (a marker instead): a secret in it may
 //!   be cut short and could not be masked.
+//! - Typed command lines (for recall in later sessions) are kept apart, never while hidden, and
+//!   not at all when a remembered secret is in them or they reach the line cap.
 //! - Retention runs before a batch is written: at the first batch, after a change and hourly.
 //!
 //! A full queue or a storage error pauses recording for the connection (the session goes on);
@@ -26,7 +28,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant, SystemTime};
 
 use super::lines::{Line, LineParser, MAX_LINE};
-use super::{EntryKind, HistoryEntry, HistorySession, HistoryStore, retention_cutoff};
+use super::{EntryKind, HistoryCommand, HistoryEntry, HistorySession, HistoryStore, retention_cutoff};
 use crate::diagnostics::console::mask;
 
 /// The time source (tests use a fixed or stepped clock).
@@ -50,7 +52,8 @@ const BATCH_CHARS: usize = 4 << 20;
 const BATCH_WAIT: Duration = Duration::from_secs(2);
 /// How often retention runs while recording.
 const PRUNE_EVERY: Duration = Duration::from_secs(3600);
-const REDACTED: &str = "[redacted]";
+/// What a masked secret is replaced with.
+pub(crate) const REDACTED: &str = "[redacted]";
 
 enum Message {
     Received {
@@ -62,6 +65,10 @@ enum Message {
         kind: EntryKind,
         text: String,
         hidden: bool,
+        at: SystemTime,
+    },
+    Typed {
+        text: String,
         at: SystemTime,
     },
     Hide {
@@ -123,6 +130,7 @@ impl HistoryRecorder {
                         shared,
                         capture: Capture::default(),
                         pending: Vec::new(),
+                        commands: Vec::new(),
                         pending_chars: 0,
                         first_pending: None,
                         next_prune: None,
@@ -184,6 +192,19 @@ impl HistoryRecorder {
     /// A command sent to the server; `hidden` when it was private input or a login.
     pub fn sent(&mut self, text: &str, hidden: bool) {
         self.local(EntryKind::Sent, text, hidden);
+    }
+
+    /// A command line as the person typed it, kept for Up and Down in later sessions. Nothing
+    /// is kept when `hidden` (private input or a login).
+    pub fn typed(&mut self, text: &str, hidden: bool) {
+        if hidden || text.trim().is_empty() {
+            return;
+        }
+        let at = (self.clock)();
+        self.send(Message::Typed {
+            text: text.to_string(),
+            at,
+        });
     }
 
     /// Text a script wrote into the transcript.
@@ -289,7 +310,7 @@ impl HistoryRecorder {
         }
         let Some(tx) = &self.tx else { return };
         let bytes = match &message {
-            Message::Received { text, .. } | Message::Local { text, .. } => text.len(),
+            Message::Received { text, .. } | Message::Local { text, .. } | Message::Typed { text, .. } => text.len(),
             _ => 0,
         };
         let queued = self.shared.queued_bytes.fetch_add(bytes, Ordering::AcqRel) + bytes;
@@ -339,6 +360,7 @@ struct Worker {
     shared: Arc<Shared>,
     capture: Capture,
     pending: Vec<HistoryEntry>,
+    commands: Vec<HistoryCommand>,
     pending_chars: usize,
     first_pending: Option<Instant>,
     next_prune: Option<SystemTime>,
@@ -383,6 +405,14 @@ impl Worker {
                 self.shared.queued_bytes.fetch_sub(text.len(), Ordering::AcqRel);
                 self.capture.local(kind, &text, hidden, at, &mut self.pending);
             }
+            Message::Typed { text, at } => {
+                self.shared.queued_bytes.fetch_sub(text.len(), Ordering::AcqRel);
+                if let Some(command) = self.capture.typed(text, at) {
+                    self.pending_chars += command.text.len();
+                    self.commands.push(command);
+                    self.first_pending.get_or_insert_with(Instant::now);
+                }
+            }
             Message::Hide { at } => self.capture.hide(at, &mut self.pending),
             Message::Secrets(secrets) => self.capture.secrets = secrets,
             Message::Character(name) => self.session.character_name = name,
@@ -404,9 +434,10 @@ impl Worker {
     /// Write the batch (`always`: even an empty one, which updates the session row).
     fn write(&mut self, always: bool) {
         let entries = std::mem::take(&mut self.pending);
+        let commands = std::mem::take(&mut self.commands);
         self.pending_chars = 0;
         self.first_pending = None;
-        if self.shared.failed.load(Ordering::Acquire) || (entries.is_empty() && !always) {
+        if self.shared.failed.load(Ordering::Acquire) || (entries.is_empty() && commands.is_empty() && !always) {
             return;
         }
         let now = (self.clock)();
@@ -419,7 +450,7 @@ impl Worker {
                 self.next_prune = Some(now + PRUNE_EVERY);
             }
             self.last_retention = Some(days);
-            self.store.append(&self.session, &entries)
+            self.store.append_batch(&self.session, &entries, &commands)
         })();
         if result.is_err() {
             self.shared.failed.store(true, Ordering::Release);
@@ -440,6 +471,8 @@ struct Capture {
     /// may start with the end of a secret.
     leading_fragment: bool,
     sequence: i64,
+    /// The typed command lines' own numbering (the entries' stays without gaps).
+    command_sequence: i64,
 }
 
 impl Capture {
@@ -475,6 +508,22 @@ impl Capture {
         }
         self.lines = lines;
         self.parser.clear();
+    }
+
+    /// A typed command line to keep, unless a remembered secret is in it or it reaches the cap.
+    fn typed(&mut self, text: String, at: SystemTime) -> Option<HistoryCommand> {
+        if text.chars().count() >= MAX_LINE || text.contains('\n') || text.contains('\r') {
+            return None;
+        }
+        if !self.secrets.is_empty() && mask(&text, &self.secrets) != text {
+            return None;
+        }
+        self.command_sequence += 1;
+        Some(HistoryCommand {
+            sequence: self.command_sequence,
+            at,
+            text,
+        })
     }
 
     fn hide(&mut self, at: SystemTime, out: &mut Vec<HistoryEntry>) {
@@ -593,6 +642,7 @@ mod tests {
     #[derive(Default)]
     struct Recording {
         records: Mutex<Vec<HistoryEntry>>,
+        commands: Mutex<Vec<HistoryCommand>>,
         last_session: Mutex<Option<HistorySession>>,
         appends: AtomicU32,
         prunes: Mutex<Vec<SystemTime>>,
@@ -626,6 +676,16 @@ mod tests {
     }
 
     impl HistoryStore for Recording {
+        fn append_batch(
+            &self,
+            session: &HistorySession,
+            entries: &[HistoryEntry],
+            commands: &[HistoryCommand],
+        ) -> Result<(), HistoryError> {
+            self.append(session, entries)?;
+            self.commands.lock().unwrap().extend_from_slice(commands);
+            Ok(())
+        }
         fn append(&self, session: &HistorySession, entries: &[HistoryEntry]) -> Result<(), HistoryError> {
             if let Some((open, wake)) = &self.gate {
                 let mut open = open.lock().unwrap();
@@ -812,6 +872,31 @@ mod tests {
                 .any(|t| t.contains("hun") || t.contains("credentials"))
         );
         assert!(store.prunes.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn typed_lines_are_kept_apart_and_never_hidden_or_with_a_secret() {
+        let store = Arc::new(Recording::default());
+        let mut r = recorder(&store, 0);
+        r.set_secrets(&hunter());
+        r.typed("/10 say 1;kill droid", false);
+        r.sent("say 1", false);
+        r.typed("hunter2", true);
+        r.typed("say my word is hunter2", false);
+        r.typed("  ", false);
+        r.typed(&"x".repeat(MAX_LINE), false);
+        r.typed("look", false);
+        finish(r);
+        let typed: Vec<(i64, String)> = store
+            .commands
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|c| (c.sequence, c.text.clone()))
+            .collect();
+        assert_eq!(typed, [(1, "/10 say 1;kill droid".into()), (2, "look".into())]);
+        // The transcript's entries are as before: the sent line only.
+        assert_eq!(store.texts(), ["say 1"]);
     }
 
     #[test]

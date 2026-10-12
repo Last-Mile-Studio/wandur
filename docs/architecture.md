@@ -192,6 +192,67 @@ reads the vault for auto-login as any connection does.
 - Scenes (`Options::ephemeral`) never read or write the file; `Options::restore` hands a scene
   its own tabs. The perf probe (`WANDUR_PERF_PROBE`) does not reopen anything.
 
+## Command recall (feature/command-recall, October 2026)
+
+A session's Up and Down history (`SessionTab::history`, 500 commands) starts with the command
+lines typed in earlier sessions of the same world and character, exactly as typed
+(`/10 say 1;kill droid`, an alias's name), read from session history
+(`wandur-core::history::recall`, `HistoryStore::recall`). With Settings > General > Save session
+history off nothing is recorded or read, and cleared, deleted or expired history (lines older
+than the retention setting are skipped even before the recorder prunes them) gives nothing back.
+
+- Storage: `wandur.db` migration 10 adds `history_commands` (session key, sequence, time, text),
+  beside `history_entries` and not in it, so search, the History window's transcript, the FTS
+  index and the C# import are unchanged; typed lines are never shown there (the transcript
+  already has the `sent` lines that went out). Deleting a session cascades to its typed lines;
+  retention deletes them by time with the entries. A file from before migration 10 (or the C#
+  client's history) has no typed lines, and recall gives nothing for it: `sent` lines are never
+  used instead. A build from before this migration skips a migrated `wandur.db` for its run (a
+  newer schema), as for every migration.
+- Recording: `SessionTab::remember`, where the input line keeps a line for Up and Down, hands it
+  to the recorder (`HistoryRecorder::typed`) when it keeps it (not blank, not the same as the
+  last one), with the privacy gate: nothing while input is private or a login runs. Private
+  input and login lines never reach `remember` in the first place. The recorder's thread drops
+  a line with a remembered secret in it (rather than masking it) and one at the 4,096-character
+  cap, numbers the rest on their own sequence and writes them in the entries' batch, in the same
+  transaction (`HistoryStore::append_batch`). Commands nobody typed (map walk steps, triggers,
+  timers, scripts, the agent, channel replies, shortcut keys) are `sent` entries only, so they
+  never come back.
+- Which sessions: every history session recorded under the tab's endpoint key or any other
+  address of the same saved world (the `endpoints` table), whose character matches the tab's
+  ignoring case (empty matches empty), minus the tab's own sessions of this run. An address that
+  belongs to no world is its own key, so unsaved addresses recall by address and character. The
+  demo recalls nothing.
+- Which lines: newest session first and newest line first, folded with the input line's own
+  rule (`recall::push_command`: not blank, not the same as the previous one, the newest 500).
+- When: `SessionTab::with_link` starts the read, so a session reopened at start and any new
+  session read it; a world that reports another character (protocol mapping) starts one more read
+  for that name, which replaces the first one's commands; turning history on later reads it then.
+- Threading: the read runs on a thread of its own (`wandur-recall-<id>`, one short SQLite
+  connection) and answers on a channel the tab polls each pump and before Up. The command line
+  never waits: commands typed before it answers stay, after the restored ones (the same command
+  at the seam is kept once); a place in the history while browsing stays on the same command.
+  The tab's history session ids go into a shared list before each recorder starts, and the store
+  reads that list after listing the sessions, so this run's own commands are never read back.
+
+### Clearing the command box (ui/clear-line, October 2026)
+
+- Escape runs its jobs in order (`terminal_view::input_line`): close the command list, put the
+  style tip away, stop a running repeated or queued line, put signature help away, dismiss the
+  ghost, and last, with none of those left, empty a typed line (the box keeps focus). Escape on
+  an empty box lets the box go as before (on the map, Escape with nothing focused returns to
+  Play). A reflex double tap to put a ghost away therefore never empties a long line at once.
+- Ctrl+C: on macOS the Control key (not Cmd) always empties the box, as in Terminal; Cmd+C stays
+  Copy. On Windows and Linux Ctrl+C is Copy (egui's `Event::Copy` with Ctrl held): it copies the
+  box's own selection, else the transcript's, and empties the box only when nothing is selected
+  in either (Windows Terminal). Copy from the Edit menu holds no Ctrl and never empties it.
+  Private input is emptied too and never copied.
+- Undo with Up: `SessionTab::clear_input` keeps the emptied line in `cleared`, one place past
+  the history, so one Up brings it back exactly (Down goes back to the draft typed since). It is
+  not a command: never recorded (`HistoryRecorder::typed`), learned for completion or kept in
+  `history`, and it goes when a line is sent. Emptying an unedited recalled command keeps the
+  draft from before Up instead; private input is kept nowhere.
+
 ## Panel headers (ui-chrome, October 2026)
 
 The C# client's panel headers (grip at the far left, title, the panel's actions, and the dock's
@@ -587,7 +648,8 @@ address, adult worlds, and per world the listing id and usage), `layout.json` (M
 `directory.json` (the snapshot, M3) and `thumbnails/` (M3) in the data directory:
 `--data-dir`, else the platform data directory plus `Wandur-Rust` (never the C# client's
 `Wandur`). Written to a temporary file and renamed. Unreadable files are moved to
-`settings.json.bad`. Input history is not persisted (it can hold passwords typed without echo off).
+`settings.json.bad`. Input history has no file of its own: a new session's Up and Down history
+is read back from session history, when that is on (Command recall, below).
 
 Parity t01 added `wandur.db` (`wandur-core::db`), the C# `ClientDatabase` in Rust: rusqlite with
 SQLite bundled (FTS5 compiled in), WAL, foreign keys, numbered migrations applied in one

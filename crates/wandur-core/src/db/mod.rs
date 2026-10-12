@@ -39,7 +39,7 @@ pub const DB_FILE: &str = "wandur.db";
 
 /// The schema version this build writes. Each entry of [`MIGRATIONS`] brings a file from the
 /// version before it to its own number.
-pub const SCHEMA_VERSION: u32 = 9;
+pub const SCHEMA_VERSION: u32 = 10;
 
 /// Numbered migrations, oldest first. Never edit a released one; add the next number instead.
 pub const MIGRATIONS: &[(u32, &str)] = &[
@@ -216,6 +216,21 @@ pub const MIGRATIONS: &[(u32, &str)] = &[
              hash TEXT NOT NULL,
              bytes BLOB NOT NULL,
              PRIMARY KEY(world_id, hash));",
+    ),
+    (
+        10,
+        // The command lines a person typed, as typed (before aliases, `;` and `/` commands),
+        // for the input line's Up and Down in later sessions (feature/command-recall). Kept
+        // apart from `history_entries` so search, the transcript view and the C# shape stay as
+        // they were; deleting a session cascades here, retention prunes by `at`. Files from
+        // before this version have none, and recall gives nothing for them.
+        "CREATE TABLE history_commands(
+             session INTEGER NOT NULL REFERENCES history_sessions(key) ON DELETE CASCADE,
+             sequence INTEGER NOT NULL CHECK(sequence >= 0),
+             at INTEGER NOT NULL,
+             text TEXT NOT NULL,
+             PRIMARY KEY(session, sequence));
+         CREATE INDEX history_commands_at ON history_commands(at);",
     ),
 ];
 
